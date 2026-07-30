@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>CAMPUS CONNECT AI</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Free HTML Templates" name="keywords">
+    <meta content="Free HTML Templates" name="description">
+
+    <!-- Favicon -->
+    <link href="img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"> 
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Topbar Start -->
+    <div class="container-fluid d-none d-lg-block">
+        <div class="row align-items-center py-4 px-xl-5">
+            <div class="col-lg-3">
+                <a href="" class="text-decoration-none">
+                    <img src="img/WhatsApp Image 2026-07-28 at 2.14.08 PM.jpeg" alt="CampusConnect AI" style="max-height: 200px; padding: 0px 0;">
+                </a>
+            </div>
+            <div class="col-lg-3 text-right">
+                <div class="d-inline-flex align-items-center">
+                    <i class="fa fa-2x fa-map-marker-alt text-primary mr-3"></i>
+                    <div class="text-left">
+                        <h6 class="font-weight-semi-bold mb-1">Our Office</h6>
+                        <small>123 Street, New York, USA</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 text-right">
+                <div class="d-inline-flex align-items-center">
+                    <i class="fa fa-2x fa-envelope text-primary mr-3"></i>
+                    <div class="text-left">
+                        <h6 class="font-weight-semi-bold mb-1">Email Us</h6>
+                        <small>info@example.com</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 text-right">
+                <div class="d-inline-flex align-items-center">
+                    <i class="fa fa-2x fa-phone text-primary mr-3"></i>
+                    <div class="text-left">
+                        <h6 class="font-weight-semi-bold mb-1">Call Us</h6>
+                        <small>+012 345 6789</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Topbar End -->
+
+
+    <!-- Navbar Start -->
+    <div class="container-fluid">
+        <div class="row border-top px-xl-5">
+            <div class="col-lg-3 d-none d-lg-block">
+                <a class="d-flex align-items-center justify-content-between bg-secondary w-100 text-decoration-none" data-toggle="collapse" href="#navbar-vertical" style="height: 67px; padding: 0 30px;">
+                    <h5 class="text-primary m-0"><i class="fa fa-book-open mr-2"></i>Subjects</h5>
+                    <i class="fa fa-angle-down text-primary"></i>
+                </a>
+                <nav class="collapse position-absolute navbar navbar-vertical navbar-light align-items-start p-0 border border-top-0 border-bottom-0 bg-light" id="navbar-vertical" style="width: calc(100% - 30px); z-index: 9;">
+                    <div class="navbar-nav w-100">
+                        <div class="nav-item dropdown">
+                            <a href="#" class="nav-link" data-toggle="dropdown">Web Design <i class="fa fa-angle-down float-right mt-1"></i></a>
+                            <div class="dropdown-menu position-absolute bg-secondary border-0 rounded-0 w-100 m-0">
+                                <a href="" class="dropdown-item">HTML</a>
+                                <a href="" class="dropdown-item">CSS</a>
+                                <a href="" class="dropdown-item">jQuery</a>
+                            </div>
+                        </div>
+                        <a href="" class="nav-item nav-link">Apps Design</a>
+                        <a href="" class="nav-item nav-link">Marketing</a>
+                        <a href="" class="nav-item nav-link">Research</a>
+                        <a href="" class="nav-item nav-link">SEO</a>
+                    </div>
+                </nav>
+            </div>
+            <div class="col-lg-9">
+                <nav class="navbar navbar-expand-lg bg-light navbar-light py-3 py-lg-0 px-0">
+                    <a href="" class="text-decoration-none d-block d-lg-none">
+                        <h1 class="m-0"><span class="text-primary">CAMPUS</span>CONNECT AI</h1>
+                    </a>
+                    <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
+                        <div class="navbar-nav py-0">
+                            <a href="index.html" class="nav-item nav-link active">Home</a>
+                            <a href="about.html" class="nav-item nav-link">About</a>
+                            <a href="course.html" class="nav-item nav-link">Courses</a>
+                            <a href="teacher.html" class="nav-item nav-link">Teachers</a>
+                            <a href="blog.html" class="nav-item nav-link">Blog</a>
+                            <a href="contact.html" class="nav-item nav-link">Contact</a>
+                        </div>
+                        <a class="btn btn-primary py-2 px-4 ml-auto d-none d-lg-block" href="#" data-toggle="modal" data-target="#registrationModal">Campus Registration</a>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <!-- Navbar End -->
+     
+    <!-- Campus Registration Modal -->
+<div class="modal fade" id="registrationModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="regModalLabel">Campus Registration</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Step 1: Registration Form -->
+                <div id="regFormStep">
+                    <form id="registrationForm">
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input type="text" class="form-control" id="regName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" class="form-control" id="regEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Mobile Number</label>
+                            <input type="tel" class="form-control" id="regMobile" required>
+                        </div>
+                        <div class="form-group">
+                            <label>College Name</label>
+                            <input type="text" class="form-control" id="regCollege" required>
+                        </div>
+                        <div class="form-group">
+                            <label>College Code</label>
+                            <input type="text" class="form-control" id="regCollegeCode" required>
+                        </div>
+                        <div id="regFormError" class="text-danger small mb-2" style="display:none;"></div>
+                        <button type="submit" class="btn btn-primary btn-block py-2">Submit & Send OTP</button>
+                    </form>
+                </div>
+
+                <!-- Step 2: OTP Verification (hidden initially) -->
+                <div id="otpStep" style="display:none;">
+                    <p class="mb-3">An OTP has been sent to <strong id="otpEmailDisplay"></strong></p>
+                    <form id="otpForm">
+                        <div class="form-group">
+                            <label>Enter OTP</label>
+                            <input type="text" class="form-control" id="otpInput" maxlength="6" required>
+                        </div>
+                        <div id="otpError" class="text-danger small mb-2" style="display:none;"></div>
+                        <button type="submit" class="btn btn-primary btn-block py-2">Verify & Register</button>
+                        <button type="button" class="btn btn-link btn-block" id="resendOtpBtn">Resend OTP</button>
+                    </form>
+                </div>
+
+                <!-- Step 3: Success (hidden initially) -->
+                <div id="successStep" style="display:none;" class="text-center py-4">
+                    <i class="fa fa-check-circle text-success fa-3x mb-3"></i>
+                    <h5>Registration Successful!</h5>
+                    <p class="mb-0">You're all set. A confirmation has been sent to your email.</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+   <script>
+$(document).ready(function () {
+
+    // Step 1 → Step 2: Submit registration form
+    $('#registrationForm').on('submit', function (e) {
+        e.preventDefault();
+        $('#regFormError').hide();
+
+        var name = $('#regName').val();
+        var email = $('#regEmail').val();
+        var mobile = $('#regMobile').val();
+        var college = $('#regCollege').val();
+        var collegeCode = $('#regCollegeCode').val();
+
+        // TODO (backend): POST { name, email, mobile, college, collegeCode }
+        // to your /api/register endpoint, which should generate + email the OTP.
+        // Example:
+        // fetch('/api/register', {
+        //     method: 'POST',
+        //     headers: { 'Content-Type': 'application/json' },
+        //     body: JSON.stringify({ name, email, mobile, college, collegeCode })
+        // })
+        // .then(res => res.json())
+        // .then(data => {
+        //     if (data.success) {
+        //         showOtpStep(email);
+        //     } else {
+        //         $('#regFormError').text(data.message).show();
+        //     }
+        // });
+
+        // For now, just move to OTP step (backend wiring pending):
+        showOtpStep(email);
+    });
+
+    function showOtpStep(email) {
+        $('#otpEmailDisplay').text(email);
+        $('#regFormStep').hide();
+        $('#otpStep').show();
+    }
+
+    // Step 2 → Step 3: Verify OTP
+    $('#otpForm').on('submit', function (e) {
+        e.preventDefault();
+        $('#otpError').hide();
+
+        var otp = $('#otpInput').val();
+
+        // TODO (backend): POST { email, otp } to /api/verify-otp
+        // fetch('/api/verify-otp', {
+        //     method: 'POST',
+        //     headers: { 'Content-Type': 'application/json' },
+        //     body: JSON.stringify({ email: $('#otpEmailDisplay').text(), otp })
+        // })
+        // .then(res => res.json())
+        // .then(data => {
+        //     if (data.success) {
+        //         $('#otpStep').hide();
+        //         $('#successStep').show();
+        //     } else {
+        //         $('#otpError').text('Invalid OTP. Please try again.').show();
+        //     }
+        // });
+
+        // Placeholder success (backend wiring pending):
+        $('#otpStep').hide();
+        $('#successStep').show();
+    });
+
+    // Resend OTP
+    $('#resendOtpBtn').on('click', function () {
+        // TODO (backend): POST to /api/resend-otp with the email
+        alert('OTP resent to ' + $('#otpEmailDisplay').text());
+    });
+
+    // Reset modal when closed
+    $('#registrationModal').on('hidden.bs.modal', function () {
+        $('#registrationForm')[0].reset();
+        $('#otpForm')[0].reset();
+        $('#regFormStep').show();
+        $('#otpStep').hide();
+        $('#successStep').hide();
+    });
+
+});
+</script>
+
+
+    <!-- Carousel Start -->
+    <div class="container-fluid p-0 pb-5 mb-5">
+        <div id="header-carousel" class="carousel slide carousel-fade" data-ride="carousel">
+            <ol class="carousel-indicators">
+                <li data-target="#header-carousel" data-slide-to="0" class="active"></li>
+                <li data-target="#header-carousel" data-slide-to="1"></li>
+                <li data-target="#header-carousel" data-slide-to="2"></li>
+            </ol>
+            <div class="carousel-inner">
+                <div class="carousel-item active" style="min-height: 300px;">
+                    <img class="position-relative w-100" src="img/carousel-1.jpg" style="min-height: 300px; object-fit: cover;">
+                    <div class="carousel-caption d-flex align-items-center justify-content-center">
+                        <div class="p-5" style="width: 100%; max-width: 900px;">
+                            <h5 class="text-white text-uppercase mb-md-3">Best Online Courses</h5>
+                            <h1 class="display-3 text-white mb-md-4">Your Campus, Smarter Connected</h1>
+                            <a href="" class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2">Learn More</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item" style="min-height: 300px;">
+                    <img class="position-relative w-100" src="img/carousel-2.jpg" style="min-height: 300px; object-fit: cover;">
+                    <div class="carousel-caption d-flex align-items-center justify-content-center">
+                        <div class="p-5" style="width: 100%; max-width: 900px;">
+                            <h5 class="text-white text-uppercase mb-md-3">Best Online Courses</h5>
+                            <h1 class="display-3 text-white mb-md-4">Bridging Students and Success with AI</h1>
+                            <a href="" class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2">Learn More</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item" style="min-height: 300px;">
+                    <img class="position-relative w-100" src="img/carousel-3.jpg" style="min-height: 300px; object-fit: cover;">
+                    <div class="carousel-caption d-flex align-items-center justify-content-center">
+                        <div class="p-5" style="width: 100%; max-width: 900px;">
+                            <h5 class="text-white text-uppercase mb-md-3">Best Online Courses</h5>
+                            <h1 class="display-3 text-white mb-md-4">Where Campus Meets Intelligence.</h1>
+                            <a href="" class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2">Learn More</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Carousel End -->
+
+
+    <!-- About Start -->
+<div class="container-fluid pt-3 pb-5">
+    <div class="container pt-3 pb-5">
+        <div class="row align-items-stretch">
+
+            <!-- About Us Box -->
+            <div class="col-lg-7 mb-4 mb-lg-0" style="margin-right: 40px;">
+                <div class="border rounded p-5 h-100">
+                    <div class="row align-items-center">
+                        <div class="col-md-5">
+                            <img class="img-fluid rounded mb-4 mb-md-0" src="img/about.jpg" alt="">
+                        </div>
+                        <div class="col-md-7">
+                            <div class="text-left mb-3">
+                                <h5 class="text-primary text-uppercase mb-3" style="letter-spacing: 5px;">About Us</h5>
+                                <h1>Innovative Way To Learn</h1>
+                            </div>
+                            <p>CampusConnect AI is your all-in-one companion for navigating college life smarter and faster. From finding the best mess and food options near you to locating hostels, libraries, and study spots using Google Maps, we bring everything you need onto a single platform.</p>
+                            <a href="about.html" class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2">Learn More</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Events 2026 Box -->
+            <div class="col-lg" style="min-width: 280px;">
+                <div class="border rounded p-4 h-100" style="border-color: #007bff !important; border-width: 2px !important;">
+                    <span class="badge badge-pill mb-3 px-3 py-2" style="background-color: #d6e9ff; color: #0056b3; font-weight: 600;">New</span>
+                    <h4 class="mb-2"><i class="fa fa-calendar-alt text-primary mr-2"></i>Events 2026</h4>
+                    <p class="mb-3" style="font-size: 14px;">Tap a college to see their upcoming events.</p>
+
+                    <div id="miniCollegeList">
+
+                        <!-- Raisoni -->
+                        <div class="mini-college-item">
+                            <div class="mini-college-header d-flex justify-content-between align-items-center py-2" data-toggle="collapse" data-target="#miniRaisoni">
+                                <span class="font-weight-600" style="font-size: 15px;">Raisoni</span>
+                                <i class="fa fa-chevron-down mini-chevron"></i>
+                            </div>
+                            <div id="miniRaisoni" class="collapse" data-parent="#miniCollegeList">
+                                <div class="pl-2 pb-2">
+                                    <div class="mini-event-item">
+                                        <div class="d-flex justify-content-between">
+                                            <span style="font-size: 13px;">TechFest 2026</span>
+                                            <span class="text-primary font-weight-bold" style="font-size: 12px;">Mar 15</span>
+                                        </div>
+                                    </div>
+                                    <div class="mini-event-item">
+                                        <div class="d-flex justify-content-between">
+                                            <span style="font-size: 13px;">Placement Drive</span>
+                                            <span class="text-primary font-weight-bold" style="font-size: 12px;">Apr 02</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- YCCE -->
+                        <div class="mini-college-item">
+                            <div class="mini-college-header d-flex justify-content-between align-items-center py-2" data-toggle="collapse" data-target="#miniYCCE">
+                                <span class="font-weight-600" style="font-size: 15px;">YCCE</span>
+                                <i class="fa fa-chevron-down mini-chevron"></i>
+                            </div>
+                            <div id="miniYCCE" class="collapse" data-parent="#miniCollegeList">
+                                <div class="pl-2 pb-2">
+                                    <div class="mini-event-item">
+                                        <div class="d-flex justify-content-between">
+                                            <span style="font-size: 13px;">Hackathon 2026</span>
+                                            <span class="text-primary font-weight-bold" style="font-size: 12px;">Mar 20</span>
+                                        </div>
+                                    </div>
+                                    <div class="mini-event-item">
+                                        <div class="d-flex justify-content-between">
+                                            <span style="font-size: 13px;">Cultural Fest</span>
+                                            <span class="text-primary font-weight-bold" style="font-size: 12px;">Apr 10</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PCE -->
+                        <div class="mini-college-item">
+                            <div class="mini-college-header d-flex justify-content-between align-items-center py-2" data-toggle="collapse" data-target="#miniPCE">
+                                <span class="font-weight-600" style="font-size: 15px;">PCE</span>
+                                <i class="fa fa-chevron-down mini-chevron"></i>
+                            </div>
+                            <div id="miniPCE" class="collapse" data-parent="#miniCollegeList">
+                                <div class="pl-2 pb-2">
+                                    <div class="mini-event-item">
+                                        <div class="d-flex justify-content-between">
+                                            <span style="font-size: 13px;">Robotics Workshop</span>
+                                            <span class="text-primary font-weight-bold" style="font-size: 12px;">Mar 25</span>
+                                        </div>
+                                    </div>
+                                    <div class="mini-event-item">
+                                        <div class="d-flex justify-content-between">
+                                            <span style="font-size: 13px;">Alumni Meet</span>
+                                            <span class="text-primary font-weight-bold" style="font-size: 12px;">Apr 18</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ramdeo Baba -->
+                        <div class="mini-college-item">
+                            <div class="mini-college-header d-flex justify-content-between align-items-center py-2" data-toggle="collapse" data-target="#miniRCOEM">
+                                <span class="font-weight-600" style="font-size: 15px;">Ramdeo Baba</span>
+                                <i class="fa fa-chevron-down mini-chevron"></i>
+                            </div>
+                            <div id="miniRCOEM" class="collapse" data-parent="#miniCollegeList">
+                                <div class="pl-2 pb-2">
+                                    <div class="mini-event-item">
+                                        <div class="d-flex justify-content-between">
+                                            <span style="font-size: 13px;">AI/ML Symposium</span>
+                                            <span class="text-primary font-weight-bold" style="font-size: 12px;">Mar 28</span>
+                                        </div>
+                                    </div>
+                                    <div class="mini-event-item">
+                                        <div class="d-flex justify-content-between">
+                                            <span style="font-size: 13px;">Sports Meet</span>
+                                            <span class="text-primary font-weight-bold" style="font-size: 12px;">Apr 05</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    .mini-college-item {
+        border-bottom: 1px solid #eee;
+    }
+    .mini-college-item:last-child {
+        border-bottom: none;
+    }
+    .mini-college-header {
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+    .mini-college-header:hover span {
+        color: #007bff;
+    }
+    .mini-chevron {
+        font-size: 12px;
+        color: #007bff;
+        transition: transform 0.25s ease;
+    }
+    .mini-college-header[aria-expanded="true"] .mini-chevron {
+        transform: rotate(180deg);
+    }
+    .mini-event-item {
+        padding: 6px 0;
+        border-top: 1px dashed #eee;
+    }
+</style>
+<!-- About End -->
+
+
+    <!-- Category Start -->
+    <div class="container-fluid py-5">
+        <div class="container pt-5 pb-3">
+            <div class="text-center mb-5">
+                <h5 class="text-primary text-uppercase mb-3" style="letter-spacing: 5px;">Subjects</h5>
+                <h1>JOIN WITH US</h1>
+            </div>
+            <div class="row">
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="cat-item position-relative overflow-hidden rounded mb-2">
+                        <img class="img-fluid" src="img/cat-1.jpg" alt="">
+                        <a class="cat-overlay text-white text-decoration-none" href="">
+                            <h4 class="text-white font-weight-medium">EVENTHUB</h4>
+                            
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="cat-item position-relative overflow-hidden rounded mb-2">
+                        <img class="img-fluid" src="img/cat-2.jpg" alt="">
+                        <a class="cat-overlay text-white text-decoration-none" href="">
+                            <h4 class="text-white font-weight-medium">CHATBOOK</h4>
+                            
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="cat-item position-relative overflow-hidden rounded mb-2">
+                        <img class="img-fluid" src="img/cat-3.jpg" alt="">
+                        <a class="cat-overlay text-white text-decoration-none" href="">
+                            <h4 class="text-white font-weight-medium">HOSTEL</h4>
+                            
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="cat-item position-relative overflow-hidden rounded mb-2">
+                        <img class="img-fluid" src="img/cat-4.jpg" alt="">
+                        <a class="cat-overlay text-white text-decoration-none" href="">
+                            <h4 class="text-white font-weight-medium">CAMPUS EATS</h4>
+                            
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="cat-item position-relative overflow-hidden rounded mb-2">
+                        <img class="img-fluid" src="img/cat-5.jpg" alt="">
+                        <a class="cat-overlay text-white text-decoration-none" href="">
+                            <h4 class="text-white font-weight-medium">EDUCATION LIBRARY</h4>
+                            
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="cat-item position-relative overflow-hidden rounded mb-2">
+                        <img class="img-fluid" src="img/cat-6.jpg" alt="">
+                        <a class="cat-overlay text-white text-decoration-none" href="">
+                            <h4 class="text-white font-weight-medium">PLACEMENTS</h4>
+                            
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="cat-item position-relative overflow-hidden rounded mb-2">
+                        <img class="img-fluid" src="img/cat-7.jpg" alt="">
+                        <a class="cat-overlay text-white text-decoration-none" href="">
+                            <h4 class="text-white font-weight-medium">CAMPUS CIRCLE</h4>
+                            
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="cat-item position-relative overflow-hidden rounded mb-2">
+                        <img class="img-fluid" src="img/cat-8.jpg" alt="">
+                        <a class="cat-overlay text-white text-decoration-none" href="">
+                            <h4 class="text-white font-weight-medium">TRAINERs</h4>
+                            
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Category Start -->
+
+
+    <!-- Courses Start -->
+    <div class="container-fluid py-5">
+        <div class="container py-5">
+            <div class="text-center mb-5">
+                <h5 class="text-primary text-uppercase mb-3" style="letter-spacing: 5px;">Courses</h5>
+                <h1>Our Popular Courses</h1>
+            <div class="row">
+    <!-- Feature 1: Mess & Tiffin Finder -->
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="rounded overflow-hidden mb-2">
+            <img class="img-fluid" src="img/course-1.jpg" alt="">
+            <div class="bg-secondary p-4">
+                <div class="d-flex justify-content-between mb-3">
+                    <small class="m-0"><i class="fa fa-map-marker-alt text-primary mr-2"></i>Google Maps</small>
+                    <small class="m-0"><i class="far fa-clock text-primary mr-2"></i>Live Updates</small>
+                </div>
+                <a class="h5" href="">Mess & Tiffin Finder</a>
+                <div class="border-top mt-4 pt-4">
+                    <p class="m-0">Find the best mess and tiffin options near your hostel instantly.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature 2: Hostel Near Me -->
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="rounded overflow-hidden mb-2">
+            <img class="img-fluid" src="img/course-2.jpg" alt="">
+            <div class="bg-secondary p-4">
+                <div class="d-flex justify-content-between mb-3">
+                    <small class="m-0"><i class="fa fa-map-marker-alt text-primary mr-2"></i>Google Maps</small>
+                    <small class="m-0"><i class="far fa-clock text-primary mr-2"></i>Real-Time</small>
+                </div>
+                <a class="h5" href="">Hostel Near Me</a>
+                <div class="border-top mt-4 pt-4">
+                    <p class="m-0">Locate verified hostels close to your campus in seconds.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature 3: Library Locator -->
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="rounded overflow-hidden mb-2">
+            <img class="img-fluid" src="img/course-3.jpg" alt="">
+            <div class="bg-secondary p-4">
+                <div class="d-flex justify-content-between mb-3">
+                    <small class="m-0"><i class="fa fa-map-marker-alt text-primary mr-2"></i>Google Maps</small>
+                    <small class="m-0"><i class="far fa-clock text-primary mr-2"></i>Open Hours</small>
+                </div>
+                <a class="h5" href="">Library Locator</a>
+                <div class="border-top mt-4 pt-4">
+                    <p class="m-0">Find the nearest library along with its timings and availability.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature 4: Campus Events -->
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="rounded overflow-hidden mb-2">
+            <img class="img-fluid" src="img/course-4.jpg" alt="">
+            <div class="bg-secondary p-4">
+                <div class="d-flex justify-content-between mb-3">
+                    <small class="m-0"><i class="fa fa-car text-primary mr-2"></i>Available Vehicles</small>
+                    <small class="m-0"><i class="far fa-clock text-primary mr-2"></i>24/7 Service</small>
+                </div>
+                <a class="h5" href="">Vehicle Rental</a>
+                <div class="border-top mt-4 pt-4">
+                    <p class="m-0">Rent vehicles for your transportation needs around campus.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature 5: Verified Chat -->
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="rounded overflow-hidden mb-2">
+            <img class="img-fluid" src="img/course-5.jpg" alt="">
+            <div class="bg-secondary p-4">
+                <div class="d-flex justify-content-between mb-3">
+                    <small class="m-0"><i class="fa fa-users text-primary mr-2"></i>Verified Students</small>
+                    <small class="m-0"><i class="far fa-clock text-primary mr-2"></i>Secure</small>
+                </div>
+                <a class="h5" href="">Verified Chat</a>
+                <div class="border-top mt-4 pt-4">
+                    <p class="m-0">Chat safely with approved students — only genuine connections.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature 6: Mentors -->
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="rounded overflow-hidden mb-2">
+            <img class="img-fluid" src="img/course-6.jpg" alt="">
+            <div class="bg-secondary p-4">
+                <div class="d-flex justify-content-between mb-3">
+                    <small class="m-0"><i class="fa fa-user-graduate text-primary mr-2"></i>Skilled Guidance</small>
+                    <small class="m-0"><i class="far fa-clock text-primary mr-2"></i>1-on-1</small>
+                </div>
+                <a class="h5" href="">Mentors</a>
+                <div class="border-top mt-4 pt-4">
+                    <p class="m-0">Connect with skilled mentors to guide your learning journey.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
+    <!-- Courses End -->
+
+
+    <!-- Registration Start -->
+    <div class="container-fluid bg-registration py-5" style="margin: 90px 0;">
+        <div class="container py-5">
+            <div class="row align-items-center">
+                <div class="col-lg-7 mb-5 mb-lg-0">
+                    <div class="mb-4">
+                        <p class="text-white">From finding a mess near your hostel to connecting with verified students and mentors, CampusConnect AI brings every essential campus service onto one smart platform — powered by AI and real-time Google Maps.</p>
+                            <ul class="list-inline text-white m-0">
+                            <li class="py-2"><i class="fa fa-check text-primary mr-3"></i>Locate mess, hostels & libraries instantly</li>
+                            <li class="py-2"><i class="fa fa-check text-primary mr-3"></i>Chat safely with verified students only</li>
+                            <li class="py-2"><i class="fa fa-check text-primary mr-3"></i>Stay updated on events & connect with mentors</li>
+                            </ul>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="card border-0">
+    <div class="card-header bg-light text-center p-4">
+        <h1 class="m-0">Enquiry Form</h1>
+    </div>
+    <div class="card-body rounded-bottom bg-primary p-5">
+        <form>
+            <div class="form-group">
+                <input type="text" class="form-control border-0 p-4" placeholder="Your name" required="required" />
+            </div>
+            <div class="form-group">
+                <input type="email" class="form-control border-0 p-4" placeholder="Your email" required="required" />
+            </div>
+            <div class="form-group">
+                <input type="tel" class="form-control border-0 p-4" placeholder="Your mobile number" required="required" />
+            </div>
+            <div class="form-group">
+                <textarea class="form-control border-0 p-4" rows="3" placeholder="Your message" required="required"></textarea>
+            </div>
+            <div>
+                <button class="btn btn-dark btn-block border-0 py-3" type="submit">Submit Enquiry</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Registration End -->
+
+
+    <!-- Team Start -->
+    <div class="container-fluid py-5">
+        <div class="container pt-5 pb-3">
+            <div class="text-center mb-5">
+                <h5 class="text-primary text-uppercase mb-3" style="letter-spacing: 5px;">Teachers</h5>
+                <h1>Meet Our Teachers</h1>
+            </div>
+            <div class="row">
+                <div class="col-md-6 col-lg-3 text-center team mb-4">
+                    <div class="team-item rounded overflow-hidden mb-2">
+                        <div class="team-img position-relative">
+                            <img class="img-fluid" src="img/team-1.jpg" alt="">
+                            <div class="team-social">
+                                <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-twitter"></i></a>
+                                <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-facebook-f"></i></a>
+                                <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-linkedin-in"></i></a>
+                            </div>
+                        </div>
+                        <div class="bg-secondary p-4">
+                            <h5>Jhon Doe</h5>
+                            <p class="m-0">Web Designer</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 text-center team mb-4">
+                    <div class="team-item rounded overflow-hidden mb-2">
+                        <div class="team-img position-relative">
+                            <img class="img-fluid" src="img/team-2.jpg" alt="">
+                            <div class="team-social">
+                                <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-twitter"></i></a>
+                                <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-facebook-f"></i></a>
+                                <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-linkedin-in"></i></a>
+                            </div>
+                        </div>
+                        <div class="bg-secondary p-4">
+                            <h5>Jhon Doe</h5>
+                            <p class="m-0">Web Designer</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 text-center team mb-4">
+                    <div class="team-item rounded overflow-hidden mb-2">
+                        <div class="team-img position-relative">
+                            <img class="img-fluid" src="img/team-3.jpg" alt="">
+                            <div class="team-social">
+                                <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-twitter"></i></a>
+                                <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-facebook-f"></i></a>
+                                <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-linkedin-in"></i></a>
+                            </div>
+                        </div>
+                        <div class="bg-secondary p-4">
+                            <h5>Jhon Doe</h5>
+                            <p class="m-0">Web Designer</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 text-center team mb-4">
+                    <div class="team-item rounded overflow-hidden mb-2">
+                        <div class="team-img position-relative">
+                            <img class="img-fluid" src="img/team-4.jpg" alt="">
+                            <div class="team-social">
+                                <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-twitter"></i></a>
+                                <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-facebook-f"></i></a>
+                                <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-linkedin-in"></i></a>
+                            </div>
+                        </div>
+                        <div class="bg-secondary p-4">
+                            <h5>Jhon Doe</h5>
+                            <p class="m-0">Web Designer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Team End -->
+
+
+    <!-- Testimonial Start -->
+    <div class="container-fluid py-5">
+        <div class="container py-5">
+            <div class="text-center mb-5">
+                <h5 class="text-primary text-uppercase mb-3" style="letter-spacing: 5px;">Testimonial</h5>
+                <h1>What Say Our Students</h1>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="owl-carousel testimonial-carousel">
+                        <div class="text-center">
+                            <i class="fa fa-3x fa-quote-left text-primary mb-4"></i>
+                            <h4 class="font-weight-normal mb-4">Dolor eirmod diam stet kasd sed. Aliqu rebum est eos. Rebum elitr dolore et eos labore, stet justo sed est sed. Diam sed sed dolor stet amet eirmod eos labore diam</h4>
+                            <img class="img-fluid mx-auto mb-3" src="img/testimonial-1.jpg" alt="">
+                            <h5 class="m-0">Client Name</h5>
+                            <span>Profession</span>
+                        </div>
+                        <div class="text-center">
+                            <i class="fa fa-3x fa-quote-left text-primary mb-4"></i>
+                            <h4 class="font-weight-normal mb-4">Dolor eirmod diam stet kasd sed. Aliqu rebum est eos. Rebum elitr dolore et eos labore, stet justo sed est sed. Diam sed sed dolor stet amet eirmod eos labore diam</h4>
+                            <img class="img-fluid mx-auto mb-3" src="img/testimonial-2.jpg" alt="">
+                            <h5 class="m-0">Client Name</h5>
+                            <span>Profession</span>
+                        </div>
+                        <div class="text-center">
+                            <i class="fa fa-3x fa-quote-left text-primary mb-4"></i>
+                            <h4 class="font-weight-normal mb-4">Dolor eirmod diam stet kasd sed. Aliqu rebum est eos. Rebum elitr dolore et eos labore, stet justo sed est sed. Diam sed sed dolor stet amet eirmod eos labore diam</h4>
+                            <img class="img-fluid mx-auto mb-3" src="img/testimonial-3.jpg" alt="">
+                            <h5 class="m-0">Client Name</h5>
+                            <span>Profession</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Testimonial End -->
+
+
+
+    <!-- Footer Start -->
+    <div class="container-fluid bg-dark text-white py-5 px-sm-3 px-lg-5" style="margin-top: 90px;">
+        <div class="row pt-5">
+            <div class="col-lg-7 col-md-12">
+                <div class="row">
+                    <div class="col-md-6 mb-5">
+                        <h5 class="text-primary text-uppercase mb-4" style="letter-spacing: 5px;">Get In Touch</h5>
+                        <p><i class="fa fa-map-marker-alt mr-2"></i>123 Street, New York, USA</p>
+                        <p><i class="fa fa-phone-alt mr-2"></i>+012 345 67890</p>
+                        <p><i class="fa fa-envelope mr-2"></i>info@example.com</p>
+                        <div class="d-flex justify-content-start mt-4">
+                            <a class="btn btn-outline-light btn-square mr-2" href="#"><i class="fab fa-twitter"></i></a>
+                            <a class="btn btn-outline-light btn-square mr-2" href="#"><i class="fab fa-facebook-f"></i></a>
+                            <a class="btn btn-outline-light btn-square mr-2" href="#"><i class="fab fa-linkedin-in"></i></a>
+                            <a class="btn btn-outline-light btn-square" href="#"><i class="fab fa-instagram"></i></a>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-5">
+                        <h5 class="text-primary text-uppercase mb-4" style="letter-spacing: 5px;">Our Courses</h5>
+                        <div class="d-flex flex-column justify-content-start">
+                            <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Web Design</a>
+                            <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Apps Design</a>
+                            <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Marketing</a>
+                            <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Research</a>
+                            <a class="text-white" href="#"><i class="fa fa-angle-right mr-2"></i>SEO</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5 col-md-12 mb-5">
+                <h5 class="text-primary text-uppercase mb-4" style="letter-spacing: 5px;">Newsletter</h5>
+                <p>Rebum labore lorem dolores kasd est, et ipsum amet et at kasd, ipsum sea tempor magna tempor. Accu kasd sed ea duo ipsum. Dolor duo eirmod sea justo no lorem est diam</p>
+                <div class="w-100">
+                    <div class="input-group">
+                        <input type="text" class="form-control border-light" style="padding: 30px;" placeholder="Your Email Address">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary px-4">Sign Up</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid bg-dark text-white border-top py-4 px-sm-3 px-md-5" style="border-color: rgba(256, 256, 256, .1) !important;">
+        <div class="row">
+            <div class="col-lg-6 text-center text-md-left mb-3 mb-md-0">
+                <p class="m-0 text-white">&copy; <a href="#">Domain Name</a>. All Rights Reserved. 
+                    
+                    <!--/*** The author’s attribution link must remain intact in the template. ***/-->
+                    <!--/*** If you wish to remove this credit link, please purchase the Pro Version . ***/-->
+                    Designed by <a href="https://htmlcodex.com">HTML Codex</a>
+                </p>
+            </div>
+            <div class="col-lg-6 text-center text-md-right">
+                <ul class="nav d-inline-flex">
+                    <li class="nav-item">
+                        <a class="nav-link text-white py-0" href="#">Privacy</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white py-0" href="#">Terms</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white py-0" href="#">FAQs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white py-0" href="#">Help</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!-- Footer End -->
+
+
+    <!-- Back to Top -->
+    <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="fa fa-angle-double-up"></i></a>
+
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script src="lib/easing/easing.min.js"></script>
+    <script src="lib/owlcarousel/owl.carousel.min.js"></script>
+
+    <!-- Contact Javascript File -->
+    <script src="mail/jqBootstrapValidation.min.js"></script>
+    <script src="mail/contact.js"></script>
+
+    <!-- Template Javascript -->
+    <script src="js/main.js"></script>
+</body>
+
+</html>
