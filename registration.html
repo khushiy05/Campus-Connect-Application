@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Campus Registration - CAMPUS CONNECT AI</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <!-- Favicon -->
+    <link href="img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet (reuses your existing template styles) -->
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- Simple top bar with logo linking back home -->
+    <div class="container-fluid d-none d-lg-block">
+        <div class="row align-items-center py-4 px-xl-5">
+            <div class="col-lg-4">
+                <a href="index.html" class="text-decoration-none">
+                    <img src="img/WhatsApp Image 2026-07-28 at 2.14.08 PM.jpeg" alt="CampusConnect AI" style="max-height: 120px;">
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Section -->
+    <div class="container-fluid py-5" style="background-color:#f9f9f9; min-height: 80vh;">
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light text-center p-4">
+                            <h2 class="m-0">Campus Registration</h2>
+                        </div>
+                        <div class="card-body p-5">
+
+                            <!-- Google Sign Up -->
+                            <button type="button" id="googleSignupBtn" class="btn btn-outline-dark btn-block d-flex align-items-center justify-content-center py-3 mb-3">
+                                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google" style="height:20px; margin-right:10px;">
+                                Continue with Google
+                            </button>
+
+                            <div class="d-flex align-items-center my-4">
+                                <hr class="flex-grow-1">
+                                <span class="px-3 text-muted">OR</span>
+                                <hr class="flex-grow-1">
+                            </div>
+
+                            <!-- Step 1: Registration Form -->
+                            <div id="regFormStep">
+                                <form id="registrationForm">
+                                    <div class="form-group">
+                                        <label>Name</label>
+                                        <input type="text" class="form-control" id="regName" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Email</label>
+                                        <input type="email" class="form-control" id="regEmail" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Mobile Number</label>
+                                        <input type="tel" class="form-control" id="regMobile" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>College Name</label>
+                                        <input type="text" class="form-control" id="regCollege" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>College Code</label>
+                                        <input type="text" class="form-control" id="regCollegeCode" required>
+                                    </div>
+                                    <div id="regFormError" class="text-danger small mb-2" style="display:none;"></div>
+                                    <button type="submit" class="btn btn-primary btn-block py-2">Submit & Send OTP</button>
+                                </form>
+                            </div>
+
+                            <!-- Step 2: OTP Verification (hidden initially) -->
+                            <div id="otpStep" style="display:none;">
+                                <p class="mb-3">An OTP has been sent to <strong id="otpEmailDisplay"></strong></p>
+                                <form id="otpForm">
+                                    <div class="form-group">
+                                        <label>Enter OTP</label>
+                                        <input type="text" class="form-control" id="otpInput" maxlength="6" required>
+                                    </div>
+                                    <div id="otpError" class="text-danger small mb-2" style="display:none;"></div>
+                                    <button type="submit" class="btn btn-primary btn-block py-2">Verify & Register</button>
+                                    <button type="button" class="btn btn-link btn-block" id="resendOtpBtn">Resend OTP</button>
+                                </form>
+                            </div>
+
+                            <!-- Step 3: Success (hidden initially) -->
+                            <div id="successStep" style="display:none;" class="text-center py-4">
+                                <i class="fa fa-check-circle text-success fa-3x mb-3"></i>
+                                <h5>Registration Successful!</h5>
+                                <p class="mb-0">You're all set. A confirmation has been sent to your email.</p>
+                                <a href="index.html" class="btn btn-primary mt-4">Back to Home</a>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer (kept minimal) -->
+    <div class="container-fluid bg-dark text-white text-center py-4">
+        <p class="m-0">&copy; <a href="index.html" class="text-white">CampusConnect AI</a>. All Rights Reserved.</p>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+    $(document).ready(function () {
+
+        // Google Sign Up (placeholder — wire to real OAuth on backend)
+        $('#googleSignupBtn').on('click', function () {
+            // TODO (backend): redirect to your Google OAuth endpoint, e.g.
+            // window.location.href = '/auth/google';
+            alert('Google Sign-Up will be connected once the backend OAuth route is ready.');
+        });
+
+        // Step 1 -> Step 2: Submit registration form
+        $('#registrationForm').on('submit', function (e) {
+            e.preventDefault();
+            $('#regFormError').hide();
+
+            var name = $('#regName').val();
+            var email = $('#regEmail').val();
+            var mobile = $('#regMobile').val();
+            var college = $('#regCollege').val();
+            var collegeCode = $('#regCollegeCode').val();
+
+            // TODO (backend): POST { name, email, mobile, college, collegeCode }
+            // to your /api/register endpoint, which should generate + email the OTP.
+            // fetch('/api/register', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({ name, email, mobile, college, collegeCode })
+            // })
+            // .then(res => res.json())
+            // .then(data => {
+            //     if (data.success) {
+            //         showOtpStep(email);
+            //     } else {
+            //         $('#regFormError').text(data.message).show();
+            //     }
+            // });
+
+            showOtpStep(email);
+        });
+
+        function showOtpStep(email) {
+            $('#otpEmailDisplay').text(email);
+            $('#regFormStep').hide();
+            $('#otpStep').show();
+        }
+
+        // Step 2 -> Step 3: Verify OTP
+        $('#otpForm').on('submit', function (e) {
+            e.preventDefault();
+            $('#otpError').hide();
+
+            var otp = $('#otpInput').val();
+
+            // TODO (backend): POST { email, otp } to /api/verify-otp
+            // fetch('/api/verify-otp', { ... })
+            // .then(res => res.json())
+            // .then(data => {
+            //     if (data.success) {
+            //         $('#otpStep').hide();
+            //         $('#successStep').show();
+            //     } else {
+            //         $('#otpError').text('Invalid OTP. Please try again.').show();
+            //     }
+            // });
+
+            $('#otpStep').hide();
+            $('#successStep').show();
+        });
+
+        // Resend OTP
+        $('#resendOtpBtn').on('click', function () {
+            // TODO (backend): POST to /api/resend-otp with the email
+            alert('OTP resent to ' + $('#otpEmailDisplay').text());
+        });
+
+    });
+    </script>
+</body>
+
+</html>
