@@ -9956,3 +9956,38 @@ h6,
   padding: 0;
   list-style-type: none;
 }
+
+/* Registration page */
+.registration-page #citySection {
+    display: none !important;
+}
+
+.registration-page #registrationBtn {
+    display: none !important;
+}
+
+@media (min-width: 992px) {
+    .registration-page .registration-navbar {
+        display: flex !important;
+        justify-content: center !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+    }
+
+    .registration-page .registration-navbar > nav {
+        width: 100% !important;
+    }
+
+    .registration-page #navbarCollapse {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+
+    .registration-page #navbarCollapse .navbar-nav {
+        display: flex !important;
+        margin: 0 auto !important;
+        justify-content: center !important;
+    }
+}

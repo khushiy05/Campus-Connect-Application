@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Campus Registration - CAMPUS CONNECT AI</title>
+    <title>CAMPUS CONNECT</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
     <!-- Favicon -->
@@ -20,26 +20,18 @@
     <link href="css/style.css" rel="stylesheet">
 </head>
 
-<body>
+<body class="registration-page">
     <div id="header"></div>
-
-    <!-- page-specific content only -->
-
-    <div id="footer"></div>
-
-    <!-- your existing script tags (jquery, bootstrap, etc.) -->
-    <script src="include.js"></script>
-<script src="js/main.js"></script>
     <!-- Registration Section -->
-    <div class="container-fluid py-5" style="background-color:#f9f9f9; min-height: 80vh;">
-        <div class="container py-5">
+    <div class="container-fluid registration-section" style="background-color:#f9f9f9;">
+    <div class="container">
             <div class="row justify-content-center">
-                <div class="col-lg-6">
+                <div class="col-lg-5">
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-light text-center p-4">
                             <h2 class="m-0">Campus Registration</h2>
                         </div>
-                        <div class="card-body p-5">
+                        <div class="card-body p-4">
 
                             <!-- Google Sign Up -->
                             <button type="button" id="googleSignupBtn" class="btn btn-outline-dark btn-block d-flex align-items-center justify-content-center py-3 mb-3">
@@ -102,16 +94,40 @@
                                 <p class="mb-0">You're all set. A confirmation has been sent to your email.</p>
                                 <a href="index.html" class="btn btn-primary mt-4">Back to Home</a>
                             </div>
+<style>
+    .registration-page .card {
+        max-width: 600px;
+        margin: 0 auto;
+    }
 
+    .registration-page .card-body {
+        padding: 30px !important;
+    }
+
+    .registration-page .card-header {
+        padding: 20px !important;
+    }
+
+    .registration-page .card-header h2 {
+        font-size: 30px;
+    }
+        .registration-section {
+        padding-top: 25px;
+        padding-bottom: 25px;
+    }
+
+    .registration-section .card {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+</style>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    
-
+<div id="footer"></div>
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
@@ -192,7 +208,10 @@
         });
 
     });
+
+    
     </script>
+    <script src="js/include.js"></script>
         
         
 </body>
