@@ -57,7 +57,7 @@
         <div class="row border-top px-xl-5">
             <div class="col-lg-3 d-none d-lg-block">
                 <a class="d-flex align-items-center justify-content-between bg-secondary w-100 text-decoration-none" data-toggle="collapse" href="#navbar-vertical" style="height: 67px; padding: 0 30px;">
-                    <h5 class="text-primary m-0"><i class="fa fa-book-open mr-2"></i>City</h5>
+                    <h5 class="text-primary m-0"><i class="fa fa-city mr-2"></i>City</h5>
                     <i class="fa fa-angle-down text-primary"></i>
                 </a>
                 <nav class="collapse position-absolute navbar navbar-vertical navbar-light align-items-start p-0 border border-top-0 border-bottom-0 bg-light" id="navbar-vertical" style="width: calc(100% - 30px); z-index: 9;">
@@ -466,7 +466,6 @@
         </form>
     </div>
 </div>
-
                             </form>
                         </div>
                     </div>
@@ -698,17 +697,20 @@
                 </div>
             </div>
             <div class="col-lg-5 col-md-12 mb-5">
-                <h5 class="text-primary text-uppercase mb-4" style="letter-spacing: 5px;">INVITE US</h5>
-                <p>Never miss what's happening on campus. From mess menus to placement drives, CampusConnect AI keeps every student in the loop one subscription, zero missed updates.</p>
-                <div class="w-100">
-                    <div class="input-group">
-                        <input type="text" class="form-control border-light" style="padding: 30px;" placeholder="Your Email Address">
-                        <div class="input-group-append">
-                            <button class="btn btn-primary px-4">Sign Up</button>
-                        </div>
-                    </div>
+    <h5 class="text-primary text-uppercase mb-4" style="letter-spacing: 5px;">INVITE US</h5>
+    <p>Never miss what's happening on campus. From mess menus to placement drives, CampusConnect AI keeps every student in the loop — one subscription, zero missed updates.</p>
+    <div class="w-100">
+        <form id="inviteForm">
+            <div class="input-group">
+                <input type="email" id="inviteEmail" class="form-control border-light" style="padding: 30px;" placeholder="Your Email Address" required>
+                <div class="input-group-append">
+                    <button class="btn btn-primary px-4" type="submit" id="inviteBtn">Send</button>
                 </div>
             </div>
+            <p id="inviteStatus" class="mt-2 mb-0" style="font-size: 13px;"></p>
+        </form>
+    </div>
+</div>
         </div>
     </div>
     <div class="container-fluid bg-dark text-white border-top py-4 px-sm-3 px-md-5" style="border-color: rgba(256, 256, 256, .1) !important;">
@@ -757,7 +759,78 @@
     <script src="mail/contact.js"></script>
 
     <!-- Template Javascript -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script src="js/main.js"></script>
+    
+
+
+    <script>
+  const EMAILJS_PUBLIC_KEY = "oTqk1LMgYJlwBhX8J";
+  const EMAILJS_SERVICE_ID = "service_6y8m99h";
+  const INVITE_TEMPLATE_ID = "template_ur5x11c";
+
+  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+  document.getElementById("inviteForm").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    const email = document.getElementById("inviteEmail").value.trim();
+    const statusEl = document.getElementById("inviteStatus");
+    const btn = document.getElementById("inviteBtn");
+
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if(!emailOk){
+      statusEl.style.color = "#ff9b8a";
+      statusEl.textContent = "Please enter a valid email address.";
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Sending...";
+    statusEl.textContent = "";
+
+    const templateParams = {
+      email: email,
+      subject: "Welcome to CampusConnect AI 🎓",
+      message:
+`Hi there,
+
+Thank you for subscribing to CampusConnect AI!
+
+You're now part of a growing community of students who stay ahead — with real-time updates on campus events, mess menus, hostel openings, and placement drives, delivered straight to your inbox.
+
+CampusConnect AI is an AI-powered platform built to simplify campus life by bringing together:
+- Mess & Tiffin Finder
+- Hostel Locator
+- Library Locator
+- Verified Student Chat
+- Mentor Connect
+- Live Campus Events & Placement Updates
+
+We're glad to have you on board. Stay tuned — your first update is on its way!
+
+Best regards,
+Team CampusConnect AI
+NRSolution4u`
+    };
+
+    emailjs.send(EMAILJS_SERVICE_ID, INVITE_TEMPLATE_ID, templateParams)
+      .then(function(){
+        statusEl.style.color = "#8fdc9b";
+        statusEl.textContent = "✅ Check your inbox — you're subscribed!";
+        document.getElementById("inviteEmail").value = "";
+      })
+      .catch(function(err){
+        console.error("EmailJS error:", err);
+        statusEl.style.color = "#ff9b8a";
+        statusEl.textContent = "❌ Could not send. Please try again.";
+      })
+      .finally(function(){
+        btn.disabled = false;
+        btn.textContent = "Send";
+      });
+  });
+</script>
 </body>
 
 </html>
