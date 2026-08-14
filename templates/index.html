@@ -443,32 +443,31 @@
                     </div>
                 </div>
                 <div class="col-lg-5">
-                    <div class="card border-0">
-    <div class="card-header bg-light text-center p-4">
-        <h1 class="m-0">Enquiry Form</h1>
-    </div>
-    <div class="card-body rounded-bottom bg-primary p-5">
-        <form>
-            <div class="form-group">
-                <input type="text" class="form-control border-0 p-4" placeholder="Your name" required="required" />
-            </div>
-            <div class="form-group">
-                <input type="email" class="form-control border-0 p-4" placeholder="Your email" required="required" />
-            </div>
-            <div class="form-group">
-                <input type="tel" class="form-control border-0 p-4" placeholder="Your mobile number" required="required" />
-            </div>
-            <div class="form-group">
-                <textarea class="form-control border-0 p-4" rows="3" placeholder="Your message" required="required"></textarea>
-            </div>
-            <div>
-                <button class="btn btn-dark btn-block border-0 py-3" type="submit">Submit Enquiry</button>
-            </div>
-        </form>
+    <div class="card border-0">
+        <div class="card-header bg-light text-center p-4">
+            <h1 class="m-0">Enquiry Form</h1>
+        </div>
+        <div class="card-body rounded-bottom bg-primary p-5">
+            <form id="enquiryForm">
+                <div class="form-group">
+                    <input type="text" id="name" name="name" class="form-control border-0 p-4" placeholder="Your name" required="required" />
+                </div>
+                <div class="form-group">
+                    <input type="email" id="email" name="email" class="form-control border-0 p-4" placeholder="Your email" required="required" />
+                </div>
+                <div class="form-group">
+                    <input type="tel" id="mobile" name="mobile" class="form-control border-0 p-4" placeholder="Your mobile number" required="required" />
+                </div>
+                <div class="form-group">
+                    <textarea id="message" name="message" class="form-control border-0 p-4" rows="3" placeholder="Your message" required="required"></textarea>
+                </div>
+                <div>
+                    <button class="btn btn-dark btn-block border-0 py-3" type="submit">Submit Enquiry</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -680,6 +679,40 @@
 
     <!-- Template Javascript -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+
+
+    <script>
+document.getElementById('enquiryForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const data = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        mobile: document.getElementById('mobile').value,
+        message: document.getElementById('message').value
+    };
+
+    try {
+        const res = await fetch('/submit-enquiry', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+        if (result.success) {
+            alert('Enquiry submitted successfully!');
+            e.target.reset();
+        } else {
+            alert('Something went wrong: ' + result.error);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Could not connect to server.');
+    }
+});
+</script>
 
 </body>
 

@@ -153,6 +153,32 @@ def requires_auth(f):
 
 
 # ---- Page routes: ab render_template use ho raha hai, templates/ folder se HTML padhega ----
+@app.route('/submit-enquiry', methods=['POST'])
+def submit_enquiry():
+    data = request.get_json()
+    name = data.get('name')
+    email = data.get('email')
+    mobile = data.get('mobile')
+    message = data.get('message')
+
+    if not name or not email or not mobile:
+        return {"success": False, "error": "Missing required fields"}, 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO Enqdb (Name, Email, [Mobile No.], Message) VALUES (?, ?, ?, ?)",
+            (name, email, mobile, message)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
 @app.route('/')
 def home():
     return render_template('index.html')
