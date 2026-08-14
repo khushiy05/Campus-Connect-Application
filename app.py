@@ -27,28 +27,100 @@ def get_db_connection():
 
 
 def send_confirmation_email(to_email):
-    body = """Hi there,
+    html_body = """
+    <html>
+    <body style="margin:0; padding:0; background-color:#f4f4f7; font-family: 'Segoe UI', Arial, sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7; padding: 40px 0;">
+            <tr>
+                <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:10px; overflow:hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
 
-Thank you for subscribing to CampusConnect AI!
+                        <!-- Header -->
+                        <tr>
+                            <td style="background-color:#2d2d3a; padding: 35px 40px; text-align:center;">
+                                <h1 style="margin:0; color:#ffffff; font-size:24px;">
+                                    <span style="color:#ff6b35;">CAMPUS</span>CONNECT AI
+                                </h1>
+                            </td>
+                        </tr>
 
-You're now part of a growing community of students who stay ahead — with real-time updates on campus events, mess menus, hostel openings, and placement drives, delivered straight to your inbox.
+                        <!-- Body -->
+                        <tr>
+                            <td style="padding: 40px;">
+                                <h2 style="color:#2d2d3a; margin-top:0;">Hi there</h2>
+                                <p style="color:#555555; font-size:15px; line-height:1.6;">
+                                    Thank you for subscribing to <strong>CampusConnect AI</strong>!
+                                </p>
+                                <p style="color:#555555; font-size:15px; line-height:1.6;">
+                                    You're now part of a growing community of students who stay ahead —
+                                    with real-time updates on campus events, mess menus, hostel openings,
+                                    and placement drives, delivered straight to your inbox.
+                                </p>
 
-CampusConnect AI is an AI-powered platform built to simplify campus life by bringing together:
-- Mess & Tiffin Finder
-- Hostel Locator
-- Library Locator
-- Verified Student Chat
-- Mentor Connect
-- Live Campus Events & Placement Updates
+                                <p style="color:#2d2d3a; font-size:16px; font-weight:600; margin-top:30px;">
+                                    What you'll get access to:
+                                </p>
 
-We're glad to have you on board. Stay tuned — your first update is on its way!
+                                <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;">
+                                    <tr>
+                                        <td style="padding:8px 0; color:#555555; font-size:14px;">
+                                            <span style="color:#ff6b35; font-weight:bold;">&#10003;</span> Mess &amp; Tiffin Finder
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:8px 0; color:#555555; font-size:14px;">
+                                            <span style="color:#ff6b35; font-weight:bold;">&#10003;</span> Hostel Locator
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:8px 0; color:#555555; font-size:14px;">
+                                            <span style="color:#ff6b35; font-weight:bold;">&#10003;</span> Library Locator
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:8px 0; color:#555555; font-size:14px;">
+                                            <span style="color:#ff6b35; font-weight:bold;">&#10003;</span> Verified Student Chat
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:8px 0; color:#555555; font-size:14px;">
+                                            <span style="color:#ff6b35; font-weight:bold;">&#10003;</span> Mentor Connect
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:8px 0; color:#555555; font-size:14px;">
+                                            <span style="color:#ff6b35; font-weight:bold;">&#10003;</span> Live Campus Events &amp; Placement Updates
+                                        </td>
+                                    </tr>
+                                </table>
 
-Best regards,
-Team CampusConnect AI
-NRSolution4u"""
+                                <p style="color:#555555; font-size:15px; line-height:1.6; margin-top:30px;">
+                                    We're glad to have you on board. Stay tuned — your first update is on its way!
+                                </p>
+                            </td>
+                        </tr>
 
-    msg = MIMEText(body)
-    msg['Subject'] = 'Welcome to CampusConnect AI 🎓'
+                        <!-- Footer -->
+                        <tr>
+                            <td style="background-color:#f4f4f7; padding: 25px 40px; text-align:center; border-top:1px solid #eaeaea;">
+                                <p style="color:#999999; font-size:13px; margin:0;">
+                                    Best regards,<br>
+                                    <strong style="color:#2d2d3a;">Team CampusConnect AI</strong><br>
+                                    NRSolution4u
+                                </p>
+                            </td>
+                        </tr>
+
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    """
+
+    msg = MIMEText(html_body, 'html')
+    msg['Subject'] = 'Welcome to CampusConnect AI'
     msg['From'] = EMAIL_SENDER
     msg['To'] = to_email
 
