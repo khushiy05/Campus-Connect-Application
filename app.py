@@ -187,7 +187,7 @@ def invite():
     except Exception as e:
         print("EMAIL ERROR:", e)
 
-    return redirect(request.referrer)
+    return "OK", 200
 
 
 @app.route('/admin/subscribers')

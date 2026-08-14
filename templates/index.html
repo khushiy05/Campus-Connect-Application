@@ -9,20 +9,20 @@
     <meta content="Free HTML Templates" name="description">
 
     <!-- Favicon -->
-    <link href="img/favicon.ico" rel="icon">
+    <link href="{{ url_for('static', filename='img/favicon.ico') }}" rel="icon">
 
     <!-- Google Web Fonts -->
     <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"> 
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
 
     <!-- Libraries Stylesheet -->
-    <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='lib/owlcarousel/assets/owl.carousel.min.css') }}" rel="stylesheet">
 
     <!-- Customized Bootstrap Stylesheet -->
-    <link href="css/style.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
 
 <body>
@@ -32,7 +32,7 @@
         <div class="row align-items-center py-4 px-xl-5">
             <div class="col-lg-3">
                 <a href="" class="text-decoration-none">
-                    <img src="img/WhatsApp Image 2026-07-28 at 2.14.08 PM.jpeg" alt="CampusConnect AI" style="max-height: 200px; padding: 0px 0;">
+                    <img src="{{ url_for('static', filename='img/WhatsApp Image 2026-07-28 at 2.14.08 PM.jpeg') }}" alt="CampusConnect AI" style="max-height: 200px; padding: 0px 0;">
                 </a>
             </div>
             <div class="col-lg-3 text-right">
@@ -78,20 +78,20 @@
                     </button>
                     <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
                     <div class="navbar-nav py-0 mx-auto">
-                        <a href="index.html" class="nav-item nav-link active">Home</a>
-                        <a href="about.html" class="nav-item nav-link">About</a>
-                        <a href="career.html" class="nav-item nav-link">Career</a>
-                        <a href="advertisement.html" class="nav-item nav-link">Advertisement</a>
-                        <a href="contact.html" class="nav-item nav-link">Contact</a>
+                        <a href="/" class="nav-item nav-link active">Home</a>
+                        <a href="/about.html" class="nav-item nav-link">About</a>
+                        <a href="/career.html" class="nav-item nav-link">Career</a>
+                        <a href="/advertisement.html" class="nav-item nav-link">Advertisement</a>
+                        <a href="/contact.html" class="nav-item nav-link">Contact</a>
                     </div>
-                        <a class="btn btn-primary py-2 px-4 ml-auto d-none d-lg-block" href="registration.html" target="_blank">Campus Registration</a>
+                        <a class="btn btn-primary py-2 px-4 ml-auto d-none d-lg-block" href="/registration.html" target="_blank">Campus Registration</a>
                     </div>
                 </nav>
             </div>
         </div>
     </div>
     <!-- Navbar End -->
-     
+
     <!-- Carousel Start -->
     <div class="container-fluid p-0 pb-5 mb-5">
         <div id="header-carousel" class="carousel slide carousel-fade" data-ride="carousel">
@@ -102,7 +102,7 @@
             </ol>
             <div class="carousel-inner">
                 <div class="carousel-item active" style="min-height: 300px;">
-                    <img class="position-relative w-100" src="img/carousel-1.jpg" style="min-height: 300px; object-fit: cover;">
+                    <img class="position-relative w-100" src="{{ url_for('static', filename='img/carousel-1.jpg') }}" style="min-height: 300px; object-fit: cover;">
                     <div class="carousel-caption d-flex align-items-center justify-content-center">
                         <div class="p-5" style="width: 100%; max-width: 900px;">
                             <h5 class="text-white text-uppercase mb-md-3">Best Online Courses</h5>
@@ -112,7 +112,7 @@
                     </div>
                 </div>
                 <div class="carousel-item" style="min-height: 300px;">
-                    <img class="position-relative w-100" src="img/carousel-2.jpg" style="min-height: 300px; object-fit: cover;">
+                    <img class="position-relative w-100" src="{{ url_for('static', filename='img/carousel-2.jpg') }}" style="min-height: 300px; object-fit: cover;">
                     <div class="carousel-caption d-flex align-items-center justify-content-center">
                         <div class="p-5" style="width: 100%; max-width: 900px;">
                             <h5 class="text-white text-uppercase mb-md-3">Best Online Courses</h5>
@@ -122,7 +122,7 @@
                     </div>
                 </div>
                 <div class="carousel-item" style="min-height: 300px;">
-                    <img class="position-relative w-100" src="img/carousel-3.jpg" style="min-height: 300px; object-fit: cover;">
+                    <img class="position-relative w-100" src="{{ url_for('static', filename='img/carousel-3.jpg') }}" style="min-height: 300px; object-fit: cover;">
                     <div class="carousel-caption d-flex align-items-center justify-content-center">
                         <div class="p-5" style="width: 100%; max-width: 900px;">
                             <h5 class="text-white text-uppercase mb-md-3">Best Online Courses</h5>
@@ -147,7 +147,7 @@
                 <div class="border rounded p-5 h-100">
                     <div class="row align-items-center">
                         <div class="col-md-5">
-                            <img class="img-fluid rounded mb-4 mb-md-0" src="img/about.jpg" alt="">
+                            <img class="img-fluid rounded mb-4 mb-md-0" src="{{ url_for('static', filename='img/about.jpg') }}" alt="">
                         </div>
                         <div class="col-md-7">
                             <div class="text-left mb-3">
@@ -155,7 +155,7 @@
                                 <h1>Innovative Way To Learn</h1>
                             </div>
                             <p>CampusConnect AI is your all-in-one companion for navigating college life smarter and faster. From finding the best mess and food options near you to locating hostels, libraries, and study spots using Google Maps, we bring everything you need onto a single platform.</p>
-                            <a href="about.html" class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2">Learn More</a>
+                            <a href="/about.html" class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2">Learn More</a>
                         </div>
                     </div>
                 </div>
@@ -235,73 +235,73 @@
             <div class="row">
                 <div class="col-lg-3 col-md-6 mb-4">
                     <div class="cat-item position-relative overflow-hidden rounded mb-2">
-                        <img class="img-fluid" src="img/cat-1.jpg" alt="">
+                        <img class="img-fluid" src="{{ url_for('static', filename='img/cat-1.jpg') }}" alt="">
                         <a class="cat-overlay text-white text-decoration-none" href="">
                             <h4 class="text-white font-weight-medium">EVENTHUB</h4>
-                            
+
                         </a>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6 mb-4">
                     <div class="cat-item position-relative overflow-hidden rounded mb-2">
-                        <img class="img-fluid" src="img/cat-2.jpg" alt="">
+                        <img class="img-fluid" src="{{ url_for('static', filename='img/cat-2.jpg') }}" alt="">
                         <a class="cat-overlay text-white text-decoration-none" href="">
                             <h4 class="text-white font-weight-medium">CHATBOOK</h4>
-                            
+
                         </a>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6 mb-4">
                     <div class="cat-item position-relative overflow-hidden rounded mb-2">
-                        <img class="img-fluid" src="img/cat-3.jpg" alt="">
+                        <img class="img-fluid" src="{{ url_for('static', filename='img/cat-3.jpg') }}" alt="">
                         <a class="cat-overlay text-white text-decoration-none" href="">
                             <h4 class="text-white font-weight-medium">HOSTEL</h4>
-                            
+
                         </a>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6 mb-4">
                     <div class="cat-item position-relative overflow-hidden rounded mb-2">
-                        <img class="img-fluid" src="img/cat-4.jpg" alt="">
+                        <img class="img-fluid" src="{{ url_for('static', filename='img/cat-4.jpg') }}" alt="">
                         <a class="cat-overlay text-white text-decoration-none" href="">
                             <h4 class="text-white font-weight-medium">CAMPUS EATS</h4>
-                            
+
                         </a>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6 mb-4">
                     <div class="cat-item position-relative overflow-hidden rounded mb-2">
-                        <img class="img-fluid" src="img/cat-5.jpg" alt="">
+                        <img class="img-fluid" src="{{ url_for('static', filename='img/cat-5.jpg') }}" alt="">
                         <a class="cat-overlay text-white text-decoration-none" href="">
                             <h4 class="text-white font-weight-medium">EDUCATION LIBRARY</h4>
-                            
+
                         </a>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6 mb-4">
                     <div class="cat-item position-relative overflow-hidden rounded mb-2">
-                        <img class="img-fluid" src="img/cat-6.jpg" alt="">
+                        <img class="img-fluid" src="{{ url_for('static', filename='img/cat-6.jpg') }}" alt="">
                         <a class="cat-overlay text-white text-decoration-none" href="">
                             <h4 class="text-white font-weight-medium">PLACEMENTS</h4>
-                            
+
                         </a>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6 mb-4">
                     <div class="cat-item position-relative overflow-hidden rounded mb-2">
-                        <img class="img-fluid" src="img/cat-7.jpg" alt="">
+                        <img class="img-fluid" src="{{ url_for('static', filename='img/cat-7.jpg') }}" alt="">
                         <a class="cat-overlay text-white text-decoration-none" href="">
                             <h4 class="text-white font-weight-medium">CAMPUS CIRCLE</h4>
-                            
+
                         </a>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6 mb-4">
                     <div class="cat-item position-relative overflow-hidden rounded mb-2">
-                        <img class="img-fluid" src="img/cat-8.jpg" alt="">
+                        <img class="img-fluid" src="{{ url_for('static', filename='img/cat-8.jpg') }}" alt="">
                         <a class="cat-overlay text-white text-decoration-none" href="">
                             <h4 class="text-white font-weight-medium">TRAINERs</h4>
-                            
+
                         </a>
                     </div>
                 </div>
@@ -322,7 +322,7 @@
     <!-- Feature 1: Mess & Tiffin Finder -->
     <div class="col-lg-4 col-md-6 mb-4">
         <div class="rounded overflow-hidden mb-2">
-            <img class="img-fluid" src="img/course-1.jpg" alt="">
+            <img class="img-fluid" src="{{ url_for('static', filename='img/course-1.jpg') }}" alt="">
             <div class="bg-secondary p-4">
                 <div class="d-flex justify-content-between mb-3">
                     <small class="m-0"><i class="fa fa-map-marker-alt text-primary mr-2"></i>Google Maps</small>
@@ -339,7 +339,7 @@
     <!-- Feature 2: Hostel Near Me -->
     <div class="col-lg-4 col-md-6 mb-4">
         <div class="rounded overflow-hidden mb-2">
-            <img class="img-fluid" src="img/course-2.jpg" alt="">
+            <img class="img-fluid" src="{{ url_for('static', filename='img/course-2.jpg') }}" alt="">
             <div class="bg-secondary p-4">
                 <div class="d-flex justify-content-between mb-3">
                     <small class="m-0"><i class="fa fa-map-marker-alt text-primary mr-2"></i>Google Maps</small>
@@ -356,7 +356,7 @@
     <!-- Feature 3: Library Locator -->
     <div class="col-lg-4 col-md-6 mb-4">
         <div class="rounded overflow-hidden mb-2">
-            <img class="img-fluid" src="img/course-3.jpg" alt="">
+            <img class="img-fluid" src="{{ url_for('static', filename='img/course-3.jpg') }}" alt="">
             <div class="bg-secondary p-4">
                 <div class="d-flex justify-content-between mb-3">
                     <small class="m-0"><i class="fa fa-map-marker-alt text-primary mr-2"></i>Google Maps</small>
@@ -373,7 +373,7 @@
     <!-- Feature 4: Campus Events -->
     <div class="col-lg-4 col-md-6 mb-4">
         <div class="rounded overflow-hidden mb-2">
-            <img class="img-fluid" src="img/course-4.jpg" alt="">
+            <img class="img-fluid" src="{{ url_for('static', filename='img/course-4.jpg') }}" alt="">
             <div class="bg-secondary p-4">
                 <div class="d-flex justify-content-between mb-3">
                     <small class="m-0"><i class="fa fa-car text-primary mr-2"></i>Available Vehicles</small>
@@ -390,7 +390,7 @@
     <!-- Feature 5: Verified Chat -->
     <div class="col-lg-4 col-md-6 mb-4">
         <div class="rounded overflow-hidden mb-2">
-            <img class="img-fluid" src="img/course-5.jpg" alt="">
+            <img class="img-fluid" src="{{ url_for('static', filename='img/course-5.jpg') }}" alt="">
             <div class="bg-secondary p-4">
                 <div class="d-flex justify-content-between mb-3">
                     <small class="m-0"><i class="fa fa-users text-primary mr-2"></i>Verified Students</small>
@@ -407,7 +407,7 @@
     <!-- Feature 6: Mentors -->
     <div class="col-lg-4 col-md-6 mb-4">
         <div class="rounded overflow-hidden mb-2">
-            <img class="img-fluid" src="img/course-6.jpg" alt="">
+            <img class="img-fluid" src="{{ url_for('static', filename='img/course-6.jpg') }}" alt="">
             <div class="bg-secondary p-4">
                 <div class="d-flex justify-content-between mb-3">
                     <small class="m-0"><i class="fa fa-user-graduate text-primary mr-2"></i>Skilled Guidance</small>
@@ -466,7 +466,6 @@
         </form>
     </div>
 </div>
-                            </form>
                         </div>
                     </div>
                 </div>
@@ -487,7 +486,7 @@
                 <div class="col-md-6 col-lg-3 text-center team mb-4">
                     <div class="team-item rounded overflow-hidden mb-2">
                         <div class="team-img position-relative">
-                            <img class="img-fluid" src="img/team-1.jpg" alt="">
+                            <img class="img-fluid" src="{{ url_for('static', filename='img/team-1.jpg') }}" alt="">
                             <div class="team-social">
                                 <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-twitter"></i></a>
                                 <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-facebook-f"></i></a>
@@ -497,14 +496,14 @@
                         <div class="bg-secondary p-4">
                             <h5>Jhon Doe</h5>
                             <p class="m-0">Web Designer</p>
-                            <a class="btn btn-primary btn-sm mt-3" href="teacher.html">Learn More</a>
+                            <a class="btn btn-primary btn-sm mt-3" href="/teacher.html">Learn More</a>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3 text-center team mb-4">
                     <div class="team-item rounded overflow-hidden mb-2">
                         <div class="team-img position-relative">
-                            <img class="img-fluid" src="img/team-2.jpg" alt="">
+                            <img class="img-fluid" src="{{ url_for('static', filename='img/team-2.jpg') }}" alt="">
                             <div class="team-social">
                                 <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-twitter"></i></a>
                                 <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-facebook-f"></i></a>
@@ -514,14 +513,14 @@
                         <div class="bg-secondary p-4">
                             <h5>Jhon Doe</h5>
                             <p class="m-0">Web Designer</p>
-                            <a class="btn btn-primary btn-sm mt-3" href="teacher.html">Learn More</a>
+                            <a class="btn btn-primary btn-sm mt-3" href="/teacher.html">Learn More</a>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3 text-center team mb-4">
                     <div class="team-item rounded overflow-hidden mb-2">
                         <div class="team-img position-relative">
-                            <img class="img-fluid" src="img/team-3.jpg" alt="">
+                            <img class="img-fluid" src="{{ url_for('static', filename='img/team-3.jpg') }}" alt="">
                             <div class="team-social">
                                 <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-twitter"></i></a>
                                 <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-facebook-f"></i></a>
@@ -531,14 +530,14 @@
                         <div class="bg-secondary p-4">
                             <h5>Jhon Doe</h5>
                             <p class="m-0">Web Designer</p>
-                            <a class="btn btn-primary btn-sm mt-3" href="teacher.html">Learn More</a>
+                            <a class="btn btn-primary btn-sm mt-3" href="/teacher.html">Learn More</a>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3 text-center team mb-4">
                     <div class="team-item rounded overflow-hidden mb-2">
                         <div class="team-img position-relative">
-                            <img class="img-fluid" src="img/team-4.jpg" alt="">
+                            <img class="img-fluid" src="{{ url_for('static', filename='img/team-4.jpg') }}" alt="">
                             <div class="team-social">
                                 <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-twitter"></i></a>
                                 <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-facebook-f"></i></a>
@@ -548,14 +547,14 @@
                         <div class="bg-secondary p-4">
                             <h5>Jhon Doe</h5>
                             <p class="m-0">Web Designer</p>
-                            <a class="btn btn-primary btn-sm mt-3" href="teacher.html">Learn More</a>
+                            <a class="btn btn-primary btn-sm mt-3" href="/teacher.html">Learn More</a>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3 text-center team mb-4">
                     <div class="team-item rounded overflow-hidden mb-2">
                         <div class="team-img position-relative">
-                            <img class="img-fluid" src="img/team-1.jpg" alt="">
+                            <img class="img-fluid" src="{{ url_for('static', filename='img/team-1.jpg') }}" alt="">
                             <div class="team-social">
                                 <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-twitter"></i></a>
                                 <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-facebook-f"></i></a>
@@ -565,14 +564,14 @@
                         <div class="bg-secondary p-4">
                             <h5>Jhon Doe</h5>
                             <p class="m-0">Web Designer</p>
-                            <a class="btn btn-primary btn-sm mt-3" href="teacher.html">Learn More</a>
+                            <a class="btn btn-primary btn-sm mt-3" href="/teacher.html">Learn More</a>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3 text-center team mb-4">
                     <div class="team-item rounded overflow-hidden mb-2">
                         <div class="team-img position-relative">
-                            <img class="img-fluid" src="img/team-2.jpg" alt="">
+                            <img class="img-fluid" src="{{ url_for('static', filename='img/team-2.jpg') }}" alt="">
                             <div class="team-social">
                                 <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-twitter"></i></a>
                                 <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-facebook-f"></i></a>
@@ -582,14 +581,14 @@
                         <div class="bg-secondary p-4">
                             <h5>Jhon Doe</h5>
                             <p class="m-0">Web Designer</p>
-                            <a class="btn btn-primary btn-sm mt-3" href="teacher.html">Learn More</a>
+                            <a class="btn btn-primary btn-sm mt-3" href="/teacher.html">Learn More</a>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3 text-center team mb-4">
                     <div class="team-item rounded overflow-hidden mb-2">
                         <div class="team-img position-relative">
-                            <img class="img-fluid" src="img/team-3.jpg" alt="">
+                            <img class="img-fluid" src="{{ url_for('static', filename='img/team-3.jpg') }}" alt="">
                             <div class="team-social">
                                 <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-twitter"></i></a>
                                 <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-facebook-f"></i></a>
@@ -599,14 +598,14 @@
                         <div class="bg-secondary p-4">
                             <h5>Jhon Doe</h5>
                             <p class="m-0">Web Designer</p>
-                            <a class="btn btn-primary btn-sm mt-3" href="teacher.html">Learn More</a>
+                            <a class="btn btn-primary btn-sm mt-3" href="/teacher.html">Learn More</a>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3 text-center team mb-4">
                     <div class="team-item rounded overflow-hidden mb-2">
                         <div class="team-img position-relative">
-                            <img class="img-fluid" src="img/team-4.jpg" alt="">
+                            <img class="img-fluid" src="{{ url_for('static', filename='img/team-4.jpg') }}" alt="">
                             <div class="team-social">
                                 <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-twitter"></i></a>
                                 <a class="btn btn-outline-light btn-square mx-1" href="#"><i class="fab fa-facebook-f"></i></a>
@@ -616,7 +615,7 @@
                         <div class="bg-secondary p-4">
                             <h5>Jhon Doe</h5>
                             <p class="m-0">Web Designer</p>
-                            <a class="btn btn-primary btn-sm mt-3" href="teacher.html">Learn More</a>
+                            <a class="btn btn-primary btn-sm mt-3" href="/teacher.html">Learn More</a>
                         </div>
                     </div>
                 </div>
@@ -639,21 +638,21 @@
                         <div class="text-center">
                             <i class="fa fa-3x fa-quote-left text-primary mb-4"></i>
                             <h4 class="font-weight-normal mb-4">Dolor eirmod diam stet kasd sed. Aliqu rebum est eos. Rebum elitr dolore et eos labore, stet justo sed est sed. Diam sed sed dolor stet amet eirmod eos labore diam</h4>
-                            <img class="img-fluid mx-auto mb-3" src="img/testimonial-1.jpg" alt="">
+                            <img class="img-fluid mx-auto mb-3" src="{{ url_for('static', filename='img/testimonial-1.jpg') }}" alt="">
                             <h5 class="m-0">Client Name</h5>
                             <span>Profession</span>
                         </div>
                         <div class="text-center">
                             <i class="fa fa-3x fa-quote-left text-primary mb-4"></i>
                             <h4 class="font-weight-normal mb-4">Dolor eirmod diam stet kasd sed. Aliqu rebum est eos. Rebum elitr dolore et eos labore, stet justo sed est sed. Diam sed sed dolor stet amet eirmod eos labore diam</h4>
-                            <img class="img-fluid mx-auto mb-3" src="img/testimonial-2.jpg" alt="">
+                            <img class="img-fluid mx-auto mb-3" src="{{ url_for('static', filename='img/testimonial-2.jpg') }}" alt="">
                             <h5 class="m-0">Client Name</h5>
                             <span>Profession</span>
                         </div>
                         <div class="text-center">
                             <i class="fa fa-3x fa-quote-left text-primary mb-4"></i>
                             <h4 class="font-weight-normal mb-4">Dolor eirmod diam stet kasd sed. Aliqu rebum est eos. Rebum elitr dolore et eos labore, stet justo sed est sed. Diam sed sed dolor stet amet eirmod eos labore diam</h4>
-                            <img class="img-fluid mx-auto mb-3" src="img/testimonial-3.jpg" alt="">
+                            <img class="img-fluid mx-auto mb-3" src="{{ url_for('static', filename='img/testimonial-3.jpg') }}" alt="">
                             <h5 class="m-0">Client Name</h5>
                             <span>Profession</span>
                         </div>
@@ -665,172 +664,22 @@
     <!-- Testimonial End -->
 
 
-
-    <!-- Footer Start -->
-    <div class="container-fluid bg-dark text-white py-5 px-sm-3 px-lg-5" style="margin-top: 90px;">
-        <div class="row pt-5">
-            <div class="col-lg-7 col-md-12">
-                <div class="row">
-                    <div class="col-md-6 mb-5">
-                        <h5 class="text-primary text-uppercase mb-4" style="letter-spacing: 5px;">Get In Touch</h5>
-                        <p><i class="fa fa-map-marker-alt mr-2"></i>FCI Godown Rd, Chuna Bhatti Road, Ajni Medical Colony, Samarth Nagar East, Nagpur, Maharashtra 440012</p>
-                        <p><i class="fa fa-phone-alt mr-2"></i>8411064860</p>
-                        <p><i class="fa fa-envelope mr-2"></i>contact.nrsolution4u@gmail.com</p>
-                        <div class="d-flex justify-content-start mt-4">
-                            <a class="btn btn-outline-light btn-square mr-2" href="#"><i class="fab fa-twitter"></i></a>
-                            <a class="btn btn-outline-light btn-square mr-2" href="#"><i class="fab fa-facebook-f"></i></a>
-                            <a class="btn btn-outline-light btn-square mr-2" href="#"><i class="fab fa-linkedin-in"></i></a>
-                            <a class="btn btn-outline-light btn-square" href="#"><i class="fab fa-instagram"></i></a>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-5">
-                        <h5 class="text-primary text-uppercase mb-4" style="letter-spacing: 5px;">Our Courses</h5>
-                        <div class="d-flex flex-column justify-content-start">
-                            <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Home</a>
-                            <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>About</a>
-                            <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Advertisement</a>
-                            <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Contact</a>
-                            <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Career</a>
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-5 col-md-12 mb-5">
-    <h5 class="text-primary text-uppercase mb-4" style="letter-spacing: 5px;">INVITE US</h5>
-    <p>Never miss what's happening on campus. From mess menus to placement drives, CampusConnect AI keeps every student in the loop — one subscription, zero missed updates.</p>
-    <div class="w-100">
-        <form id="inviteForm">
-            <div class="input-group">
-                <input type="email" id="inviteEmail" class="form-control border-light" style="padding: 30px;" placeholder="Your Email Address" required>
-                <div class="input-group-append">
-                    <button class="btn btn-primary px-4" type="submit" id="inviteBtn">Send</button>
-                </div>
-            </div>
-            <p id="inviteStatus" class="mt-2 mb-0" style="font-size: 13px;"></p>
-        </form>
-    </div>
-</div>
-        </div>
-    </div>
-    <div class="container-fluid bg-dark text-white border-top py-4 px-sm-3 px-md-5" style="border-color: rgba(256, 256, 256, .1) !important;">
-        <div class="row">
-            <div class="col-lg-6 text-center text-md-left mb-3 mb-md-0">
-                <p class="m-0 text-white">&copy;. All Rights Reserved. 
-                    
-                    <!--/*** The author’s attribution link must remain intact in the template. ***/-->
-                    <!--/*** If you wish to remove this credit link, please purchase the Pro Version . ***/-->
-                    Designed by <a href="http://www.nrsolution4u.com/prayatn/">NRSolution4u</a>
-                </p>
-            </div>
-            <div class="col-lg-6 text-center text-md-right">
-                <ul class="nav d-inline-flex">
-                    <li class="nav-item">
-                        <a class="nav-link text-white py-0" href="#">Privacy</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white py-0" href="#">Terms</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white py-0" href="#">FAQs</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white py-0" href="#">Help</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-    <!-- Footer End -->
-
-
-    <!-- Back to Top -->
-    <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="fa fa-angle-double-up"></i></a>
+    {% include 'footer.html' %}
 
 
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
-    <script src="lib/easing/easing.min.js"></script>
-    <script src="lib/owlcarousel/owl.carousel.min.js"></script>
+    <script src="{{ url_for('static', filename='lib/easing/easing.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/owlcarousel/owl.carousel.min.js') }}"></script>
 
     <!-- Contact Javascript File -->
-    <script src="mail/jqBootstrapValidation.min.js"></script>
-    <script src="mail/contact.js"></script>
+    <script src="{{ url_for('static', filename='mail/jqBootstrapValidation.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='mail/contact.js') }}"></script>
 
     <!-- Template Javascript -->
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-    <script src="js/main.js"></script>
-    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
-
-    <script>
-  const EMAILJS_PUBLIC_KEY = "oTqk1LMgYJlwBhX8J";
-  const EMAILJS_SERVICE_ID = "service_6y8m99h";
-  const INVITE_TEMPLATE_ID = "template_ur5x11c";
-
-  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
-
-  document.getElementById("inviteForm").addEventListener("submit", function(e){
-    e.preventDefault();
-
-    const email = document.getElementById("inviteEmail").value.trim();
-    const statusEl = document.getElementById("inviteStatus");
-    const btn = document.getElementById("inviteBtn");
-
-    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if(!emailOk){
-      statusEl.style.color = "#ff9b8a";
-      statusEl.textContent = "Please enter a valid email address.";
-      return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = "Sending...";
-    statusEl.textContent = "";
-
-    const templateParams = {
-      email: email,
-      subject: "Welcome to CampusConnect AI 🎓",
-      message:
-`Hi there,
-
-Thank you for subscribing to CampusConnect AI!
-
-You're now part of a growing community of students who stay ahead — with real-time updates on campus events, mess menus, hostel openings, and placement drives, delivered straight to your inbox.
-
-CampusConnect AI is an AI-powered platform built to simplify campus life by bringing together:
-- Mess & Tiffin Finder
-- Hostel Locator
-- Library Locator
-- Verified Student Chat
-- Mentor Connect
-- Live Campus Events & Placement Updates
-
-We're glad to have you on board. Stay tuned — your first update is on its way!
-
-Best regards,
-Team CampusConnect AI
-NRSolution4u`
-    };
-
-    emailjs.send(EMAILJS_SERVICE_ID, INVITE_TEMPLATE_ID, templateParams)
-      .then(function(){
-        statusEl.style.color = "#8fdc9b";
-        statusEl.textContent = "✅ Check your inbox — you're subscribed!";
-        document.getElementById("inviteEmail").value = "";
-      })
-      .catch(function(err){
-        console.error("EmailJS error:", err);
-        statusEl.style.color = "#ff9b8a";
-        statusEl.textContent = "❌ Could not send. Please try again.";
-      })
-      .finally(function(){
-        btn.disabled = false;
-        btn.textContent = "Send";
-      });
-  });
-</script>
 </body>
 
 </html>

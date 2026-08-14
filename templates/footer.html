@@ -23,33 +23,33 @@
                             <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Advertisement</a>
                             <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Contact</a>
                             <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Career</a>
-                            
+
                         </div>
                     </div>
                 </div>
             </div>
             <div class="col-lg-5 col-md-12 mb-5">
                 <h5 class="text-primary text-uppercase mb-4" style="letter-spacing: 5px;">INVITE US</h5>
-                <p>Never miss what's happening on campus. From mess menus to placement drives, CampusConnect AI keeps every student in the loop one subscription, zero missed updates.</p>
+                <p>Never miss what's happening on campus. From mess menus to placement drives, CampusConnect AI keeps every student in the loop — one subscription, zero missed updates.</p>
                 <div class="w-100">
-    <form action="/invite" method="POST">
-        <div class="input-group">
-            <input 
-                type="email" 
-                name="email"
-                class="form-control border-light" 
-                style="padding: 30px;" 
-                placeholder="Your Email Address"
-                required
-            >
-            <div class="input-group-append">
-                <button type="submit" class="btn btn-primary px-4">
-                    SEND
-                </button>
-            </div>
-        </div>
-    </form>
-</div>
+                    <form id="inviteForm">
+                        <div class="input-group">
+                            <input
+                                type="email"
+                                id="inviteEmail"
+                                name="email"
+                                class="form-control border-light"
+                                style="padding: 30px;"
+                                placeholder="Your Email Address"
+                                required
+                            >
+                            <div class="input-group-append">
+                                <button class="btn btn-primary px-4" type="submit" id="inviteBtn">SEND</button>
+                            </div>
+                        </div>
+                        <p id="inviteStatus" class="mt-2 mb-0" style="font-size: 13px;"></p>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -57,7 +57,7 @@
         <div class="row">
             <div class="col-lg-6 text-center text-md-left mb-3 mb-md-0">
                 <p class="m-0 text-white">&copy;. All Rights Reserved. 
-                    
+
                     <!--/*** The author’s attribution link must remain intact in the template. ***/-->
                     <!--/*** If you wish to remove this credit link, please purchase the Pro Version . ***/-->
                     Designed by <a href="http://www.nrsolution4u.com/prayatn/">NRSolution4u</a>
@@ -86,3 +86,55 @@
 
     <!-- Back to Top -->
     <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="fa fa-angle-double-up"></i></a>
+
+    <!-- Invite form AJAX submit: no page reload, shows inline success/error message -->
+    <script>
+    (function () {
+        const form = document.getElementById("inviteForm");
+        if (!form) return;
+
+        form.addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const emailInput = document.getElementById("inviteEmail");
+            const statusEl = document.getElementById("inviteStatus");
+            const btn = document.getElementById("inviteBtn");
+            const email = emailInput.value.trim();
+
+            const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+            if (!emailOk) {
+                statusEl.style.color = "#ff9b8a";
+                statusEl.textContent = "Please enter a valid email address.";
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = "Sending...";
+            statusEl.textContent = "";
+
+            fetch("/invite", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: "email=" + encodeURIComponent(email)
+            })
+                .then(function (res) {
+                    if (res.ok) {
+                        statusEl.style.color = "#8fdc9b";
+                        statusEl.textContent = "✅ Check your inbox — you're subscribed!";
+                        emailInput.value = "";
+                    } else {
+                        statusEl.style.color = "#ff9b8a";
+                        statusEl.textContent = "❌ Could not send. Please try again.";
+                    }
+                })
+                .catch(function () {
+                    statusEl.style.color = "#ff9b8a";
+                    statusEl.textContent = "❌ Could not send. Please try again.";
+                })
+                .finally(function () {
+                    btn.disabled = false;
+                    btn.textContent = "SEND";
+                });
+        });
+    })();
+    </script>
