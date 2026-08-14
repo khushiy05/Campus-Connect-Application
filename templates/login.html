@@ -12,7 +12,7 @@
 <!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- Your site's stylesheet -->
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
 <style>
   body {
@@ -133,13 +133,12 @@
 </head>
 <body>
 
-<div id="header"></div>
+
 
 <div class="login-wrapper">
   <div class="login-card">
     <h2>Login</h2>
     <hr>
-    
 
     <div class="alert alert-danger" id="loginError" role="alert"></div>
 
@@ -171,18 +170,17 @@
     <div class="text-center mt-4">
       <p class="mb-0 signup-link">
         Don't have an account?
-        <a href="registration.html">Register</a>
+        <a href="{{ url_for('registration') }}">Register</a>
       </p>
     </div>
   </div>
 </div>
 
-<div id="footer"></div>
+
 
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
-<script src="include.js"></script>
 
 <script>
   // Show/hide password
@@ -215,14 +213,7 @@
     // TODO: Replace this with your actual login API / SQL check
     console.log('Logging in with:', email, password);
 
-    // Example placeholder success flow:
-    // window.location.href = "index.html";
     alert('Login submitted! Connect this to your backend/auth to complete the flow.');
-  });
-
-  // Google Sign-In placeholder — wire this to your existing Google OAuth client ID
-  document.getElementById('googleLoginBtn').addEventListener('click', function () {
-    alert('Connect this button to your existing Google Sign-In flow (same Client ID as registration.html).');
   });
 </script>
 

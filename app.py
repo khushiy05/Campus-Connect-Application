@@ -1,7 +1,6 @@
-from flask import Flask, request, redirect, send_from_directory, Response
+from flask import Flask, request, render_template, Response
 from functools import wraps
 import pyodbc
-import os
 import smtplib
 from email.mime.text import MIMEText
 
@@ -153,16 +152,40 @@ def requires_auth(f):
 # -----------------------------
 
 
+# ---- Page routes: ab render_template use ho raha hai, templates/ folder se HTML padhega ----
 @app.route('/')
 def home():
-    return send_from_directory('.', 'index.html')
+    return render_template('index.html')
 
 
-@app.route('/<path:path>')
-def serve_files(path):
-    if os.path.isfile(path):
-        return send_from_directory('.', path)
-    return "File not found", 404
+@app.route('/about.html')
+def about():
+    return render_template('about.html')
+
+
+@app.route('/career.html')
+def career():
+    return render_template('career.html')
+
+
+@app.route('/advertisement.html')
+def advertisement():
+    return render_template('advertisement.html')
+
+
+@app.route('/contact.html')
+def contact():
+    return render_template('contact.html')
+
+
+@app.route('/registration.html')
+def registration():
+    return render_template('registration.html')
+
+
+@app.route('/login.html')
+def login():
+    return render_template('login.html')
 
 
 @app.route('/invite', methods=['POST'])

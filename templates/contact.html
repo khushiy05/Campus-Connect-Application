@@ -9,25 +9,25 @@
     <meta content="Free HTML Templates" name="description">
 
     <!-- Favicon -->
-    <link href="img/favicon.ico" rel="icon">
+    <link href="{{ url_for('static', filename='img/favicon.ico') }}" rel="icon">
 
     <!-- Google Web Fonts -->
     <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"> 
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
 
     <!-- Libraries Stylesheet -->
-    <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='lib/owlcarousel/assets/owl.carousel.min.css') }}" rel="stylesheet">
 
     <!-- Customized Bootstrap Stylesheet -->
-    <link href="css/style.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
 
 <body>
-<div id="header"></div>
-    <!-- Contact Start -->
+{% include 'header.html' %}
+<!-- Contact Start -->
     <div class="container-fluid py-5">
         <div class="container py-5">
             <div class="text-center mb-5">
@@ -35,24 +35,24 @@
                 <h1>Contact For Any Query</h1>
             </div>
             <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="bg-secondary rounded p-5">
-                        <h4 class="text-center mb-4">Receive messages instantly with our PHP and Ajax contact form - available in the <a href="https://htmlcodex.com/downloading/?item=1427">Pro Version</a> only.</h4>
+                <div class="col-lg-6 col-md-8">
+                    <div class="bg-secondary rounded p-4">
+                        <h6 class="text-center mb-4 font-weight-normal">Have a question? Send us a message and we'll get back to you.</h6>
                         <form>
                             <div class="control-group mb-3">
-                                <input type="text" class="form-control border-0 p-4" placeholder="Your Name" />
+                                <input type="text" class="form-control border-0 p-3" placeholder="Your Name" />
                             </div>
                             <div class="control-group mb-3">
-                                <input type="email" class="form-control border-0 p-4" placeholder="Your Email" />
+                                <input type="email" class="form-control border-0 p-3" placeholder="Your Email" />
                             </div>
                             <div class="control-group mb-3">
-                                <input type="text" class="form-control border-0 p-4" placeholder="Subject" />
+                                <input type="text" class="form-control border-0 p-3" placeholder="Subject" />
                             </div>
                             <div class="control-group mb-3">
-                                <textarea class="form-control border-0 py-3 px-4" rows="5" placeholder="Message" ></textarea>
+                                <textarea class="form-control border-0 py-2 px-3" rows="3" placeholder="Message"></textarea>
                             </div>
                             <div class="text-center">
-                                <button class="btn btn-primary py-3 px-5" type="submit">Send Message</button>
+                                <button class="btn btn-primary py-2 px-4" type="submit">Send Message</button>
                             </div>
                         </form>
                     </div>
@@ -61,21 +61,19 @@
         </div>
     </div>
     <!-- Contact End -->
-      <div id="footer"></div>
+{% include 'footer.html' %}
 
     <!-- Back to Top -->
     <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="fa fa-angle-double-up"></i></a>
 
-
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
-    <script src="lib/easing/easing.min.js"></script>
-    <script src="lib/owlcarousel/owl.carousel.min.js"></script>
+    <script src="{{ url_for('static', filename='lib/easing/easing.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/owlcarousel/owl.carousel.min.js') }}"></script>
 
     <!-- Template Javascript -->
-    <script src="js/main.js"></script>
-    <script src="js/include.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 
 </html>

@@ -7,7 +7,7 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
     <!-- Favicon -->
-    <link href="img/favicon.ico" rel="icon">
+    <link href="{{ url_for('static', filename='img/favicon.ico') }}" rel="icon">
 
     <!-- Google Web Fonts -->
     <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -17,7 +17,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
 
     <!-- Customized Bootstrap Stylesheet (reuses your existing template styles) -->
-    <link href="css/style.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 
     <style>
         .registration-section {
@@ -142,7 +142,7 @@
 </head>
 
 <body class="registration-page">
-    <div id="header"></div>
+    {% include 'header.html' %}
 
     <!-- Registration Card -->
     <div class="container-fluid registration-section">
@@ -210,7 +210,7 @@
                                 <div class="text-center mt-3">
                                     <p class="mb-0 login-link-text">
                                         Already have an account?
-                                        <a href="login.html">Login</a>
+                                        <a href="{{ url_for('login') }}">Login</a>
                                     </p>
                                 </div>
                             </div>
@@ -234,7 +234,7 @@
                                 <i class="fa fa-check-circle text-success fa-3x mb-3"></i>
                                 <h5>Registration Successful!</h5>
                                 <p class="mb-0">You're all set. A confirmation has been sent to your email.</p>
-                                <a href="index.html" class="reg-submit-btn mt-4" style="display:inline-block; width:auto; padding:10px 24px;">Back to Home</a>
+                                <a href="{{ url_for('home') }}" class="reg-submit-btn mt-4" style="display:inline-block; width:auto; padding:10px 24px;">Back to Home</a>
                             </div>
 
                         </div>
@@ -244,7 +244,7 @@
         </div>
     </div>
 
-    <div id="footer"></div>
+    {% include 'footer.html' %}
 
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
@@ -315,22 +315,6 @@
             var college = $('#regCollege').val();
             var collegeCode = $('#regCollegeCode').val();
 
-            // TODO (backend): POST { name, email, mobile, city, college, collegeCode }
-            // to your /api/register endpoint, which should generate + email the OTP.
-            // fetch('/api/register', {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({ name, email, mobile, city, college, collegeCode })
-            // })
-            // .then(res => res.json())
-            // .then(data => {
-            //     if (data.success) {
-            //         showOtpStep(email);
-            //     } else {
-            //         $('#regFormError').text(data.message).show();
-            //     }
-            // });
-
             showOtpStep(email);
         });
 
@@ -347,31 +331,17 @@
 
             var otp = $('#otpInput').val();
 
-            // TODO (backend): POST { email, otp } to /api/verify-otp
-            // fetch('/api/verify-otp', { ... })
-            // .then(res => res.json())
-            // .then(data => {
-            //     if (data.success) {
-            //         $('#otpStep').hide();
-            //         $('#successStep').show();
-            //     } else {
-            //         $('#otpError').text('Invalid OTP. Please try again.').show();
-            //     }
-            // });
-
             $('#otpStep').hide();
             $('#successStep').show();
         });
 
         // ---- Resend OTP ----
         $('#resendOtpBtn').on('click', function () {
-            // TODO (backend): POST to /api/resend-otp with the email
             alert('OTP resent to ' + $('#otpEmailDisplay').text());
         });
 
     });
     </script>
-    <script src="js/include.js"></script>
 </body>
 
 </html>
