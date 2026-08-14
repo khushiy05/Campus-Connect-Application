@@ -18,30 +18,151 @@
 
     <!-- Customized Bootstrap Stylesheet (reuses your existing template styles) -->
     <link href="css/style.css" rel="stylesheet">
+
+    <style>
+        .registration-section {
+            padding-top: 40px;
+            padding-bottom: 40px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .reg-card {
+            max-width: 480px;
+            margin: 0 auto;
+            border-radius: 14px !important;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08) !important;
+            border: none !important;
+        }
+
+        .reg-card .card-header {
+            background: #fff !important;
+            border-bottom: 1px solid #eee;
+            padding: 30px 30px 20px 30px !important;
+        }
+
+        .reg-card .card-header h2 {
+            font-weight: 700;
+            color: #2b2b52;
+            font-size: 30px;
+            margin: 0;
+        }
+
+        .reg-card .card-body {
+            padding: 30px !important;
+        }
+
+        .reg-card .form-group label {
+            color: #4b4b63;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .reg-card .form-control {
+            border-radius: 8px;
+            border: 1px solid #dcdce6;
+            padding: 12px 14px;
+            height: auto;
+        }
+
+        .reg-card .form-control:focus {
+            border-color: #6c63ff;
+            box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.12);
+        }
+
+        .reg-card .form-control:disabled {
+            background-color: #f4f4f8;
+            color: #a0a0b2;
+            cursor: not-allowed;
+        }
+
+        .reg-card .city-note {
+            font-size: 12px;
+            color: #a0a0b2;
+            margin-top: 4px;
+        }
+
+        .reg-card #googleSignupBtn {
+            width: 100%;
+            border: 1px solid #dcdce6;
+            border-radius: 8px;
+            padding: 12px;
+            background: #fff;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .reg-card #googleSignupBtn:hover {
+            background: #f8f9fa;
+        }
+
+        .reg-card .reg-divider {
+            display: flex;
+            align-items: center;
+            color: #8a8ca3;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .reg-card .reg-divider hr {
+            border-top: 1px solid #e2e2ea;
+        }
+
+        .reg-card .reg-submit-btn {
+            width: 100%;
+            background: #fd7e14 !important;
+            border: none !important;
+            border-radius: 8px !important;
+            padding: 13px !important;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            color: #fff !important;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .reg-card .reg-submit-btn:hover {
+            background: #e8710c !important;
+            color: #fff !important;
+        }
+
+        .reg-card .login-link-text {
+            color: #6c757d;
+        }
+
+        .reg-card .login-link-text a {
+            color: #fd7e14;
+            font-weight: 600;
+            text-decoration: none;
+        }
+    </style>
 </head>
 
 <body class="registration-page">
     <div id="header"></div>
-    <!-- Registration Section -->
-    <div class="container-fluid registration-section" style="background-color:#f9f9f9;">
-    <div class="container">
+
+    <!-- Registration Card -->
+    <div class="container-fluid registration-section">
+        <div class="container">
             <div class="row justify-content-center">
                 <div class="col-lg-5">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-light text-center p-4">
-                            <h2 class="m-0">Campus Registration</h2>
+                    <div class="card reg-card">
+                        <div class="card-header text-center">
+                            <h2>Campus Registration</h2>
                         </div>
-                        <div class="card-body p-4">
+                        <div class="card-body">
 
-                            <!-- Google Sign Up -->
-                            <button type="button" id="googleSignupBtn" class="btn btn-outline-dark btn-block d-flex align-items-center justify-content-center py-3 mb-3">
-                                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google" style="height:20px; margin-right:10px;">
+                            <button type="button" id="googleSignupBtn" class="mb-3">
+                                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google" style="height:20px;">
                                 Continue with Google
                             </button>
 
-                            <div class="d-flex align-items-center my-4">
+                            <div class="reg-divider my-4">
                                 <hr class="flex-grow-1">
-                                <span class="px-3 text-muted">OR</span>
+                                <span class="px-3">OR</span>
                                 <hr class="flex-grow-1">
                             </div>
 
@@ -60,17 +181,38 @@
                                         <label>Mobile Number</label>
                                         <input type="tel" class="form-control" id="regMobile" required>
                                     </div>
+
+                                    <!-- City dropdown -->
+                                    <div class="form-group">
+                                        <label>City</label>
+                                        <select class="form-control" id="regCity" disabled required>
+                                            <option value="" selected disabled>City list coming soon</option>
+                                        </select>
+                                        <small class="form-text city-note" id="cityNote">City list will be enabled once uploaded.</small>
+                                    </div>
+
+                                    <!-- College Name: depends on City -->
                                     <div class="form-group">
                                         <label>College Name</label>
-                                        <input type="text" class="form-control" id="regCollege" required>
+                                        <input type="text" class="form-control" id="regCollege" list="collegeSuggestions"
+                                               placeholder="Select a city first" disabled required autocomplete="off">
+                                        <datalist id="collegeSuggestions"></datalist>
+                                        <small class="form-text city-note" id="collegeNote">Don't see your college? Just type its name — it'll be added.</small>
                                     </div>
+
                                     <div class="form-group">
                                         <label>College Code</label>
                                         <input type="text" class="form-control" id="regCollegeCode" required>
                                     </div>
                                     <div id="regFormError" class="text-danger small mb-2" style="display:none;"></div>
-                                    <button type="submit" class="btn btn-primary btn-block py-2">Submit & Send OTP</button>
+                                    <button type="submit" class="reg-submit-btn btn-block py-2">Submit & Send OTP</button>
                                 </form>
+                                <div class="text-center mt-3">
+                                    <p class="mb-0 login-link-text">
+                                        Already have an account?
+                                        <a href="login.html">Login</a>
+                                    </p>
+                                </div>
                             </div>
 
                             <!-- Step 2: OTP Verification (hidden initially) -->
@@ -82,7 +224,7 @@
                                         <input type="text" class="form-control" id="otpInput" maxlength="6" required>
                                     </div>
                                     <div id="otpError" class="text-danger small mb-2" style="display:none;"></div>
-                                    <button type="submit" class="btn btn-primary btn-block py-2">Verify & Register</button>
+                                    <button type="submit" class="reg-submit-btn btn-block py-2">Verify & Register</button>
                                     <button type="button" class="btn btn-link btn-block" id="resendOtpBtn">Resend OTP</button>
                                 </form>
                             </div>
@@ -92,42 +234,18 @@
                                 <i class="fa fa-check-circle text-success fa-3x mb-3"></i>
                                 <h5>Registration Successful!</h5>
                                 <p class="mb-0">You're all set. A confirmation has been sent to your email.</p>
-                                <a href="index.html" class="btn btn-primary mt-4">Back to Home</a>
+                                <a href="index.html" class="reg-submit-btn mt-4" style="display:inline-block; width:auto; padding:10px 24px;">Back to Home</a>
                             </div>
-<style>
-    .registration-page .card {
-        max-width: 600px;
-        margin: 0 auto;
-    }
 
-    .registration-page .card-body {
-        padding: 30px !important;
-    }
-
-    .registration-page .card-header {
-        padding: 20px !important;
-    }
-
-    .registration-page .card-header h2 {
-        font-size: 30px;
-    }
-        .registration-section {
-        padding-top: 25px;
-        padding-bottom: 25px;
-    }
-
-    .registration-section .card {
-        max-width: 600px;
-        margin: 0 auto;
-    }
-</style>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-<div id="footer"></div>
+
+    <div id="footer"></div>
+
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
@@ -135,14 +253,57 @@
     <script>
     $(document).ready(function () {
 
-        // Google Sign Up (placeholder — wire to real OAuth on backend)
+        // ---- City -> College dependent dropdown ----
+
+        // This will be populated from your Excel sheet, e.g.:
+        // { "Nagpur": ["GHRCE", "VNIT", "RCOEM", "YCCE"], "Pune": [...] }
+        var cityCollegeData = {};
+
+        function populateCityDropdown(data) {
+            cityCollegeData = data;
+            var $citySelect = $('#regCity');
+            $citySelect.empty().append('<option value="" selected disabled>Select your city</option>');
+
+            Object.keys(data).sort().forEach(function (city) {
+                $citySelect.append('<option value="' + city + '">' + city + '</option>');
+            });
+
+            $citySelect.prop('disabled', false);
+            $('#cityNote').hide();
+        }
+
+        $('#regCity').on('change', function () {
+            var selectedCity = $(this).val();
+            var $collegeInput = $('#regCollege');
+            var $collegeList = $('#collegeSuggestions');
+
+            $collegeList.empty();
+            $collegeInput.val('');
+
+            if (selectedCity && cityCollegeData[selectedCity]) {
+                cityCollegeData[selectedCity].forEach(function (college) {
+                    $collegeList.append('<option value="' + college + '"></option>');
+                });
+                $collegeInput.prop('disabled', false)
+                             .attr('placeholder', 'Select or type your college name');
+            } else {
+                $collegeInput.prop('disabled', true)
+                             .attr('placeholder', 'Select a city first');
+            }
+        });
+
+        // Once the Excel sheet is converted, call:
+        // populateCityDropdown({ "Nagpur": [...], "Pune": [...] });
+
+
+        // ---- Google Sign Up (placeholder — wire to real OAuth on backend) ----
         $('#googleSignupBtn').on('click', function () {
             // TODO (backend): redirect to your Google OAuth endpoint, e.g.
             // window.location.href = '/auth/google';
             alert('Google Sign-Up will be connected once the backend OAuth route is ready.');
         });
 
-        // Step 1 -> Step 2: Submit registration form
+        // ---- Step 1 -> Step 2: Submit registration form ----
         $('#registrationForm').on('submit', function (e) {
             e.preventDefault();
             $('#regFormError').hide();
@@ -150,15 +311,16 @@
             var name = $('#regName').val();
             var email = $('#regEmail').val();
             var mobile = $('#regMobile').val();
+            var city = $('#regCity').val();
             var college = $('#regCollege').val();
             var collegeCode = $('#regCollegeCode').val();
 
-            // TODO (backend): POST { name, email, mobile, college, collegeCode }
+            // TODO (backend): POST { name, email, mobile, city, college, collegeCode }
             // to your /api/register endpoint, which should generate + email the OTP.
             // fetch('/api/register', {
             //     method: 'POST',
             //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({ name, email, mobile, college, collegeCode })
+            //     body: JSON.stringify({ name, email, mobile, city, college, collegeCode })
             // })
             // .then(res => res.json())
             // .then(data => {
@@ -178,7 +340,7 @@
             $('#otpStep').show();
         }
 
-        // Step 2 -> Step 3: Verify OTP
+        // ---- Step 2 -> Step 3: Verify OTP ----
         $('#otpForm').on('submit', function (e) {
             e.preventDefault();
             $('#otpError').hide();
@@ -201,19 +363,15 @@
             $('#successStep').show();
         });
 
-        // Resend OTP
+        // ---- Resend OTP ----
         $('#resendOtpBtn').on('click', function () {
             // TODO (backend): POST to /api/resend-otp with the email
             alert('OTP resent to ' + $('#otpEmailDisplay').text());
         });
 
     });
-
-    
     </script>
     <script src="js/include.js"></script>
-        
-        
 </body>
 
 </html>

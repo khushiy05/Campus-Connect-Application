@@ -32,13 +32,24 @@
                 <h5 class="text-primary text-uppercase mb-4" style="letter-spacing: 5px;">INVITE US</h5>
                 <p>Never miss what's happening on campus. From mess menus to placement drives, CampusConnect AI keeps every student in the loop one subscription, zero missed updates.</p>
                 <div class="w-100">
-                    <div class="input-group">
-                        <input type="text" class="form-control border-light" style="padding: 30px;" placeholder="Your Email Address">
-                        <div class="input-group-append">
-                            <button class="btn btn-primary px-4">SEND</button>
-                        </div>
-                    </div>
-                </div>
+    <form action="/invite" method="POST">
+        <div class="input-group">
+            <input 
+                type="email" 
+                name="email"
+                class="form-control border-light" 
+                style="padding: 30px;" 
+                placeholder="Your Email Address"
+                required
+            >
+            <div class="input-group-append">
+                <button type="submit" class="btn btn-primary px-4">
+                    SEND
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
             </div>
         </div>
     </div>

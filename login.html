@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Connect - Login</title>
+
+<!-- Bootstrap 4.4.1 -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+<!-- Font Awesome 5.10.0 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Your site's stylesheet -->
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #f5f6fa;
+  }
+
+  .login-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 15px;
+  }
+
+  .login-card {
+    background: #ffffff;
+    max-width: 480px;
+    width: 100%;
+    border-radius: 14px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    padding: 40px;
+  }
+
+  .login-card h2 {
+    font-weight: 700;
+    color: #2b2b52;
+    margin-bottom: 0;
+  }
+
+  .login-divider {
+    display: flex;
+    align-items: center;
+    margin: 22px 0;
+    color: #8a8ca3;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .login-divider::before,
+  .login-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #e2e2ea;
+  }
+  .login-divider::before { margin-right: 12px; }
+  .login-divider::after { margin-left: 12px; }
+
+  .form-group label {
+    color: #4b4b63;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  .form-control {
+    border-radius: 8px;
+    border: 1px solid #dcdce6;
+    padding: 12px 14px;
+    height: auto;
+  }
+  .form-control:focus {
+    border-color: #6c63ff;
+    box-shadow: 0 0 0 3px rgba(108,99,255,0.12);
+  }
+
+  .btn-google {
+    width: 100%;
+    border: 1px solid #dcdce6;
+    border-radius: 8px;
+    padding: 12px;
+    background: #fff;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .btn-google:hover { background: #f8f9fa; }
+
+  .btn-login {
+    width: 100%;
+    background: #fd7e14;
+    border: none;
+    border-radius: 8px;
+    padding: 13px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.3px;
+  }
+  .btn-login:hover { background: #e8710c; color: #fff; }
+
+  .password-wrapper {
+    position: relative;
+  }
+  .password-toggle {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #8a8ca3;
+  }
+
+  .signup-link {
+    color: #6c757d;
+  }
+  .signup-link a {
+    color: #fd7e14;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  #loginError {
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="header"></div>
+
+<div class="login-wrapper">
+  <div class="login-card">
+    <h2>Login</h2>
+    <hr>
+    
+
+    <div class="alert alert-danger" id="loginError" role="alert"></div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="loginEmail">Email</label>
+        <input type="email" class="form-control" id="loginEmail" placeholder="you@example.com" required>
+      </div>
+
+      <div class="form-group">
+        <label for="loginPassword">Password</label>
+        <div class="password-wrapper">
+          <input type="password" class="form-control" id="loginPassword" placeholder="Enter your password" required>
+          <i class="fas fa-eye password-toggle" id="togglePassword"></i>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="form-check">
+          <input type="checkbox" class="form-check-input" id="rememberMe">
+          <label class="form-check-label" for="rememberMe" style="color:#6c757d; font-size:14px;">Remember me</label>
+        </div>
+        <a href="#" style="color:#6c63ff; font-size:14px; text-decoration:none;">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="btn-login">Login</button>
+    </form>
+
+    <div class="text-center mt-4">
+      <p class="mb-0 signup-link">
+        Don't have an account?
+        <a href="registration.html">Register</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<div id="footer"></div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+<script src="include.js"></script>
+
+<script>
+  // Show/hide password
+  const togglePassword = document.getElementById('togglePassword');
+  const passwordField = document.getElementById('loginPassword');
+  togglePassword.addEventListener('click', function () {
+    const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordField.setAttribute('type', type);
+    this.classList.toggle('fa-eye');
+    this.classList.toggle('fa-eye-slash');
+  });
+
+  // Basic login form handler (replace with your real auth logic)
+  const loginForm = document.getElementById('loginForm');
+  const loginError = document.getElementById('loginError');
+
+  loginForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    loginError.style.display = 'none';
+
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+
+    if (!email || !password) {
+      loginError.textContent = 'Please enter both email and password.';
+      loginError.style.display = 'block';
+      return;
+    }
+
+    // TODO: Replace this with your actual login API / SQL check
+    console.log('Logging in with:', email, password);
+
+    // Example placeholder success flow:
+    // window.location.href = "index.html";
+    alert('Login submitted! Connect this to your backend/auth to complete the flow.');
+  });
+
+  // Google Sign-In placeholder — wire this to your existing Google OAuth client ID
+  document.getElementById('googleLoginBtn').addEventListener('click', function () {
+    alert('Connect this button to your existing Google Sign-In flow (same Client ID as registration.html).');
+  });
+</script>
+
+</body>
+</html>
