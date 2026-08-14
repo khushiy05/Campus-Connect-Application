@@ -2,6 +2,8 @@ from flask import Flask, request, render_template, Response
 from functools import wraps
 import pyodbc
 import smtplib
+import json
+import os
 from email.mime.text import MIMEText
 
 app = Flask(__name__)
@@ -276,6 +278,55 @@ def view_subscribers():
     </html>
     """
     return html
+
+
+CITIES_JSON_PATH = os.path.join(app.root_path, "static", "data", "cities_by_state.json")
+
+@app.route('/api/cities', methods=['GET'])
+def get_cities():
+    with open(CITIES_JSON_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data
+
+
+@app.route('/api/register', methods=['POST'])
+def register_student():
+    data = request.get_json()
+
+    name = data.get('name')
+    email = data.get('email')
+    mobile = data.get('mobile')
+    city = data.get('city')
+    college_name = data.get('college_name')
+    college_code = data.get('college_code')
+
+    if not name or not email or not mobile or not city or not college_name or not college_code:
+        return {"success": False, "error": "Missing required fields"}, 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT 1 FROM collegedb WHERE Email = ?", email)
+        if cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return {"success": False, "error": "This email is already registered."}, 409
+
+        cursor.execute(
+            "INSERT INTO collegedb (Name, Email, MobileNo, City, CollegeName, CollegeCode) VALUES (?, ?, ?, ?, ?, ?)",
+            (name, email, mobile, city, college_name, college_code)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"success": True}, 201
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+
 
 
 if __name__ == '__main__':

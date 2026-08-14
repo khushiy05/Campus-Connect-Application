@@ -16,8 +16,12 @@
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
 
-    <!-- Customized Bootstrap Stylesheet (reuses your existing template styles) -->
+    <!-- Customized Bootstrap Stylesheet -->
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+
+    <!-- Google Sign-In + EmailJS -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
     <style>
         .registration-section {
@@ -99,6 +103,11 @@
             background: #f8f9fa;
         }
 
+        .reg-card #googleSignupBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .reg-card .reg-divider {
             display: flex;
             align-items: center;
@@ -129,6 +138,11 @@
             color: #fff !important;
         }
 
+        .reg-card .reg-submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .reg-card .login-link-text {
             color: #6c757d;
         }
@@ -137,6 +151,27 @@
             color: #fd7e14;
             font-weight: 600;
             text-decoration: none;
+        }
+
+        .reg-card .send-error, .reg-card .otp-info {
+            font-size: 13px;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .reg-card .send-error {
+            background: #fff0ef;
+            border: 1px solid #f3c6c2;
+            color: #a1352d;
+            display: none;
+        }
+
+        .reg-card .otp-info {
+            background: #eef6ff;
+            border: 1px solid #cfe6ff;
+            color: #2c5a8a;
         }
     </style>
 </head>
@@ -182,16 +217,16 @@
                                         <input type="tel" class="form-control" id="regMobile" required>
                                     </div>
 
-                                    <!-- City dropdown -->
+                                    <!-- City dropdown, grouped by state, loaded from /api/cities -->
                                     <div class="form-group">
                                         <label>City</label>
                                         <select class="form-control" id="regCity" disabled required>
-                                            <option value="" selected disabled>City list coming soon</option>
+                                            <option value="" selected disabled>Loading cities...</option>
                                         </select>
-                                        <small class="form-text city-note" id="cityNote">City list will be enabled once uploaded.</small>
+                                        <small class="form-text city-note" id="cityNote">Loading city list...</small>
                                     </div>
 
-                                    <!-- College Name: depends on City -->
+                                    <!-- College Name: dependent on City -->
                                     <div class="form-group">
                                         <label>College Name</label>
                                         <input type="text" class="form-control" id="regCollege" list="collegeSuggestions"
@@ -205,7 +240,7 @@
                                         <input type="text" class="form-control" id="regCollegeCode" required>
                                     </div>
                                     <div id="regFormError" class="text-danger small mb-2" style="display:none;"></div>
-                                    <button type="submit" class="reg-submit-btn btn-block py-2">Submit & Send OTP</button>
+                                    <button type="submit" class="reg-submit-btn btn-block py-2" id="regSubmitBtn">Submit &amp; Send OTP</button>
                                 </form>
                                 <div class="text-center mt-3">
                                     <p class="mb-0 login-link-text">
@@ -218,14 +253,18 @@
                             <!-- Step 2: OTP Verification (hidden initially) -->
                             <div id="otpStep" style="display:none;">
                                 <p class="mb-3">An OTP has been sent to <strong id="otpEmailDisplay"></strong></p>
+                                <div class="otp-info">
+                                    📧 Check your inbox (and spam/promotions folder) for an email titled
+                                    <b>"OTP for your Campus Registration authentication"</b>. It can take a few seconds to arrive.
+                                </div>
                                 <form id="otpForm">
                                     <div class="form-group">
                                         <label>Enter OTP</label>
                                         <input type="text" class="form-control" id="otpInput" maxlength="6" required>
                                     </div>
                                     <div id="otpError" class="text-danger small mb-2" style="display:none;"></div>
-                                    <button type="submit" class="reg-submit-btn btn-block py-2">Verify & Register</button>
-                                    <button type="button" class="btn btn-link btn-block" id="resendOtpBtn">Resend OTP</button>
+                                    <button type="submit" class="reg-submit-btn btn-block py-2" id="otpSubmitBtn">Verify &amp; Register</button>
+                                    <button type="button" class="btn btn-link btn-block" id="resendOtpBtn" disabled>Resend OTP (<span id="resendTimer">30</span>s)</button>
                                 </form>
                             </div>
 
@@ -253,23 +292,71 @@
     <script>
     $(document).ready(function () {
 
-        // ---- City -> College dependent dropdown ----
+        // ---- Google Sign-In ----
+        var GOOGLE_CLIENT_ID = "783150146725-si2g0g9u233d9q2jlcfg556giccfmkvg.apps.googleusercontent.com";
 
-        // This will be populated from your Excel sheet, e.g.:
-        // { "Nagpur": ["GHRCE", "VNIT", "RCOEM", "YCCE"], "Pune": [...] }
-        var cityCollegeData = {};
+        function handleGoogleCredential(response) {
+            var payload = JSON.parse(atob(response.credential.split('.')[1]));
+            $('#regName').val(payload.name || '');
+            $('#regEmail').val(payload.email || '');
+            $('#regMobile').focus();
+        }
+
+        if (window.google && google.accounts && google.accounts.id) {
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleGoogleCredential
+            });
+        }
+
+        $('#googleSignupBtn').on('click', function () {
+            if (window.google && google.accounts && google.accounts.id) {
+                google.accounts.id.prompt();
+            } else {
+                alert('Google Sign-In is still loading, please try again in a moment.');
+            }
+        });
+
+        // ---- EmailJS config ----
+        var EMAILJS_PUBLIC_KEY  = "oTqk1LMgYJlwBhX8J";
+        var EMAILJS_SERVICE_ID  = "service_6y8m99h";
+        var EMAILJS_TEMPLATE_ID = "template_1atdh9g";
+        emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+        var currentOtp = "";
+        var resendInterval = null;
+        var pendingRegistration = null;
+
+        // ---- City -> College dependent dropdown ----
+        var cityCollegeData = {
+            "Nagpur": ["GHRCE", "VNIT", "RCOEM", "YCCE"]
+        };
+
+        function loadCities() {
+            $.getJSON("/api/cities")
+                .done(function (data) {
+                    populateCityDropdown(data);
+                })
+                .fail(function () {
+                    $('#regCity').empty().append('<option value="" selected disabled>Failed to load cities</option>');
+                    $('#cityNote').text('Could not load city list. Please refresh the page.');
+                });
+        }
 
         function populateCityDropdown(data) {
-            cityCollegeData = data;
             var $citySelect = $('#regCity');
             $citySelect.empty().append('<option value="" selected disabled>Select your city</option>');
 
-            Object.keys(data).sort().forEach(function (city) {
-                $citySelect.append('<option value="' + city + '">' + city + '</option>');
+            Object.keys(data).sort().forEach(function (state) {
+                var $group = $('<optgroup>').attr('label', state);
+                data[state].forEach(function (city) {
+                    $group.append($('<option>').val(city).text(city));
+                });
+                $citySelect.append($group);
             });
 
             $citySelect.prop('disabled', false);
-            $('#cityNote').hide();
+            $('#cityNote').text('Don\'t see your city? It will still be saved as typed once colleges are added for it.');
         }
 
         $('#regCity').on('change', function () {
@@ -279,65 +366,151 @@
 
             $collegeList.empty();
             $collegeInput.val('');
+            $collegeInput.prop('disabled', false);
 
             if (selectedCity && cityCollegeData[selectedCity]) {
                 cityCollegeData[selectedCity].forEach(function (college) {
                     $collegeList.append('<option value="' + college + '"></option>');
                 });
-                $collegeInput.prop('disabled', false)
-                             .attr('placeholder', 'Select or type your college name');
+                $collegeInput.attr('placeholder', 'Select or type your college name');
             } else {
-                $collegeInput.prop('disabled', true)
-                             .attr('placeholder', 'Select a city first');
+                $collegeInput.attr('placeholder', 'Type your college name');
             }
         });
 
-        // Once the Excel sheet is converted, call:
-        // populateCityDropdown({ "Nagpur": [...], "Pune": [...] });
+        loadCities();
 
-
-        // ---- Google Sign Up (placeholder — wire to real OAuth on backend) ----
-        $('#googleSignupBtn').on('click', function () {
-            // TODO (backend): redirect to your Google OAuth endpoint, e.g.
-            // window.location.href = '/auth/google';
-            alert('Google Sign-Up will be connected once the backend OAuth route is ready.');
-        });
-
-        // ---- Step 1 -> Step 2: Submit registration form ----
+        // ---- Step 1: Submit registration form, send real OTP via EmailJS ----
         $('#registrationForm').on('submit', function (e) {
             e.preventDefault();
             $('#regFormError').hide();
 
-            var name = $('#regName').val();
-            var email = $('#regEmail').val();
-            var mobile = $('#regMobile').val();
+            var name = $('#regName').val().trim();
+            var email = $('#regEmail').val().trim();
+            var mobile = $('#regMobile').val().trim();
             var city = $('#regCity').val();
-            var college = $('#regCollege').val();
-            var collegeCode = $('#regCollegeCode').val();
+            var college = $('#regCollege').val().trim();
+            var collegeCode = $('#regCollegeCode').val().trim();
 
-            showOtpStep(email);
+            if (!name || !email || !mobile || !city || !college || !collegeCode) {
+                $('#regFormError').text('Please fill in all fields.').show();
+                return;
+            }
+
+            pendingRegistration = {
+                name: name, email: email, mobile: mobile,
+                city: city, college_name: college, college_code: collegeCode
+            };
+
+            currentOtp = String(Math.floor(100000 + Math.random() * 900000));
+            sendOtpEmail(email, name, currentOtp);
         });
+
+        function sendOtpEmail(email, name, otp) {
+            var $btn = $('#regSubmitBtn');
+            $btn.prop('disabled', true).text('Sending OTP...');
+
+            var expiry = new Date(Date.now() + 10 * 60 * 1000);
+            var expiryStr = expiry.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+
+            var templateParams = {
+                email: email,
+                passcode: otp,
+                time: expiryStr,
+                to_name: name
+            };
+
+            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+                .then(function () {
+                    $btn.prop('disabled', false).text('Submit & Send OTP');
+                    showOtpStep(email);
+                })
+                .catch(function (err) {
+                    $btn.prop('disabled', false).text('Submit & Send OTP');
+                    console.error('EmailJS error:', err);
+                    $('#regFormError').text(
+                        'Could not send the OTP email (' + (err && err.text ? err.text : 'unknown error') + '). Please try again.'
+                    ).show();
+                });
+        }
 
         function showOtpStep(email) {
             $('#otpEmailDisplay').text(email);
+            $('#otpInput').val('');
             $('#regFormStep').hide();
             $('#otpStep').show();
+            startResendTimer();
         }
 
-        // ---- Step 2 -> Step 3: Verify OTP ----
+        function startResendTimer() {
+            var seconds = 30;
+            var $resendBtn = $('#resendOtpBtn');
+            var $timer = $('#resendTimer');
+
+            $resendBtn.prop('disabled', true);
+            clearInterval(resendInterval);
+            resendInterval = setInterval(function () {
+                seconds--;
+                $timer.text(seconds);
+                if (seconds <= 0) {
+                    clearInterval(resendInterval);
+                    $resendBtn.prop('disabled', false).html('Resend OTP');
+                }
+            }, 1000);
+        }
+
+        // ---- Step 2: Verify OTP, then save to SQL Server ----
         $('#otpForm').on('submit', function (e) {
             e.preventDefault();
             $('#otpError').hide();
 
-            var otp = $('#otpInput').val();
+            var otp = $('#otpInput').val().trim();
 
-            $('#otpStep').hide();
-            $('#successStep').show();
+            if (otp.length < 6) {
+                $('#otpError').text('Please enter all 6 digits.').show();
+                return;
+            }
+
+            if (otp !== currentOtp) {
+                $('#otpError').text('Incorrect OTP. Please try again.').show();
+                return;
+            }
+
+            if (!pendingRegistration) {
+                $('#otpError').text('Something went wrong. Please restart registration.').show();
+                return;
+            }
+
+            clearInterval(resendInterval);
+
+            var $btn = $('#otpSubmitBtn');
+            $btn.prop('disabled', true).text('Registering...');
+
+            $.ajax({
+                url: '/api/register',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(pendingRegistration)
+            }).done(function () {
+                $('#otpStep').hide();
+                $('#successStep').show();
+            }).fail(function (xhr) {
+                var msg = 'Registration failed. Please try again.';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    msg = xhr.responseJSON.error;
+                }
+                $('#otpError').text(msg).show();
+            }).always(function () {
+                $btn.prop('disabled', false).text('Verify & Register');
+            });
         });
 
         // ---- Resend OTP ----
         $('#resendOtpBtn').on('click', function () {
-            alert('OTP resent to ' + $('#otpEmailDisplay').text());
+            if ($(this).prop('disabled') || !pendingRegistration) return;
+            currentOtp = String(Math.floor(100000 + Math.random() * 900000));
+            $('#otpError').hide();
+            sendOtpEmail(pendingRegistration.email, pendingRegistration.name, currentOtp);
         });
 
     });
