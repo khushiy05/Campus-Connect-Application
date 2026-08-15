@@ -173,6 +173,32 @@
             border: 1px solid #cfe6ff;
             color: #2c5a8a;
         }
+
+        /* Password field with show/hide toggle */
+        .reg-card .password-wrapper {
+            position: relative;
+        }
+
+        .reg-card .password-wrapper .form-control {
+            padding-right: 44px;
+        }
+
+        .reg-card .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #a0a0b2;
+            cursor: pointer;
+            padding: 0;
+            font-size: 16px;
+        }
+
+        .reg-card .toggle-password:hover {
+            color: #6c63ff;
+        }
     </style>
 </head>
 
@@ -223,7 +249,6 @@
                                         <select class="form-control" id="regCity" disabled required>
                                             <option value="" selected disabled>Loading cities...</option>
                                         </select>
-                                        <small class="form-text city-note" id="cityNote">Loading city list...</small>
                                     </div>
 
                                     <!-- College Name: dependent on City -->
@@ -232,13 +257,24 @@
                                         <input type="text" class="form-control" id="regCollege" list="collegeSuggestions"
                                                placeholder="Select a city first" disabled required autocomplete="off">
                                         <datalist id="collegeSuggestions"></datalist>
-                                        <small class="form-text city-note" id="collegeNote">Don't see your college? Just type its name — it'll be added.</small>
                                     </div>
 
                                     <div class="form-group">
                                         <label>College Code</label>
                                         <input type="text" class="form-control" id="regCollegeCode" required>
                                     </div>
+
+                                    <!-- Password field with show/hide toggle -->
+                                    <div class="form-group">
+                                        <label>Password</label>
+                                        <div class="password-wrapper">
+                                            <input type="password" class="form-control" id="regPassword" required minlength="6">
+                                            <button type="button" class="toggle-password" id="togglePassword" tabindex="-1">
+                                                <i class="fa fa-eye" id="toggleIcon"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     <div id="regFormError" class="text-danger small mb-2" style="display:none;"></div>
                                     <button type="submit" class="reg-submit-btn btn-block py-2" id="regSubmitBtn">Submit &amp; Send OTP</button>
                                 </form>
@@ -313,6 +349,19 @@
     window.location.href = '/auth/google';
 });
 
+        // ---- Password show/hide toggle ----
+        $('#togglePassword').on('click', function () {
+            var $input = $('#regPassword');
+            var $icon = $('#toggleIcon');
+            if ($input.attr('type') === 'password') {
+                $input.attr('type', 'text');
+                $icon.removeClass('fa-eye').addClass('fa-eye-slash');
+            } else {
+                $input.attr('type', 'password');
+                $icon.removeClass('fa-eye-slash').addClass('fa-eye');
+            }
+        });
+
         // ---- EmailJS config ----
         var EMAILJS_PUBLIC_KEY  = "oTqk1LMgYJlwBhX8J";
         var EMAILJS_SERVICE_ID  = "service_6y8m99h";
@@ -335,7 +384,6 @@
                 })
                 .fail(function () {
                     $('#regCity').empty().append('<option value="" selected disabled>Failed to load cities</option>');
-                    $('#cityNote').text('Could not load city list. Please refresh the page.');
                 });
         }
 
@@ -352,7 +400,6 @@
             });
 
             $citySelect.prop('disabled', false);
-            $('#cityNote').text('Don\'t see your city? It will still be saved as typed once colleges are added for it.');
         }
 
         $('#regCity').on('change', function () {
@@ -387,15 +434,22 @@
             var city = $('#regCity').val();
             var college = $('#regCollege').val().trim();
             var collegeCode = $('#regCollegeCode').val().trim();
+            var password = $('#regPassword').val();
 
-            if (!name || !email || !mobile || !city || !college || !collegeCode) {
+            if (!name || !email || !mobile || !city || !college || !collegeCode || !password) {
                 $('#regFormError').text('Please fill in all fields.').show();
+                return;
+            }
+
+            if (password.length < 6) {
+                $('#regFormError').text('Password must be at least 6 characters.').show();
                 return;
             }
 
             pendingRegistration = {
                 name: name, email: email, mobile: mobile,
-                city: city, college_name: college, college_code: collegeCode
+                city: city, college_name: college, college_code: collegeCode,
+                password: password
             };
 
             currentOtp = String(Math.floor(100000 + Math.random() * 900000));
@@ -434,6 +488,8 @@
             $('#otpEmailDisplay').text(email);
             $('#otpInput').val('');
             $('#regFormStep').hide();
+            $('.reg-divider').hide();
+            $('#googleSignupBtn').hide();
             $('#otpStep').show();
             startResendTimer();
         }
