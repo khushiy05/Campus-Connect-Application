@@ -1,5 +1,6 @@
 from flask import Flask, request, render_template, Response
 from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
 import pyodbc
 import smtplib
 import json
@@ -299,9 +300,13 @@ def register_student():
     city = data.get('city')
     college_name = data.get('college_name')
     college_code = data.get('college_code')
+    password = data.get('password')
 
-    if not name or not email or not mobile or not city or not college_name or not college_code:
+    if not name or not email or not mobile or not city or not college_name or not college_code or not password:
         return {"success": False, "error": "Missing required fields"}, 400
+
+    if len(password) < 6:
+        return {"success": False, "error": "Password must be at least 6 characters."}, 400
 
     try:
         conn = get_db_connection()
@@ -313,9 +318,13 @@ def register_student():
             conn.close()
             return {"success": False, "error": "This email is already registered."}, 409
 
+        # Hash the password before storing — never store plain text
+        hashed_password = generate_password_hash(password)
+
         cursor.execute(
-            "INSERT INTO collegedb (Name, Email, MobileNo, City, CollegeName, CollegeCode) VALUES (?, ?, ?, ?, ?, ?)",
-            (name, email, mobile, city, college_name, college_code)
+            "INSERT INTO collegedb (Name, Email, MobileNo, City, CollegeName, CollegeCode, Password) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (name, email, mobile, city, college_name, college_code, hashed_password)
         )
         conn.commit()
         cursor.close()
@@ -326,7 +335,50 @@ def register_student():
         return {"success": False, "error": str(e)}, 500
 
 
+@app.route('/api/login', methods=['POST'])
+def login_student():
+    data = request.get_json()
 
+    email = data.get('email')
+    password = data.get('password')
+
+    if not email or not password:
+        return {"success": False, "error": "Email and password are required."}, 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT ID, Name, Email, Password FROM collegedb WHERE Email = ?",
+            email
+        )
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if not row:
+            return {"success": False, "error": "No account found with this email."}, 404
+
+        stored_hash = row.Password
+        if not stored_hash:
+            return {"success": False, "error": "This account has no password set. Please contact support."}, 400
+
+        if not check_password_hash(stored_hash, password):
+            return {"success": False, "error": "Incorrect password."}, 401
+
+        return {
+            "success": True,
+            "user": {
+                "id": row.ID,
+                "name": row.Name,
+                "email": row.Email
+            }
+        }, 200
+
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
 
 
 if __name__ == '__main__':
