@@ -352,12 +352,8 @@
         }
 
         $('#googleSignupBtn').on('click', function () {
-            if (window.google && google.accounts && google.accounts.id) {
-                google.accounts.id.prompt();
-            } else {
-                alert('Google Sign-In is still loading, please try again in a moment.');
-            }
-        });
+    window.location.href = '/auth/google';
+});
 
         // ---- Password show/hide toggle ----
         $('#togglePassword').on('click', function () {

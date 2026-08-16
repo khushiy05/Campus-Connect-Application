@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, Response
+from flask import Flask, request, render_template, Response, redirect, url_for, session
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import pyodbc
@@ -6,24 +6,39 @@ import smtplib
 import json
 import os
 from email.mime.text import MIMEText
+from authlib.integrations.flask_client import OAuth
+from dotenv import load_dotenv
 
+load_dotenv()
 app = Flask(__name__)
 
-EMAIL_SENDER = "khushiyewale150@gmail.com"
-EMAIL_PASSWORD = "aweejzlvecclpopp"
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-change-this')
+
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=os.environ.get('GOOGLE_CLIENT_ID'),
+    client_secret=os.environ.get('GOOGLE_CLIENT_SECRET'),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'}
+)
+
+
+EMAIL_SENDER = os.environ.get("EMAIL_SENDER")
+EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
 
 # Admin login credentials
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "choose-a-strong-password"   # change this
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 
 
 def get_db_connection():
     conn = pyodbc.connect(
         "DRIVER={ODBC Driver 17 for SQL Server};"
-        "SERVER=103.159.239.101;"
-        "DATABASE=nrpaytrack;"
-        "UID=nrpaytrackuser;"
-        "PWD=u8z6mM5_7ycx;"
+        f"SERVER={os.environ.get('DB_SERVER')};"
+        f"DATABASE={os.environ.get('DB_NAME')};"
+        f"UID={os.environ.get('DB_USER')};"
+        f"PWD={os.environ.get('DB_PASSWORD')};"
     )
     return conn
 
@@ -205,6 +220,28 @@ def advertisement():
 @app.route('/contact.html')
 def contact():
     return render_template('contact.html')
+
+
+@app.route('/auth/google')
+def auth_google():
+    redirect_uri = url_for('auth_google_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+
+@app.route('/auth/google/callback')
+def auth_google_callback():
+    token = google.authorize_access_token()
+    user_info = token.get('userinfo')
+
+    if not user_info:
+        return redirect('/registration.html?error=google_failed')
+
+    session['user_email'] = user_info.get('email')
+    session['user_name'] = user_info.get('name')
+
+    print(f"Signed in via Google: {user_info.get('name')} ({user_info.get('email')})")
+
+    return redirect('/registration.html?google_success=1')
 
 
 @app.route('/registration.html')
