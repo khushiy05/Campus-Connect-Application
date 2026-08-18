@@ -427,7 +427,7 @@ def login_student():
             return {
                 "success": True,
                 "role": "admin",
-                "redirect": "/static/admin/index.html"
+                "redirect": "http://localhost:5173/"
             }, 200
 
         return {
