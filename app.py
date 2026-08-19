@@ -8,9 +8,11 @@ import os
 from email.mime.text import MIMEText
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
+from flask_cors import CORS
 
 load_dotenv()
 app = Flask(__name__)
+CORS(app)
 
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-change-this')
 
@@ -373,6 +375,7 @@ def register_student():
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
 
+
 @app.route('/api/login', methods=['POST'])
 def login_student():
     data = request.get_json()
@@ -444,6 +447,26 @@ def login_student():
             "success": False,
             "error": "Database connection error."
         }, 500
+
+
+@app.route('/api/enquiries', methods=['GET'])
+def get_enquiries():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT ID, Name, Email, [Mobile No.], Message FROM Enqdb")
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        data = [
+            {"id": r[0], "name": r[1], "email": r[2], "mobile": r[3], "message": r[4]}
+            for r in rows
+        ]
+        return {"success": True, "data": data}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
 
 
 if __name__ == '__main__':

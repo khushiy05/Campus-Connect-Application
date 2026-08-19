@@ -15,13 +15,13 @@ const router = createRouter({
       },
     },
     {
-      path: '/calendar',
-      name: 'Calendar',
-      component: () => import('../views/Others/Calendar.vue'),
+      path: '/enquiry',
+      name: 'Enquiry',
+      component: () => import('../views/Others/Enquiry.vue'),
       meta: {
-        title: 'Calendar',
-      },
-    },
+    title: 'Enquiry',
+  },
+},
     {
       path: '/profile',
       name: 'Profile',

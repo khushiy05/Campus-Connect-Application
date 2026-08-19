@@ -248,22 +248,14 @@ const menuGroups = [
         subItems: [{ name: "Ecommerce", path: "/", pro: false }],
       },
       {
-        icon: CalenderIcon,
-        name: "Calendar",
-        path: "/calendar",
+        icon: ListIcon,
+        name: "Enquiry",
+        path: "/enquiry",
       },
       {
         icon: UserCircleIcon,
         name: "User Profile",
         path: "/profile",
-      },
-
-      {
-        name: "Enquiry",
-        icon: ListIcon,
-        subItems: [
-          { name: "Form Elements", path: "/form-elements", pro: false },
-        ],
       },
       {
         name: "Campus Registration",
