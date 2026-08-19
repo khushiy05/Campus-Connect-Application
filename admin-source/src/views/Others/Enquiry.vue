@@ -20,6 +20,7 @@
                 <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Email</th>
                 <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Mobile No.</th>
                 <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Message</th>
+                <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -33,6 +34,15 @@
                 <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ row.email }}</td>
                 <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ row.mobile }}</td>
                 <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ row.message }}</td>
+                <td class="px-4 py-3 text-sm">
+                  <button
+                    @click="deleteEnquiry(row.id)"
+                    :disabled="deletingId === row.id"
+                    class="px-3 py-1.5 rounded-md bg-error-500 text-white text-xs font-medium hover:bg-error-600 disabled:opacity-50"
+                  >
+                    {{ deletingId === row.id ? "Deleting..." : "Delete" }}
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -57,6 +67,7 @@ const currentPageTitle = ref("Enquiry");
 const enquiries = ref([]);
 const loading = ref(true);
 const error = ref(null);
+const deletingId = ref(null);
 
 onMounted(async () => {
   try {
@@ -74,4 +85,26 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+async function deleteEnquiry(id) {
+  if (!confirm("Are you sure you want to delete this enquiry?")) return;
+
+  deletingId.value = id;
+  try {
+    const res = await fetch(`http://127.0.0.1:5000/api/enquiries/${id}`, {
+      method: "DELETE",
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      enquiries.value = enquiries.value.filter((row) => row.id !== id);
+    } else {
+      alert(data.error || "Failed to delete enquiry.");
+    }
+  } catch (e) {
+    alert("Unable to connect to the server.");
+  } finally {
+    deletingId.value = null;
+  }
+}
 </script>

@@ -466,6 +466,24 @@ def get_enquiries():
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
 
+@app.route('/api/enquiries/<int:enquiry_id>', methods=['DELETE'])
+def delete_enquiry(enquiry_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM Enqdb WHERE ID = ?", (enquiry_id,))
+        conn.commit()
+        deleted = cursor.rowcount
+        cursor.close()
+        conn.close()
 
+        if deleted == 0:
+            return {"success": False, "error": "Enquiry not found."}, 404
+
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+    
 if __name__ == '__main__':
     app.run(debug=True)
