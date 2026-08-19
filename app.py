@@ -373,7 +373,6 @@ def register_student():
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
 
-
 @app.route('/api/login', methods=['POST'])
 def login_student():
     data = request.get_json()
@@ -382,42 +381,69 @@ def login_student():
     password = data.get('password')
 
     if not email or not password:
-        return {"success": False, "error": "Email and password are required."}, 400
+        return {
+            "success": False,
+            "error": "Email and password are required."
+        }, 400
 
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
 
+        # Check the login credentials in logindb
         cursor.execute(
-            "SELECT ID, Name, Email, Password FROM collegedb WHERE Email = ?",
-            email
+            """
+            SELECT login_id, email, password, role
+            FROM logindb
+            WHERE email = ?
+            """,
+            (email,)
         )
+
         row = cursor.fetchone()
+
         cursor.close()
         conn.close()
 
+        # Email not found
         if not row:
-            return {"success": False, "error": "No account found with this email."}, 404
+            return {
+                "success": False,
+                "error": "Invalid email or password."
+            }, 401
 
-        stored_hash = row.Password
-        if not stored_hash:
-            return {"success": False, "error": "This account has no password set. Please contact support."}, 400
+        # Check password
+        if row.password != password:
+            return {
+                "success": False,
+                "error": "Invalid email or password."
+            }, 401
 
-        if not check_password_hash(stored_hash, password):
-            return {"success": False, "error": "Incorrect password."}, 401
+        # Check role
+        if row.role.lower() == "admin":
+
+            session['logged_in'] = True
+            session['user_email'] = row.email
+            session['role'] = row.role
+
+            return {
+                "success": True,
+                "role": "admin",
+                "redirect": "http://localhost:5173/"
+            }, 200
 
         return {
-            "success": True,
-            "user": {
-                "id": row.ID,
-                "name": row.Name,
-                "email": row.Email
-            }
-        }, 200
+            "success": False,
+            "error": "You are not authorized to access this page."
+        }, 403
 
     except Exception as e:
-        print("DB ERROR:", e)
-        return {"success": False, "error": str(e)}, 500
+        print("LOGIN DB ERROR:", e)
+
+        return {
+            "success": False,
+            "error": "Database connection error."
+        }, 500
 
 
 if __name__ == '__main__':

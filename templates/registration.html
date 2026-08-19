@@ -23,6 +23,9 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
     <style>
         .registration-section {
             padding-top: 40px;
@@ -407,7 +410,16 @@
             });
 
             $citySelect.prop('disabled', false);
+                // NEW: turn the select into a searchable dropdown
+    var cityChoices = new Choices('#regCity', {
+        searchEnabled: true,
+        itemSelectText: '',
+        shouldSort: false,
+        placeholder: true,
+        placeholderValue: 'Select your city'
+    });
         }
+        
 
         $('#regCity').on('change', function () {
             var selectedCity = $(this).val();
@@ -529,6 +541,7 @@
                 $('#otpError').text('Please enter all 6 digits.').show();
                 return;
             }
+            
 
             if (otp !== currentOtp) {
                 $('#otpError').text('Incorrect OTP. Please try again.').show();
