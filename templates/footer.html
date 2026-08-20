@@ -18,11 +18,11 @@
                     <div class="col-md-6 mb-5">
                         <h5 class="text-primary text-uppercase mb-4" style="letter-spacing: 5px;">Our Courses</h5>
                         <div class="d-flex flex-column justify-content-start">
-                            <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Home</a>
-                            <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>About</a>
-                            <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Advertisement</a>
-                            <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Contact</a>
-                            <a class="text-white mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Career</a>
+                            <a class="text-white mb-2" href="{{ url_for('home') }}"><i class="fa fa-angle-right mr-2"></i>Home</a>
+                            <a class="text-white mb-2" href="{{ url_for('about') }}"><i class="fa fa-angle-right mr-2"></i>About</a>
+                            <a class="text-white mb-2" href="{{ url_for('advertisement') }}"><i class="fa fa-angle-right mr-2"></i>Advertisement</a>
+                            <a class="text-white mb-2" href="{{ url_for('contact') }}"><i class="fa fa-angle-right mr-2"></i>Contact</a>
+                            <a class="text-white mb-2" href="{{ url_for('career') }}"><i class="fa fa-angle-right mr-2"></i>Career</a>
 
                         </div>
                     </div>
