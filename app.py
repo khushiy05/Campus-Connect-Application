@@ -466,6 +466,7 @@ def get_enquiries():
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
 
+
 @app.route('/api/enquiries/<int:enquiry_id>', methods=['DELETE'])
 def delete_enquiry(enquiry_id):
     try:
@@ -484,6 +485,58 @@ def delete_enquiry(enquiry_id):
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
-    
+
+
+@app.route('/api/registrations', methods=['GET'])
+def get_registrations():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT ID, Name, Email, MobileNo, City, CollegeName, RegisteredOn, Approved FROM collegedb"
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        data = [
+            {
+                "id": r[0],
+                "name": r[1],
+                "email": r[2],
+                "mobile": r[3],
+                "city": r[4],
+                "college_name": r[5],
+                "registered_on": str(r[6]) if r[6] else "",
+                "approved": bool(r[7])
+            }
+            for r in rows
+        ]
+        return {"success": True, "data": data}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/registrations/<int:reg_id>/approve', methods=['PUT'])
+def approve_registration(reg_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE collegedb SET Approved = 1 WHERE ID = ?", (reg_id,))
+        conn.commit()
+        updated = cursor.rowcount
+        cursor.close()
+        conn.close()
+
+        if updated == 0:
+            return {"success": False, "error": "Registration not found."}, 404
+
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
 if __name__ == '__main__':
     app.run(debug=True)

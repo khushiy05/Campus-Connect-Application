@@ -226,7 +226,12 @@ loginForm.addEventListener('submit', async function (e) {
         const result = await response.json();
 
         if (result.success && result.role === 'admin') {
-            window.location.href = result.redirect;
+            // Open the admin dashboard in a brand new tab.
+            // That tab has no history, so there's nothing to "back" into.
+            window.open(result.redirect, '_blank');
+
+            // Clear the login form so email/password don't linger on screen.
+            loginForm.reset();
             return;
         }
 
