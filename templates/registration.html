@@ -34,7 +34,7 @@
         }
 
         .reg-card {
-            max-width: 480px;
+            max-width: 560px;
             margin: 0 auto;
             border-radius: 14px !important;
             box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08) !important;
@@ -94,6 +94,23 @@
             margin-top: 4px;
         }
 
+        /* Horizontal form layout */
+        .reg-card .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 16px;
+        }
+
+        .reg-card .form-grid .full-width {
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 480px) {
+            .reg-card .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .reg-card #googleSignupBtn {
             width: 100%;
             border: 1px solid #dcdce6;
@@ -134,7 +151,8 @@
             background: #fd7e14 !important;
             border: none !important;
             border-radius: 8px !important;
-            padding: 13px !important;
+            padding: 9px !important;
+            font-size: 14px;
             font-weight: 600;
             letter-spacing: 0.3px;
             color: #fff !important;
@@ -218,7 +236,7 @@
     <div class="container-fluid registration-section">
         <div class="container">
             <div class="row justify-content-center">
-                <div class="col-lg-5">
+                <div class="col-lg-6">
                     <div class="card reg-card">
                         <div class="card-header text-center">
                             <h2>Campus Registration</h2>
@@ -239,6 +257,7 @@
                             <!-- Step 1: Registration Form -->
                             <div id="regFormStep">
                                 <form id="registrationForm">
+<<<<<<< ours
                                   <div class="form-group">
                                       <label>Name</label>
                                      <input type="text" class="form-control" id="regName" value="{{ prefill_name }}" required>
@@ -252,36 +271,52 @@
                                         <label>Mobile Number</label>
                                         <input type="tel" class="form-control" id="regMobile" required>
                                     </div>
+=======
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label>Name</label>
+                                            <input type="text" class="form-control" id="regName" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Email</label>
+                                            <input type="email" class="form-control" id="regEmail" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Mobile Number</label>
+                                            <input type="tel" class="form-control" id="regMobile" required>
+                                        </div>
+>>>>>>> theirs
 
-                                    <!-- City dropdown, grouped by state, loaded from /api/cities -->
-                                    <div class="form-group">
-                                        <label>City</label>
-                                        <select class="form-control" id="regCity" disabled required>
-                                            <option value="" selected disabled>Loading cities...</option>
-                                        </select>
-                                    </div>
+                                        <!-- City dropdown, grouped by state, loaded from /api/cities -->
+                                        <div class="form-group">
+                                            <label>City</label>
+                                            <select class="form-control" id="regCity" disabled required>
+                                                <option value="" selected disabled>Loading cities...</option>
+                                            </select>
+                                        </div>
 
-                                    <!-- College Name: dependent on City -->
-                                    <div class="form-group">
-                                        <label>College Name</label>
-                                        <input type="text" class="form-control" id="regCollege" list="collegeSuggestions"
-                                               placeholder="Select a city first" disabled required autocomplete="off">
-                                        <datalist id="collegeSuggestions"></datalist>
-                                    </div>
+                                        <!-- College Name: dependent on City -->
+                                        <div class="form-group">
+                                            <label>College Name</label>
+                                            <input type="text" class="form-control" id="regCollege" list="collegeSuggestions"
+                                                   placeholder="Select a city first" disabled required autocomplete="off">
+                                            <datalist id="collegeSuggestions"></datalist>
+                                        </div>
 
-                                    <div class="form-group">
-                                        <label>College Code</label>
-                                        <input type="text" class="form-control" id="regCollegeCode" required>
-                                    </div>
+                                        <div class="form-group">
+                                            <label>College Code</label>
+                                            <input type="text" class="form-control" id="regCollegeCode" required>
+                                        </div>
 
-                                    <!-- Password field with show/hide toggle -->
-                                    <div class="form-group">
-                                        <label>Password</label>
-                                        <div class="password-wrapper">
-                                            <input type="password" class="form-control" id="regPassword" required minlength="6">
-                                            <button type="button" class="toggle-password" id="togglePassword" tabindex="-1">
-                                                <i class="fa fa-eye" id="toggleIcon"></i>
-                                            </button>
+                                        <!-- Password field with show/hide toggle -->
+                                        <div class="form-group full-width">
+                                            <label>Password</label>
+                                            <div class="password-wrapper">
+                                                <input type="password" class="form-control" id="regPassword" required minlength="6">
+                                                <button type="button" class="toggle-password" id="togglePassword" tabindex="-1">
+                                                    <i class="fa fa-eye" id="toggleIcon"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 

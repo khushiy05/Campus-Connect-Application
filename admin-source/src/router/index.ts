@@ -20,8 +20,16 @@ const router = createRouter({
       component: () => import('../views/Others/Enquiry.vue'),
       meta: {
     title: 'Enquiry',
-  },
-},
+    },
+   },
+       {
+      path: '/campus-registration',
+      name: 'Campus Registration',
+      component: () => import('../views/Others/CampusRegistration.vue'),
+      meta: {
+        title: 'Campus Registration',
+      },
+    },
     {
       path: '/profile',
       name: 'Profile',

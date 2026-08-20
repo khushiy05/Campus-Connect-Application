@@ -258,9 +258,9 @@ const menuGroups = [
         path: "/profile",
       },
       {
-        name: "Campus Registration",
         icon: TableIcon,
-        subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
+        name: "Campus Registration",
+        path: "/campus-registration",
       },
       {
         name: "Pages",

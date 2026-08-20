@@ -43,5 +43,12 @@ export default {
     RecentOrders,
   },
   name: 'Ecommerce',
+  mounted() {
+    // Prevent navigating back to login page
+    history.pushState(null, null, location.href);
+    window.addEventListener('popstate', function () {
+      history.pushState(null, null, location.href);
+    });
+  },
 }
 </script>

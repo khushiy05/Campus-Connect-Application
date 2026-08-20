@@ -2,9 +2,9 @@
   <AdminLayout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
     <div class="space-y-5 sm:space-y-6">
-      <ComponentCard title="Enquiries">
+      <ComponentCard title="Campus Registrations">
         <div v-if="loading" class="py-10 text-center text-gray-500 dark:text-gray-400">
-          Loading enquiries...
+          Loading registrations...
         </div>
 
         <div v-else-if="error" class="py-10 text-center text-error-500">
@@ -19,13 +19,15 @@
                 <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Name</th>
                 <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Email</th>
                 <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Mobile No.</th>
-                <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Message</th>
+                <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">City</th>
+                <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">College</th>
+                <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Registered On</th>
                 <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Action</th>
               </tr>
             </thead>
             <tbody>
               <tr
-                v-for="row in enquiries"
+                v-for="row in registrations"
                 :key="row.id"
                 class="border-b border-gray-100 dark:border-gray-800"
               >
@@ -33,22 +35,31 @@
                 <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ row.name }}</td>
                 <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ row.email }}</td>
                 <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ row.mobile }}</td>
-                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ row.message }}</td>
+                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ row.city }}</td>
+                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ row.college_name }}</td>
+                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ row.registered_on }}</td>
                 <td class="px-4 py-3 text-sm">
                   <button
-                    @click="deleteEnquiry(row.id)"
-                    :disabled="deletingId === row.id"
-                    class="px-3 py-1.5 rounded-md bg-error-500 text-white text-xs font-medium hover:bg-error-600 disabled:opacity-50"
+                    v-if="!row.approved"
+                    @click="approveRegistration(row.id)"
+                    :disabled="approvingId === row.id"
+                    class="px-3 py-1.5 rounded-md bg-success-500 text-white text-xs font-medium hover:bg-success-600 disabled:opacity-50"
                   >
-                    {{ deletingId === row.id ? "Deleting..." : "Delete" }}
+                    {{ approvingId === row.id ? "Approving..." : "Approve" }}
                   </button>
+                  <span
+                    v-else
+                    class="px-3 py-1.5 rounded-md bg-success-50 text-success-600 text-xs font-medium"
+                  >
+                    Approved
+                  </span>
                 </td>
               </tr>
             </tbody>
           </table>
 
-          <div v-if="enquiries.length === 0" class="py-10 text-center text-gray-500 dark:text-gray-400">
-            No enquiries yet.
+          <div v-if="registrations.length === 0" class="py-10 text-center text-gray-500 dark:text-gray-400">
+            No registrations yet.
           </div>
         </div>
       </ComponentCard>
@@ -62,22 +73,22 @@ import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
 
-const currentPageTitle = ref("Enquiry");
+const currentPageTitle = ref("Campus Registration");
 
-const enquiries = ref([]);
+const registrations = ref([]);
 const loading = ref(true);
 const error = ref(null);
-const deletingId = ref(null);
+const approvingId = ref(null);
 
 onMounted(async () => {
   try {
-    const res = await fetch("http://127.0.0.1:5000/api/enquiries");
+    const res = await fetch("http://127.0.0.1:5000/api/registrations");
     const data = await res.json();
 
     if (data.success) {
-      enquiries.value = data.data;
+      registrations.value = data.data;
     } else {
-      error.value = data.error || "Failed to load enquiries.";
+      error.value = data.error || "Failed to load registrations.";
     }
   } catch (e) {
     error.value = "Unable to connect to the server.";
@@ -86,25 +97,24 @@ onMounted(async () => {
   }
 });
 
-async function deleteEnquiry(id) {
-  if (!confirm("Are you sure you want to delete this enquiry?")) return;
-
-  deletingId.value = id;
+async function approveRegistration(id) {
+  approvingId.value = id;
   try {
-    const res = await fetch(`http://127.0.0.1:5000/api/enquiries/${id}`, {
-      method: "DELETE",
+    const res = await fetch(`http://127.0.0.1:5000/api/registrations/${id}/approve`, {
+      method: "PUT",
     });
     const data = await res.json();
 
     if (data.success) {
-      enquiries.value = enquiries.value.filter((row) => row.id !== id);
+      const row = registrations.value.find((r) => r.id === id);
+      if (row) row.approved = true;
     } else {
-      alert(data.error || "Failed to delete enquiry.");
+      alert(data.error || "Failed to approve registration.");
     }
   } catch (e) {
     alert("Unable to connect to the server.");
   } finally {
-    deletingId.value = null;
+    approvingId.value = null;
   }
 }
 </script>
