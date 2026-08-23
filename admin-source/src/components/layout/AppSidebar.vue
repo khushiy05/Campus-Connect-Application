@@ -245,7 +245,7 @@ const menuGroups = [
       {
         icon: GridIcon,
         name: "Dashboard",
-        subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+        path: "/",
       },
       {
         icon: ListIcon,
@@ -253,21 +253,16 @@ const menuGroups = [
         path: "/enquiry",
       },
       {
-        icon: UserCircleIcon,
-        name: "User Profile",
-        path: "/profile",
-      },
-      {
         icon: TableIcon,
         name: "Campus Registration",
         path: "/campus-registration",
       },
       {
-        name: "Pages",
+        name: "Admin",
         icon: PageIcon,
         subItems: [
-          { name: "Black Page", path: "/blank", pro: false },
-          { name: "404 Page", path: "/error-404", pro: false },
+          { name: "Expertise", path: "/expertise", pro: false },
+          { name: "Campus", path: "/campus", pro: false },
         ],
       },
     ],
