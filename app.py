@@ -260,7 +260,9 @@ def auth_google_callback():
 
 @app.route('/registration.html')
 def registration():
-    return render_template('registration.html')
+    prefill_name = session.pop('user_name', '')
+    prefill_email = session.pop('user_email', '')
+    return render_template('registration.html', prefill_name=prefill_name, prefill_email=prefill_email)
 
 
 @app.route('/login.html')
