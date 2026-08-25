@@ -9,6 +9,7 @@ from email.mime.text import MIMEText
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 from flask_cors import CORS
+from werkzeug.utils import secure_filename
 
 load_dotenv()
 app = Flask(__name__)
@@ -201,7 +202,18 @@ def submit_enquiry():
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    experts = []
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT ID, Photo, Domain FROM Expertdb ORDER BY ID DESC")
+        columns = [col[0] for col in cursor.description]
+        experts = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print("DB ERROR:", e)
+    return render_template('index.html', experts=experts)
 
 
 @app.route('/about.html')
@@ -538,5 +550,119 @@ def approve_registration(reg_id):
         return {"success": False, "error": str(e)}, 500
 
 
+UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'experts')
+ALLOWED_EXT = {'png', 'jpg', 'jpeg'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXT
+
+
+@app.route('/api/experts', methods=['GET'])
+def get_experts():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Expertdb ORDER BY ID DESC")
+        columns = [col[0] for col in cursor.description]
+        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        cursor.close()
+        conn.close()
+        for r in rows:
+            for k, v in r.items():
+                if not isinstance(v, (str, int, float, type(None))):
+                    r[k] = str(v)
+        return {"success": True, "data": rows}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/experts', methods=['POST'])
+def add_expert():
+    name = request.form.get('name')
+    email = request.form.get('email')
+    mobile = request.form.get('mobile')
+    domain = request.form.get('domain_select')
+    if domain == 'Other':
+        domain = request.form.get('domain_other')
+    linkedin = request.form.get('linkedin')
+    city = request.form.get('city')
+    plan_type = request.form.get('plan_type', 'Yearly')
+    amount = request.form.get('amount', 1200)
+    transaction_id = request.form.get('transaction_id')
+    payment_date = request.form.get('payment_date')
+    expiry_date = request.form.get('expiry_date')
+
+    if not name or not email or not mobile or not domain:
+        return {"success": False, "error": "Missing required fields"}, 400
+
+    photo_filename = None
+    photo = request.files.get('photo')
+    if photo and photo.filename and allowed_file(photo.filename):
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        photo_filename = secure_filename(f"{mobile}_{photo.filename}")
+        photo.save(os.path.join(UPLOAD_FOLDER, photo_filename))
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """INSERT INTO Expertdb
+               (Name, Email, Mobile, Domain, LinkedinURL, Photo, City,
+                PlanType, Amount, TransactionID, PaymentDate, ExpiryDate)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (name, email, mobile, domain, linkedin, photo_filename, city,
+             plan_type, amount, transaction_id, payment_date, expiry_date)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"success": True}, 201
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/expert/<int:expert_id>')
+def expert_detail(expert_id):
+    if not session.get('user_email'):
+        return redirect(url_for('registration') + f'?next=/expert/{expert_id}')
+
+    expert = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Expertdb WHERE ID = ?", expert_id)
+        columns = [col[0] for col in cursor.description]
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if row:
+            expert = dict(zip(columns, row))
+    except Exception as e:
+        print("DB ERROR:", e)
+
+    if not expert:
+        return "Expert not found", 404
+
+    return render_template('expert_detail.html', expert=expert)
+@app.route('/api/experts/<int:expert_id>', methods=['DELETE'])
+def delete_expert(expert_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM Expertdb WHERE ID = ?", (expert_id,))
+        conn.commit()
+        deleted = cursor.rowcount
+        cursor.close()
+        conn.close()
+
+        if deleted == 0:
+            return {"success": False, "error": "Expert not found."}, 404
+
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
 if __name__ == '__main__':
     app.run(debug=True)

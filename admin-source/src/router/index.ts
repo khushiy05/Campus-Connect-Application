@@ -22,6 +22,22 @@ const router = createRouter({
     title: 'Enquiry',
     },
    },
+      {
+      path: '/expertise',
+      name: 'Expertise',
+      component: () => import('../views/Others/Expertise.vue'),
+      meta: {
+        title: 'Expertise',
+      },
+    },
+    {
+      path: '/campus',
+      name: 'Campus',
+      component: () => import('../views/Others/Campus.vue'),
+      meta: {
+        title: 'Campus',
+      },
+    },
        {
       path: '/campus-registration',
       name: 'Campus Registration',
