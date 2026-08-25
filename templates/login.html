@@ -142,7 +142,7 @@
     <hr>
 
     <div class="alert alert-danger" id="loginError" role="alert"></div>
-
+    <div class="alert alert-success" id="loginSuccess" role="alert" style="display:none;"></div>
     <form id="loginForm">
       <div class="form-group">
         <label for="loginEmail">Email</label>
@@ -197,11 +197,13 @@
   // Login handler
 const loginForm = document.getElementById('loginForm');
 const loginError = document.getElementById('loginError');
+const loginSuccess = document.getElementById('loginSuccess');
 
 loginForm.addEventListener('submit', async function (e) {
     e.preventDefault();
 
     loginError.style.display = 'none';
+    loginSuccess.style.display = 'none';
 
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value.trim();

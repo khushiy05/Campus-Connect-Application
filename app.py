@@ -5,11 +5,14 @@ import pyodbc
 import smtplib
 import json
 import os
+import secrets
+import string
 from email.mime.text import MIMEText
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
+
 
 load_dotenv()
 app = Flask(__name__)
@@ -33,6 +36,7 @@ EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
 # Admin login credentials
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
+APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://127.0.0.1:5000")
 
 
 def get_db_connection():
@@ -138,6 +142,87 @@ def send_confirmation_email(to_email):
     </body>
     </html>
     """
+def generate_random_password(length=10):
+    alphabet = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
+
+
+def send_expert_login_email(to_email, name, password):
+    login_url = f"{APP_BASE_URL}/login.html"
+
+    html_body = f"""
+    <html>
+    <body style="margin:0; padding:0; background-color:#f4f4f7; font-family: 'Segoe UI', Arial, sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7; padding: 40px 0;">
+            <tr>
+                <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:10px; overflow:hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
+                        <tr>
+                            <td style="background-color:#2d2d3a; padding: 35px 40px; text-align:center;">
+                                <h1 style="margin:0; color:#ffffff; font-size:24px;">
+                                    <span style="color:#ff6b35;">CAMPUS</span>CONNECT AI
+                                </h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 40px;">
+                                <h2 style="color:#2d2d3a; margin-top:0;">Welcome aboard, {name}!</h2>
+                                <p style="color:#555555; font-size:15px; line-height:1.6;">
+                                    You've been added as an expert on <strong>CampusConnect AI</strong>.
+                                    Your account is ready — here are your login details:
+                                </p>
+                                <table cellpadding="0" cellspacing="0" style="margin: 25px 0; width:100%; background:#f9f9fb; border-radius:8px;">
+                                    <tr>
+                                        <td style="padding: 18px 20px;">
+                                            <p style="margin:0 0 8px 0; color:#555555; font-size:14px;">
+                                                <strong style="color:#2d2d3a;">Email:</strong> {to_email}
+                                            </p>
+                                            <p style="margin:0; color:#555555; font-size:14px;">
+                                                <strong style="color:#2d2d3a;">Password:</strong> {password}
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <p style="color:#555555; font-size:15px; line-height:1.6;">
+                                    For your security, we recommend changing this password after your first login.
+                                </p>
+                                <div style="text-align:center; margin: 30px 0;">
+                                    <a href="{login_url}" style="background-color:#fd7e14; color:#ffffff; text-decoration:none; padding: 14px 32px; border-radius:8px; font-weight:600; display:inline-block;">
+                                        Log In to Your Account
+                                    </a>
+                                </div>
+                                <p style="color:#999999; font-size:13px; line-height:1.6;">
+                                    If the button above doesn't work, copy and paste this link into your browser:<br>
+                                    <a href="{login_url}" style="color:#fd7e14;">{login_url}</a>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="background-color:#f4f4f7; padding: 25px 40px; text-align:center; border-top:1px solid #eaeaea;">
+                                <p style="color:#999999; font-size:13px; margin:0;">
+                                    Best regards,<br>
+                                    <strong style="color:#2d2d3a;">Team CampusConnect AI</strong><br>
+                                    NRSolution4u
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    """
+
+    msg = MIMEText(html_body, 'html')
+    msg['Subject'] = 'Your CampusConnect AI Expert Login Details'
+    msg['From'] = EMAIL_SENDER
+    msg['To'] = to_email
+
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.starttls()
+        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+        server.sendmail(EMAIL_SENDER, to_email, msg.as_string())
 
     msg = MIMEText(html_body, 'html')
     msg['Subject'] = 'Welcome to CampusConnect AI'
@@ -435,8 +520,9 @@ def login_student():
             }, 401
 
         # Check role
-        if row.role.lower() == "admin":
+        role = row.role.lower()
 
+        if role == "admin":
             session['logged_in'] = True
             session['user_email'] = row.email
             session['role'] = row.role
@@ -445,6 +531,16 @@ def login_student():
                 "success": True,
                 "role": "admin",
                 "redirect": "http://localhost:5173/"
+            }, 200
+
+        if role == "expert":
+            session['logged_in'] = True
+            session['user_email'] = row.email
+            session['role'] = row.role
+
+            return {
+                "success": True,
+                "role": "expert"
             }, 200
 
         return {
@@ -605,9 +701,12 @@ def add_expert():
         photo_filename = secure_filename(f"{mobile}_{photo.filename}")
         photo.save(os.path.join(UPLOAD_FOLDER, photo_filename))
 
+    generated_password = generate_random_password()
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+
         cursor.execute(
             """INSERT INTO Expertdb
                (Name, Email, Mobile, Domain, LinkedinURL, Photo, City,
@@ -616,13 +715,32 @@ def add_expert():
             (name, email, mobile, domain, linkedin, photo_filename, city,
              plan_type, amount, transaction_id, payment_date, expiry_date)
         )
+
+        # Only create login credentials if this email doesn't already have an account
+        cursor.execute("SELECT 1 FROM logindb WHERE email = ?", (email,))
+        already_has_login = cursor.fetchone() is not None
+
+        if not already_has_login:
+            cursor.execute(
+                "INSERT INTO logindb (email, password, role) VALUES (?, ?, ?)",
+                (email, generated_password, 'expert')
+            )
+
         conn.commit()
         cursor.close()
         conn.close()
-        return {"success": True}, 201
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
+
+    if not already_has_login:
+        try:
+            send_expert_login_email(email, name, generated_password)
+        except Exception as e:
+            print("EMAIL ERROR:", e)
+            # Expert + login were still created; email delivery is best-effort
+
+    return {"success": True}, 201
 
 
 @app.route('/expert/<int:expert_id>')

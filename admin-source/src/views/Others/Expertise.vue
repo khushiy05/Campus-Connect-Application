@@ -63,7 +63,7 @@
             <input v-model="form.transaction_id" required class="w-full rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 px-3 py-2 text-sm" />
           </div>
           <div>
-            <label class="block text-sm mb-1 text-gray-700 dark:text-gray-300">Payment Date</label>
+            <label class="block text-sm mb-1 text-gray-700 dark:text-gray-300">Registration Date</label>
             <input v-model="form.payment_date" type="date" required class="w-full rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 px-3 py-2 text-sm" />
           </div>
           <div>
