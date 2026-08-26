@@ -142,6 +142,18 @@ def send_confirmation_email(to_email):
     </body>
     </html>
     """
+
+    msg = MIMEText(html_body, 'html')
+    msg['Subject'] = 'Welcome to CampusConnect AI'
+    msg['From'] = EMAIL_SENDER
+    msg['To'] = to_email
+
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.starttls()
+        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+        server.sendmail(EMAIL_SENDER, to_email, msg.as_string())
+
+
 def generate_random_password(length=10):
     alphabet = string.ascii_letters + string.digits
     return ''.join(secrets.choice(alphabet) for _ in range(length))
@@ -216,16 +228,6 @@ def send_expert_login_email(to_email, name, password):
 
     msg = MIMEText(html_body, 'html')
     msg['Subject'] = 'Your CampusConnect AI Expert Login Details'
-    msg['From'] = EMAIL_SENDER
-    msg['To'] = to_email
-
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
-        server.starttls()
-        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_SENDER, to_email, msg.as_string())
-
-    msg = MIMEText(html_body, 'html')
-    msg['Subject'] = 'Welcome to CampusConnect AI'
     msg['From'] = EMAIL_SENDER
     msg['To'] = to_email
 

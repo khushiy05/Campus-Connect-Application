@@ -263,6 +263,7 @@ const menuGroups = [
         subItems: [
           { name: "Expertise", path: "/expertise", pro: false },
           { name: "Campus", path: "/campus", pro: false },
+          { name: "Invite", path: "/invite", pro: false },
         ],
       },
     ],
