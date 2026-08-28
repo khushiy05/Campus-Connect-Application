@@ -1,4 +1,31 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import menuConfig from '../config/menuConfig'
+
+function flattenMenuRoutes(groups: any[]): RouteRecordRaw[] {
+  const routes: RouteRecordRaw[] = []
+  groups.forEach((group) => {
+    group.items.forEach((item: any) => {
+      if (item.subItems) {
+        item.subItems.forEach((sub: any) => {
+          routes.push({
+            path: sub.path,
+            name: sub.name,
+            component: sub.component,
+            meta: { title: sub.name },
+          })
+        })
+      } else if (item.path) {
+        routes.push({
+          path: item.path,
+          name: item.name,
+          component: item.component,
+          meta: { title: item.name },
+        })
+      }
+    })
+  })
+  return routes
+}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -6,46 +33,7 @@ const router = createRouter({
     return savedPosition || { left: 0, top: 0 }
   },
   routes: [
-    {
-      path: '/',
-      name: 'Ecommerce',
-      component: () => import('../views/Ecommerce.vue'),
-      meta: {
-        title: 'eCommerce Dashboard',
-      },
-    },
-    {
-      path: '/enquiry',
-      name: 'Enquiry',
-      component: () => import('../views/Others/Enquiry.vue'),
-      meta: {
-    title: 'Enquiry',
-    },
-   },
-      {
-      path: '/expertise',
-      name: 'Expertise',
-      component: () => import('../views/Others/Expertise.vue'),
-      meta: {
-        title: 'Expertise',
-      },
-    },
-    {
-      path: '/campus',
-      name: 'Campus',
-      component: () => import('../views/Others/Campus.vue'),
-      meta: {
-        title: 'Campus',
-      },
-    },
-       {
-      path: '/campus-registration',
-      name: 'Campus Registration',
-      component: () => import('../views/Others/CampusRegistration.vue'),
-      meta: {
-        title: 'Campus Registration',
-      },
-    },
+    ...flattenMenuRoutes(menuConfig),
     {
       path: '/profile',
       name: 'Profile',

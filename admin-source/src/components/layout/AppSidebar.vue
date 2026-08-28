@@ -233,37 +233,9 @@ const route = useRoute();
 
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
 
-const menuGroups = [
-  {
-    title: "Menu",
-    items: [
-      {
-        icon: GridIcon,
-        name: "Dashboard",
-        path: "/",
-      },
-      {
-        icon: ListIcon,
-        name: "Enquiry",
-        path: "/enquiry",
-      },
-      {
-        icon: TableIcon,
-        name: "Campus Registration",
-        path: "/campus-registration",
-      },
-      {
-        name: "Admin",
-        icon: PageIcon,
-        subItems: [
-          { name: "Expertise", path: "/expertise", pro: false },
-          { name: "Campus", path: "/campus", pro: false },
-          { name: "Invite", path: "/invite", pro: false },
-        ],
-      },
-    ],
-  },
-];
+import menuConfig from "@/config/menuConfig";
+
+const menuGroups = menuConfig;
 
 const isActive = (path) => route.path === path;
 
