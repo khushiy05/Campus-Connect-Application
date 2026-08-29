@@ -237,6 +237,19 @@ def send_expert_login_email(to_email, name, password):
         server.sendmail(EMAIL_SENDER, to_email, msg.as_string())
 
 
+def send_invite_email(to_email, subject, message):
+    """Plain-text invite/broadcast email used by /api/invite/send."""
+    msg = MIMEText(message, 'plain')
+    msg['Subject'] = subject or "CampusConnect AI"
+    msg['From'] = EMAIL_SENDER
+    msg['To'] = to_email
+
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.starttls()
+        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+        server.sendmail(EMAIL_SENDER, to_email, msg.as_string())
+
+
 # ---- Basic Auth helpers ----
 def check_auth(username, password):
     return username == ADMIN_USERNAME and password == ADMIN_PASSWORD
@@ -380,6 +393,83 @@ def invite():
         print("EMAIL ERROR:", e)
 
     return "OK", 200
+
+
+@app.route('/api/subscribers', methods=['GET'])
+def get_subscribers():
+    """Emails collected via the 'Invite Us' newsletter box on the homepage
+    (stored in invitedb). Used as a source for the Admin > Invite page."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT email FROM invitedb")
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        # invitedb only stores the email itself, so we assign a synthetic id
+        data = [{"id": i + 1, "email": row.email} for i, row in enumerate(rows)]
+        return {"success": True, "data": data}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/invite/send', methods=['POST'])
+def send_invite():
+    """Used by the Admin > Invite page: sends the composed subject/message
+    to every selected recipient email."""
+    data = request.get_json(silent=True) or {}
+
+    emails = data.get('emails') or []
+    subject = (data.get('subject') or '').strip()
+    message = (data.get('message') or '').strip()
+
+    if not isinstance(emails, list) or len(emails) == 0:
+        return {"success": False, "error": "No recipients provided."}, 400
+
+    if not message:
+        return {"success": False, "error": "Message body is required."}, 400
+
+    if not EMAIL_SENDER or not EMAIL_PASSWORD:
+        return {"success": False, "error": "Email sender is not configured on the server."}, 500
+
+    sent = []
+    failed = []
+
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+
+            for to_email in emails:
+                try:
+                    msg = MIMEText(message, 'plain')
+                    msg['Subject'] = subject or "CampusConnect AI"
+                    msg['From'] = EMAIL_SENDER
+                    msg['To'] = to_email
+                    server.sendmail(EMAIL_SENDER, to_email, msg.as_string())
+                    sent.append(to_email)
+                except Exception as e:
+                    print("INVITE SEND ERROR for", to_email, ":", e)
+                    failed.append(to_email)
+    except Exception as e:
+        # Couldn't even connect/login to the SMTP server at all
+        print("SMTP CONNECTION ERROR:", e)
+        return {"success": False, "error": f"Could not connect to mail server: {e}"}, 500
+
+    if failed and not sent:
+        return {"success": False, "error": f"Failed to send to: {', '.join(failed)}"}, 500
+
+    if failed:
+        return {
+            "success": True,
+            "sent": len(sent),
+            "failed": failed,
+            "message": f"Sent to {len(sent)} recipient(s); failed for {len(failed)}."
+        }, 200
+
+    return {"success": True, "sent": len(sent)}, 200
 
 
 @app.route('/admin/subscribers')
@@ -748,7 +838,7 @@ def add_expert():
 @app.route('/expert/<int:expert_id>')
 def expert_detail(expert_id):
     if not session.get('user_email'):
-        return redirect(url_for('registration') + f'?next=/expert/{expert_id}')
+        return redirect(url_for('login') + f'?next=/expert/{expert_id}')
 
     expert = None
     try:
