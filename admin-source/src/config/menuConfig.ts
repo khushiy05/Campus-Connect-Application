@@ -40,14 +40,24 @@ const menuConfig = [
             component: () => import("../views/Others/Expertise.vue"),
           },
           {
-            name: "Campus",
-            path: "/campus",
-            component: () => import("../views/Others/Campus.vue"),
-          },
-          {
             name: "Invite",
             path: "/invite",
             component: () => import("../views/Others/Invite.vue"),
+          },
+          {
+            name: "Advertisement",
+            path: "/advertisement",
+            component: () => import("../views/Others/Advertisement.vue"),
+          },
+          {
+            name: "Internship",
+            path: "/internship",
+            component: () => import("../views/Others/Internship.vue"),
+          },
+          {
+            name: "RojgarSetu",
+            path: "/rojgarsetu",
+            component: () => import("../views/Others/RojgarSetu.vue"),
           },
         ],
       },
