@@ -9991,3 +9991,25 @@ h6,
         justify-content: center !important;
     }
 }
+.ad-marquee-wrap {
+    width: 100%;
+    height: 90px;
+    overflow: hidden;
+    position: relative;
+}
+.ad-marquee-track {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    width: max-content;
+    animation: ad-scroll 15s linear infinite;
+}
+.ad-marquee-track img {
+    height: 80px;
+    width: auto;
+    flex-shrink: 0;
+}
+@keyframes ad-scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
