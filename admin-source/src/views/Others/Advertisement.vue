@@ -257,18 +257,20 @@ const handleSubmit = async () => {
   const regDateFormatted = formatDate(new Date(form.value.registrationDate));
 
   // Build multipart payload for file upload + fields
+  // NOTE: field names below must match request.form.get(...) keys in Flask
+  // (backend uses snake_case: registration_date)
   const payload = new FormData();
   payload.append("name", form.value.name);
   payload.append("email", form.value.email);
   payload.append("mobile", form.value.mobile);
   payload.append("cost", form.value.cost);
   payload.append("duration", form.value.duration);
-  payload.append("registrationDate", form.value.registrationDate); // yyyy-mm-dd, best for SQL DATE column
-  payload.append("expiryDate", computeExpiryISO(form.value.registrationDate)); // yyyy-mm-dd
+  payload.append("registration_date", form.value.registrationDate); // yyyy-mm-dd — FIXED: was "registrationDate"
   if (form.value.logoFile) payload.append("logo", form.value.logoFile);
+  // expiryDate intentionally not sent — it's a computed column in SQL Server,
+  // the Flask /api/advertisements POST route ignores/does not expect it.
 
   try {
-    // Replace with your actual API endpoint that inserts into the SQL Server table
     const res = await fetch("/api/advertisements", {
       method: "POST",
       body: payload,
@@ -292,13 +294,5 @@ const handleSubmit = async () => {
     console.error(err);
     alert("Something went wrong while saving. Please try again.");
   }
-};
-
-// Returns yyyy-mm-dd expiry, for sending to backend in ISO/SQL-friendly format
-const computeExpiryISO = (registrationDateStr) => {
-  const regDate = new Date(registrationDateStr);
-  const expiry = new Date(regDate);
-  expiry.setMonth(expiry.getMonth() + 6);
-  return expiry.toISOString().split("T")[0];
 };
 </script>
