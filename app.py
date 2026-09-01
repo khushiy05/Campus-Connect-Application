@@ -316,14 +316,14 @@ def home():
     return render_template('index.html', experts=experts)
 
 
-@app.route('/about.html')
-def about():
-    return render_template('about.html')
+@app.route('/internship.html')
+def internship():
+    return render_template('internship.html')
 
 
-@app.route('/career.html')
-def career():
-    return render_template('career.html')
+@app.route('/rojgarsetu.html')
+def rojgarsetu():
+    return render_template('rojgarsetu.html')
 
 
 @app.route('/advertisement.html')
@@ -876,5 +876,94 @@ def delete_expert(expert_id):
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
+
+
+# ---- Advertisement routes ----
+ADV_UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'advertisements')
+ALLOWED_ADV_EXT = {'png', 'jpg', 'jpeg'}
+
+def allowed_adv_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_ADV_EXT
+
+
+@app.route('/api/advertisements', methods=['GET'])
+def get_advertisements():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Advertisement ORDER BY AdvertisementId DESC")
+        columns = [col[0] for col in cursor.description]
+        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        cursor.close()
+        conn.close()
+        for r in rows:
+            for k, v in r.items():
+                if not isinstance(v, (str, int, float, type(None))):
+                    r[k] = str(v)
+        return {"success": True, "data": rows}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/advertisements', methods=['POST'])
+def add_advertisement():
+    name = request.form.get('name')
+    email = request.form.get('email')
+    mobile = request.form.get('mobile')
+    cost = request.form.get('cost', 1200)
+    duration = request.form.get('duration', '6 Months')
+    registration_date = request.form.get('registration_date')  # yyyy-mm-dd from <input type="date">
+
+    if not name or not email or not mobile or not registration_date:
+        return {"success": False, "error": "Missing required fields"}, 400
+
+    logo_filename = None
+    logo = request.files.get('logo')
+    if logo and logo.filename and allowed_adv_file(logo.filename):
+        os.makedirs(ADV_UPLOAD_FOLDER, exist_ok=True)
+        logo_filename = secure_filename(f"{mobile}_{logo.filename}")
+        logo.save(os.path.join(ADV_UPLOAD_FOLDER, logo_filename))
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # ExpiryDate is a computed column in SQL Server — do NOT insert it here
+        cursor.execute(
+            """INSERT INTO Advertisement
+               (Name, Email, Mobile, LogoPath, Cost, Duration, RegistrationDate)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (name, email, mobile, logo_filename, cost, duration, registration_date)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"success": True}, 201
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/advertisements/<int:adv_id>', methods=['DELETE'])
+def delete_advertisement(adv_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM Advertisement WHERE AdvertisementId = ?", (adv_id,))
+        conn.commit()
+        deleted = cursor.rowcount
+        cursor.close()
+        conn.close()
+
+        if deleted == 0:
+            return {"success": False, "error": "Advertisement not found."}, 404
+
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
 if __name__ == '__main__':
     app.run(debug=True)

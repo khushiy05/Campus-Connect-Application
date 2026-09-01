@@ -1,0 +1,1022 @@
+<template>
+  <AdminLayout>
+    <PageBreadcrumb :pageTitle="currentPageTitle" />
+    <div class="space-y-5 sm:space-y-6">
+      <ComponentCard title="RojgarSetu">
+        <div class="p-6">
+          <h4 class="mb-6 text-lg font-semibold text-gray-800 dark:text-white/90">
+            Add Job Posting
+          </h4>
+
+          <form @submit.prevent="submitForm" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+
+            <!-- Job Category -->
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Job Category
+              </label>
+              <select
+                v-model="form.category"
+                required
+                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-primary dark:border-gray-700 dark:text-white"
+              >
+                <option value="" disabled>Select category</option>
+                <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+              </select>
+            </div>
+
+            <!-- Job Title -->
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Job Title
+              </label>
+              <input
+                v-model="form.jobTitle"
+                type="text"
+                placeholder="Enter job title"
+                required
+                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-primary dark:border-gray-700 dark:text-white"
+              />
+            </div>
+
+            <!-- Company Name -->
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Company Name
+              </label>
+              <input
+                v-model="form.companyName"
+                type="text"
+                placeholder="Enter company name"
+                required
+                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-primary dark:border-gray-700 dark:text-white"
+              />
+            </div>
+
+            <!-- Location (searchable) -->
+            <div class="relative" ref="cityFieldRef">
+              <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Location
+              </label>
+              <input
+                v-model="citySearch"
+                type="text"
+                autocomplete="off"
+                placeholder="Select your city"
+                required
+                @focus="cityDropdownOpen = true"
+                @input="cityDropdownOpen = true"
+                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-primary dark:border-gray-700 dark:text-white placeholder:text-gray-400"
+              />
+
+              <div
+                v-if="cityDropdownOpen"
+                class="absolute z-20 mt-1 w-full max-h-72 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900"
+              >
+                <template v-for="state in filteredCityStates" :key="state.name">
+                  <div
+                    v-if="state.cities.length"
+                    class="border-b border-gray-100 bg-gray-50 px-4 py-2 text-sm font-bold text-gray-700 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                  >
+                    {{ state.name }}
+                  </div>
+                  <div
+                    v-for="city in state.cities"
+                    :key="city"
+                    @mousedown.prevent="selectCity(city)"
+                    class="cursor-pointer border-b border-gray-50 px-6 py-2.5 text-sm text-gray-600 hover:bg-orange-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800"
+                  >
+                    {{ city }}
+                  </div>
+                </template>
+
+                <div v-if="!filteredCityStates.some(s => s.cities.length)" class="px-4 py-3 text-sm text-gray-400">
+                  No matching cities
+                </div>
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Email
+              </label>
+              <input
+                v-model="form.email"
+                type="email"
+                placeholder="Enter email"
+                required
+                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-primary dark:border-gray-700 dark:text-white"
+              />
+            </div>
+
+            <!-- Mobile -->
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Mobile
+              </label>
+              <input
+                v-model="form.mobile"
+                type="tel"
+                placeholder="Enter mobile number"
+                required
+                pattern="[0-9]{10}"
+                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-primary dark:border-gray-700 dark:text-white"
+              />
+            </div>
+
+            <!-- Experience -->
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Experience
+              </label>
+              <input
+                v-model="form.experience"
+                type="text"
+                placeholder="e.g. 0-1 years, 2-4 years"
+                required
+                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-primary dark:border-gray-700 dark:text-white"
+              />
+            </div>
+
+            <!-- Salary LPA -->
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Salary (LPA)
+              </label>
+              <input
+                v-model="form.salary"
+                type="text"
+                placeholder="e.g. 4-6 LPA"
+                required
+                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-primary dark:border-gray-700 dark:text-white"
+              />
+            </div>
+
+            <!-- Link (URL) -->
+            <div class="md:col-span-2">
+              <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Application Link (URL)
+              </label>
+              <input
+                v-model="form.link"
+                type="url"
+                placeholder="https://example.com/apply"
+                required
+                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-primary dark:border-gray-700 dark:text-white"
+              />
+            </div>
+
+            <!-- Submit -->
+            <div class="md:col-span-2 flex gap-3 pt-2">
+              <button
+                type="submit"
+                :disabled="submitting"
+                class="rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+              >
+                {{ submitting ? 'Submitting...' : 'Submit' }}
+              </button>
+            </div>
+
+            <p v-if="statusMessage" class="md:col-span-2 text-sm" :class="statusOk ? 'text-green-600' : 'text-red-600'">
+              {{ statusMessage }}
+            </p>
+
+          </form>
+        </div>
+      </ComponentCard>
+    </div>
+  </AdminLayout>
+</template>
+
+<script setup>
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from "vue";
+import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
+import AdminLayout from "@/components/layout/AdminLayout.vue";
+import ComponentCard from "@/components/common/ComponentCard.vue";
+
+const currentPageTitle = ref("RojgarSetu");
+
+// Adjust this list to match your actual job categories
+const categories = [
+  "IT & Software",
+  "Marketing",
+  "Sales",
+  "Finance",
+  "Human Resources",
+  "Design",
+  "Content Writing",
+  "Customer Support",
+  "Operations",
+  "Internship",
+  "Other",
+];
+
+// Cities grouped by state — embedded directly so this admin panel
+// (served from Vite on a different origin/port) doesn't depend on
+// the Flask backend's /api/cities endpoint being reachable.
+const CITY_DATA = {
+  "Andaman And Nicobar Islands": [
+    "Nicobars",
+    "North And Middle Andaman",
+    "South Andaman"
+  ],
+  "Andhra Pradesh": [
+    "Adilabad",
+    "Anantapur",
+    "Chittoor",
+    "East Godavari",
+    "Guntur",
+    "Hyderabad",
+    "Karimnagar",
+    "Khammam",
+    "Krishna",
+    "Kurnool",
+    "Mahbubnagar",
+    "Medak",
+    "Nalgonda",
+    "Nizamabad",
+    "Prakasam",
+    "Rangareddy",
+    "Sri Potti Sriramulu Nellore",
+    "Srikakulam",
+    "Visakhapatnam",
+    "Vizianagaram",
+    "Warangal",
+    "West Godavari",
+    "YSR"
+  ],
+  "Arunachal Pradesh": [
+    "Anjaw",
+    "Changlang",
+    "Dibang Valley",
+    "East Kameng",
+    "East Siang",
+    "Kurung Kumey",
+    "Lohit",
+    "Lower Dibang Valley",
+    "Lower Subansiri",
+    "Papumpare",
+    "Tawang",
+    "Tirap",
+    "Upper Siang",
+    "Upper Subansiri",
+    "West Kameng",
+    "West Siang"
+  ],
+  "Assam": [
+    "Baksa",
+    "Barpeta",
+    "Bongaigaon",
+    "Cachar",
+    "Chirang",
+    "Darrang",
+    "Dhemaji",
+    "Dhubri",
+    "Dibrugarh",
+    "Dima Hasao",
+    "Goalpara",
+    "Golaghat",
+    "Hailakandi",
+    "Jorhat",
+    "Kamrup",
+    "Kamrup Metropolitan",
+    "Karbi Anglong",
+    "Karimganj",
+    "Kokrajhar",
+    "Lakhimpur",
+    "Morigaon",
+    "Nagaon",
+    "Nalbari",
+    "Sivasagar",
+    "Sonitpur",
+    "Tinsukia",
+    "Udalguri"
+  ],
+  "Bihar": [
+    "Araria",
+    "Arwal",
+    "Aurangabad",
+    "Banka",
+    "Begusarai",
+    "Bhagalpur",
+    "Bhojpur",
+    "Buxar",
+    "Darbhanga",
+    "Gaya",
+    "Gopalganj",
+    "Jamui",
+    "Jehanabad",
+    "Kaimur",
+    "Katihar",
+    "Khagaria",
+    "Kishanganj",
+    "Lakhisarai",
+    "Madhepura",
+    "Madhubani",
+    "Munger",
+    "Muzaffarpur",
+    "Nalanda",
+    "Nawada",
+    "Pashchim Champaran",
+    "Patna",
+    "Purbi Champaran",
+    "Purnia",
+    "Rohtas",
+    "Saharsa",
+    "Samastipur",
+    "Saran",
+    "Sheikhpura",
+    "Sheohar",
+    "Sitamarhi",
+    "Siwan",
+    "Supaul",
+    "Vaishali"
+  ],
+  "Chandigarh": [
+    "Chandigarh"
+  ],
+  "Chhattisgarh": [
+    "Bastar",
+    "Bijapur",
+    "Bilaspur",
+    "Dantewada",
+    "Dhamtari",
+    "Durg",
+    "Janjgir Champa",
+    "Jashpur",
+    "Kabirdham",
+    "Kanker",
+    "Korba",
+    "Korea",
+    "Mahasamund",
+    "Narayanpur",
+    "Raigarh",
+    "Raipur",
+    "Rajnandgaon",
+    "Surguja"
+  ],
+  "Dadra and Nagar Haveli": [
+    "Dadra and Nagar Haveli"
+  ],
+  "Daman and Diu": [
+    "Daman",
+    "Diu"
+  ],
+  "Delhi": [
+    "Central Delhi",
+    "East Delhi",
+    "New Delhi",
+    "North Delhi",
+    "North East Delhi",
+    "North West Delhi",
+    "South Delhi",
+    "South West Delhi",
+    "West Delhi"
+  ],
+  "Goa": [
+    "North Goa",
+    "South Goa"
+  ],
+  "Gujarat": [
+    "Ahmadabad",
+    "Amreli",
+    "Anand",
+    "Banaskantha",
+    "Bharuch",
+    "Bhavnagar",
+    "Dohad",
+    "Gandhinagar",
+    "Jamnagar",
+    "Junagadh",
+    "Kachchh",
+    "Kheda",
+    "Mahesana",
+    "Narmada",
+    "Navsari",
+    "PanchMahal",
+    "Patan",
+    "Porbandar",
+    "Rajkot",
+    "Sabarkantha",
+    "Surat",
+    "Surendranagar",
+    "Tapi",
+    "The Dangs",
+    "Vadodara",
+    "Valsad"
+  ],
+  "Haryana": [
+    "Ambala",
+    "Bhiwani",
+    "Faridabad",
+    "Fatehabad",
+    "Gurgaon",
+    "Hisar",
+    "Jhajjar",
+    "Jind",
+    "Kaithal",
+    "Karnal",
+    "Kurukshetra",
+    "Mahendragarh",
+    "Mewat",
+    "Palwal",
+    "Panchkula",
+    "Panipat",
+    "Rewari",
+    "Rohtak",
+    "Sirsa",
+    "Sonipat",
+    "Yamunanagar"
+  ],
+  "Himachal Pradesh": [
+    "Bilaspur",
+    "Chamba",
+    "Hamirpur",
+    "Kangra",
+    "Kinnaur",
+    "Kullu",
+    "Lahul and Spiti",
+    "Mandi",
+    "Shimla",
+    "Sirmaur",
+    "Solan",
+    "Una"
+  ],
+  "Jammu and Kashmir": [
+    "Anantnag",
+    "Badgam",
+    "Bandipora",
+    "Baramula",
+    "Doda",
+    "Ganderbal",
+    "Jammu",
+    "Kargil",
+    "Kathua",
+    "Kishtwar",
+    "Kulgam",
+    "Kupwara",
+    "Leh",
+    "Pulwama",
+    "Punch",
+    "Rajouri",
+    "Ramban",
+    "Reasi",
+    "Samba",
+    "Shupiyan",
+    "Srinagar",
+    "Udhampur"
+  ],
+  "Jharkhand": [
+    "Bokaro",
+    "Chatra",
+    "Deoghar",
+    "Dhanbad",
+    "Dumka",
+    "Garhwa",
+    "Giridih",
+    "Godda",
+    "Gumla",
+    "Hazaribagh",
+    "Jamshedpur",
+    "Jamtara",
+    "Khunti",
+    "Kodarma",
+    "Latehar",
+    "Lohardaga",
+    "Pakur",
+    "Palamu",
+    "Pashchimi Singhbhum",
+    "Purbi Singhbhum",
+    "Ramgarh",
+    "Ranchi",
+    "Sahibganj",
+    "Saraikela Kharsawan",
+    "Simdega"
+  ],
+  "Karnataka": [
+    "Bagalkot",
+    "Bangalore",
+    "Bangalore Rural",
+    "Belgaum",
+    "Bellary",
+    "Bidar",
+    "Bijapur",
+    "Chamarajanagar",
+    "Chikkaballapura",
+    "Chikmagalur",
+    "Chitradurga",
+    "Dakshina Kannada",
+    "Davanagere",
+    "Dharwad",
+    "Gadag",
+    "Gulbarga",
+    "Hassan",
+    "Haveri",
+    "Kodagu",
+    "Kolar",
+    "Koppal",
+    "Mandya",
+    "Mysore",
+    "Raichur",
+    "Ramanagara",
+    "Shimoga",
+    "Tumkur",
+    "Udupi",
+    "Uttara Kannada",
+    "Yadgir"
+  ],
+  "Kerala": [
+    "Alappuzha",
+    "Ernakulam",
+    "Idukki",
+    "Kannur",
+    "Kasaragod",
+    "Kollam",
+    "Kottayam",
+    "Kozhikode",
+    "Malappuram",
+    "Palakkad",
+    "Pathanamthitta",
+    "Thiruvananthapuram",
+    "Thrissur",
+    "Wayanad"
+  ],
+  "Lakshadweep": [
+    "Lakshadweep"
+  ],
+  "Madhya Pradesh": [
+    "Alirajpur",
+    "Anuppur",
+    "Ashoknagar",
+    "Balaghat",
+    "Barwani",
+    "Betul",
+    "Bhind",
+    "Bhopal",
+    "Burhanpur",
+    "Chhattarpur",
+    "Chhindwara",
+    "Damoh",
+    "Datia",
+    "Dewas",
+    "Dhar",
+    "Dindori",
+    "East Nimar",
+    "Guna",
+    "Gwalior",
+    "Harda",
+    "Hoshangabad",
+    "Indore",
+    "Jabalpur",
+    "Jhabua",
+    "Katni",
+    "Mandla",
+    "Mandsaur",
+    "Morena",
+    "Narsimhapur",
+    "Neemuch",
+    "Panna",
+    "Raisen",
+    "Rajgarh",
+    "Ratlam",
+    "Rewa",
+    "Sagar",
+    "Satna",
+    "Sehore",
+    "Seoni",
+    "Shahdol",
+    "Shajapur",
+    "Sheopur",
+    "Shivpuri",
+    "Sidhi",
+    "Singrauli",
+    "Tikamgarh",
+    "Ujjain",
+    "Umaria",
+    "Vidisha",
+    "West Nimar"
+  ],
+  "Maharashtra": [
+    "Ahmadnagar",
+    "Akola",
+    "Amravati",
+    "Aurangabad",
+    "Bhandara",
+    "Bid",
+    "Buldana",
+    "Chandrapur",
+    "Dhule",
+    "Gadchiroli",
+    "Gondiya",
+    "Hingoli",
+    "Jalgaon",
+    "Jalna",
+    "Kolhapur",
+    "Latur",
+    "Mumbai City",
+    "Mumbai Suburban",
+    "Nagpur",
+    "Nanded",
+    "Nandurbar",
+    "Nashik",
+    "Osmanabad",
+    "Parbhani",
+    "Pune",
+    "Raigarh",
+    "Ratnagiri",
+    "Sangli",
+    "Satara",
+    "Sindhudurg",
+    "Solapur",
+    "Thane",
+    "Wardha",
+    "Washim",
+    "Yavatmal"
+  ],
+  "Manipur": [
+    "Bishnupur",
+    "Chandel",
+    "Churachandpur",
+    "Imphal East",
+    "Imphal West",
+    "Senapati",
+    "Tamenglong",
+    "Thoubal",
+    "Ukhrul"
+  ],
+  "Meghalaya": [
+    "East Garo Hills",
+    "East Khasi Hills",
+    "Jaintia Hills",
+    "Ri Bhoi",
+    "South Garo Hills",
+    "West Garo Hills",
+    "West Khasi Hills"
+  ],
+  "Mizoram": [
+    "Aizawl",
+    "Champhai",
+    "Kolasib",
+    "Lawngtlai",
+    "Lunglei",
+    "Mamit",
+    "Saiha",
+    "Serchhip"
+  ],
+  "Nagaland": [
+    "Dimapur",
+    "Kiphire",
+    "Kohima",
+    "Longleng",
+    "Mokokchung",
+    "Mon",
+    "Peren",
+    "Phek",
+    "Tuensang",
+    "Wokha",
+    "Zunheboto"
+  ],
+  "Orissa": [
+    "Anugul",
+    "Balangir",
+    "Baleshwar",
+    "Bargarh",
+    "Baudh",
+    "Bhadrak",
+    "Cuttack",
+    "Debagarh",
+    "Dhenkanal",
+    "Gajapati",
+    "Ganjam",
+    "Jagatsinghapur",
+    "Jajapur",
+    "Jharsuguda",
+    "Kalahandi",
+    "Kandhamal",
+    "Kendrapara",
+    "Kendujhar",
+    "Khordha",
+    "Koraput",
+    "Malkangiri",
+    "Mayurbhanj",
+    "Nabarangapur",
+    "Nayagarh",
+    "Nuapada",
+    "Puri",
+    "Rayagada",
+    "Sambalpur",
+    "Subarnapur",
+    "Sundargarh"
+  ],
+  "Puducherry": [
+    "Karaikal",
+    "Mahe",
+    "Puducherry",
+    "Yanam"
+  ],
+  "Punjab": [
+    "Amritsar",
+    "Barnala",
+    "Bathinda",
+    "Faridkot",
+    "Fatehgarh Sahib",
+    "Firozpur",
+    "Gurdaspur",
+    "Hoshiarpur",
+    "Jalandhar",
+    "Kapurthala",
+    "Ludhiana",
+    "Mansa",
+    "Moga",
+    "Mohali",
+    "Muktsar",
+    "Patiala",
+    "Rupnagar",
+    "Sangrur",
+    "Shahid Bhagat Singh Nagar",
+    "Tarn Taran"
+  ],
+  "Rajasthan": [
+    "Ajmer",
+    "Alwar",
+    "Banswara",
+    "Baran",
+    "Barmer",
+    "Bharatpur",
+    "Bhilwara",
+    "Bikaner",
+    "Bundi",
+    "Chittaurgarh",
+    "Churu",
+    "Dausa",
+    "Dhaulpur",
+    "Dungarpur",
+    "Ganganagar",
+    "Hanumangarh",
+    "Jaipur",
+    "Jaisalmer",
+    "Jalor",
+    "Jhalawar",
+    "Jhunjhunun",
+    "Jodhpur",
+    "Karauli",
+    "Kota",
+    "Nagaur",
+    "Pali",
+    "Pratapgarh",
+    "Rajsamand",
+    "Sawai Madhopur",
+    "Sikar",
+    "Sirohi",
+    "Tonk",
+    "Udaipur"
+  ],
+  "Sikkim": [
+    "East Sikkim",
+    "North Sikkim",
+    "South Sikkim",
+    "West Sikkim"
+  ],
+  "Tamil Nadu": [
+    "Ariyalur",
+    "Chennai",
+    "Coimbatore",
+    "Cuddalore",
+    "Dharmapuri",
+    "Dindigul",
+    "Erode",
+    "Kancheepuram",
+    "Kanniyakumari",
+    "Karur",
+    "Krishnagiri",
+    "Madurai",
+    "Nagapattinam",
+    "Namakkal",
+    "Perambalur",
+    "Pudukkottai",
+    "Ramanathapuram",
+    "Salem",
+    "Sivaganga",
+    "Thanjavur",
+    "The Nilgiris",
+    "Theni",
+    "Thiruvallur",
+    "Thiruvarur",
+    "Thoothukkudi",
+    "Tiruchirappalli",
+    "Tirunelveli",
+    "Tiruppur",
+    "Tiruvannamalai",
+    "Vellore",
+    "Viluppuram",
+    "Virudhunagar"
+  ],
+  "Tripura": [
+    "Dhalai",
+    "North Tripura",
+    "South Tripura",
+    "West Tripura"
+  ],
+  "Uttar Pradesh": [
+    "Agra",
+    "Aligarh",
+    "Allahabad",
+    "Ambedkar Nagar",
+    "Auraiya",
+    "Azamgarh",
+    "Baghpat",
+    "Bahraich",
+    "Ballia",
+    "Balrampur",
+    "Banda",
+    "Barabanki",
+    "Bareilly",
+    "Basti",
+    "Bijnor",
+    "Budaun",
+    "Bulandshahar",
+    "Chandauli",
+    "Chitrakoot",
+    "Deoria",
+    "Etah",
+    "Etawah",
+    "Faizabad",
+    "Farrukhabad",
+    "Fatehpur",
+    "Firozabad",
+    "Gautam Buddha Nagar",
+    "Ghaziabad",
+    "Ghazipur",
+    "Gonda",
+    "Gorakhpur",
+    "Hamirpur",
+    "Hardoi",
+    "Jalaun",
+    "Jaunpur",
+    "Jhansi",
+    "Jyotiba Phule Nagar",
+    "Kannauj",
+    "Kanpur Nagar",
+    "Kanshiram Nagar",
+    "Kaushambi",
+    "Kheri",
+    "Kushinagar",
+    "Lalitpur",
+    "Lucknow",
+    "Mahamaya Nagar",
+    "Maharajganj",
+    "Mahoba",
+    "Mainpuri",
+    "Mathura",
+    "Mau",
+    "Meerut",
+    "Mirzapur",
+    "Moradabad",
+    "Muzaffarnagar",
+    "Noida",
+    "Pilibhit",
+    "Pratapgarh",
+    "Rae Bareli",
+    "Ramabai Nagar",
+    "Rampur",
+    "Saharanpur",
+    "Sant Kabir Nagar",
+    "Sant Ravidas Nagar",
+    "Shahjahanpur",
+    "Shrawasti",
+    "Siddharth Nagar",
+    "Sitapur",
+    "Sonbhadra",
+    "Sultanpur",
+    "Unnao",
+    "Varanasi"
+  ],
+  "Uttarakhand": [
+    "Almora",
+    "Bageshwar",
+    "Chamoli",
+    "Champawat",
+    "Dehradun",
+    "Haridwar",
+    "Nainital",
+    "Pauri Garhwal",
+    "Pithoragarh",
+    "Rudraprayag",
+    "Tehri Garhwal",
+    "Udham Singh Nagar",
+    "Uttarkashi"
+  ],
+  "West Bengal": [
+    "Bankura",
+    "Barddhaman",
+    "Birbhum",
+    "Dakshin Dinajpur",
+    "Darjiling",
+    "Haora",
+    "Hugli",
+    "Jalpaiguri",
+    "Koch Bihar",
+    "Kolkata",
+    "Maldah",
+    "Murshidabad",
+    "Nadia",
+    "North Twenty Four Parganas",
+    "Paschim Medinipur",
+    "Purba Medinipur",
+    "Puruliya",
+    "South Twenty Four Parganas",
+    "Uttar Dinajpur"
+  ]
+};
+
+const cityStates = ref(
+  Object.entries(CITY_DATA).map(([name, cities]) => ({ name, cities }))
+);
+
+const citySearch = ref("");
+const cityDropdownOpen = ref(false);
+const cityFieldRef = ref(null);
+
+const filteredCityStates = computed(() => {
+  const q = citySearch.value.trim().toLowerCase();
+  if (!q) return cityStates.value;
+
+  return cityStates.value
+    .map((state) => ({
+      name: state.name,
+      cities: state.cities.filter((city) => city.toLowerCase().includes(q)),
+    }))
+    .filter((state) => state.cities.length > 0);
+});
+
+function selectCity(city) {
+  form.location = city;
+  citySearch.value = city;
+  cityDropdownOpen.value = false;
+}
+
+function handleClickOutside(event) {
+  if (cityFieldRef.value && !cityFieldRef.value.contains(event.target)) {
+    cityDropdownOpen.value = false;
+    // If they typed something that isn't a valid city, clear it so form.location stays accurate
+    if (citySearch.value !== form.location) {
+      citySearch.value = form.location;
+    }
+  }
+}
+
+const form = reactive({
+  category: "",
+  jobTitle: "",
+  companyName: "",
+  location: "",
+  email: "",
+  mobile: "",
+  experience: "",
+  salary: "",
+  link: "",
+});
+
+const submitting = ref(false);
+const statusMessage = ref("");
+const statusOk = ref(false);
+
+async function submitForm() {
+  submitting.value = true;
+  statusMessage.value = "";
+
+  try {
+    const res = await fetch("/api/rojgarsetu", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    const result = await res.json();
+
+    if (result.success) {
+      statusOk.value = true;
+      statusMessage.value = "Job posted successfully!";
+      Object.keys(form).forEach((key) => (form[key] = ""));
+      citySearch.value = "";
+    } else {
+      statusOk.value = false;
+      statusMessage.value = result.error || "Something went wrong.";
+    }
+  } catch (err) {
+    statusOk.value = false;
+    statusMessage.value = "Could not connect to server.";
+    console.error(err);
+  } finally {
+    submitting.value = false;
+  }
+}
+
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleClickOutside);
+});
+</script>
