@@ -114,6 +114,13 @@
             </div>
 
             <!-- City (searchable) -->
+            <!--
+              NOTE: `required` was removed from this input on purpose.
+              It's bound to `citySearch` (the visible text), not `form.location`
+              (the actual value we submit). Validating the wrong variable let
+              the browser silently block submission. We now validate
+              `form.location` explicitly inside submitForm() instead.
+            -->
             <div class="relative" ref="cityFieldRef">
               <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 City
@@ -123,7 +130,6 @@
                 type="text"
                 autocomplete="off"
                 placeholder="Select your city"
-                required
                 @focus="cityDropdownOpen = true"
                 @input="cityDropdownOpen = true"
                 class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-primary dark:border-gray-700 dark:text-white placeholder:text-gray-400"
@@ -157,6 +163,7 @@
             </div>
 
             <!-- Branch (searchable) -->
+            <!-- Same fix as City: `required` removed, validated in JS instead. -->
             <div class="relative md:col-span-2" ref="branchFieldRef">
               <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Branch
@@ -166,7 +173,6 @@
                 type="text"
                 autocomplete="off"
                 placeholder="Select or search branch"
-                required
                 @focus="branchDropdownOpen = true"
                 @input="branchDropdownOpen = true"
                 class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-primary dark:border-gray-700 dark:text-white placeholder:text-gray-400"
@@ -211,9 +217,10 @@
             <div class="md:col-span-2 flex gap-3 pt-2">
               <button
                 type="submit"
-                class="rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-medium text-white hover:bg-orange-600"
+                :disabled="submitting"
+                class="rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
               >
-                Submit
+                {{ submitting ? 'Submitting...' : 'Submit' }}
               </button>
               <button
                 type="button"
@@ -223,6 +230,10 @@
                 {{ showTable ? 'Hide' : 'Show' }}
               </button>
             </div>
+
+            <p v-if="statusMessage" class="md:col-span-2 text-sm" :class="statusOk ? 'text-green-600' : 'text-red-600'">
+              {{ statusMessage }}
+            </p>
 
           </form>
         </div>
@@ -251,12 +262,13 @@
                   <th class="px-3 py-2 font-medium">Branch</th>
                   <th class="px-3 py-2 font-medium">Status</th>
                   <th class="px-3 py-2 font-medium">Link</th>
+                  <th class="px-3 py-2 font-medium"></th>
                 </tr>
               </thead>
               <tbody>
                 <tr
-                  v-for="(item, idx) in submissions"
-                  :key="idx"
+                  v-for="item in submissions"
+                  :key="item.InternshipId"
                   class="border-b border-gray-100 text-gray-700 dark:border-gray-800 dark:text-gray-300"
                 >
                   <td class="px-3 py-2">{{ item.company }}</td>
@@ -278,6 +290,15 @@
                   <td class="px-3 py-2">
                     <a :href="item.link" target="_blank" class="text-orange-500 hover:underline">Link</a>
                   </td>
+                  <td class="px-3 py-2">
+                    <button
+                      type="button"
+                      @click="removeInternship(item.InternshipId)"
+                      class="text-xs font-medium text-red-500 hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -295,6 +316,10 @@ import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
 
 const currentPageTitle = ref("Internship");
+
+// Base URL of the Flask API. Vue (Vite) runs on :5173, Flask runs on :5000 —
+// change this if your Flask server runs somewhere else.
+const API_BASE = "http://127.0.0.1:5000";
 
 const companyTypes = [
   "Private",
@@ -1169,21 +1194,94 @@ function handleClickOutside(event) {
   }
 }
 
-// ---- Submissions (kept in local state; wire to a real API when ready) ----
+// ---- Submissions — now backed by Flask + SQL Server via /api/internships ----
 const submissions = ref([]);
 const showTable = ref(false);
+const submitting = ref(false);
+const statusMessage = ref("");
+const statusOk = ref(false);
 
-function submitForm() {
-  submissions.value.push({ ...form });
+async function fetchInternships() {
+  try {
+    const res = await fetch(`${API_BASE}/api/internships`);
+    const result = await res.json();
+    if (result.success) {
+      submissions.value = result.data;
+    }
+  } catch (err) {
+    console.error("Could not load internships:", err);
+  }
+}
 
-  // Reset form
-  Object.keys(form).forEach((key) => (form[key] = ""));
-  citySearch.value = "";
-  branchSearch.value = "";
+async function submitForm() {
+  // These two fields are validated here (instead of via the native `required`
+  // attribute) because their visible <input> is bound to a separate search
+  // string (citySearch / branchSearch), not to form.location / form.branch.
+  // Validating the wrong variable let the browser silently block submission
+  // even when the fields *looked* filled in.
+  if (!form.location) {
+    statusOk.value = false;
+    statusMessage.value = "Please select a city from the dropdown list.";
+    return;
+  }
+  if (!form.branch) {
+    statusOk.value = false;
+    statusMessage.value = "Please select a branch from the dropdown list.";
+    return;
+  }
+
+  submitting.value = true;
+  statusMessage.value = "";
+
+  try {
+    const res = await fetch(`${API_BASE}/api/internships`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    const result = await res.json();
+
+    if (result.success) {
+      statusOk.value = true;
+      statusMessage.value = "Internship posted successfully!";
+      Object.keys(form).forEach((key) => (form[key] = ""));
+      citySearch.value = "";
+      branchSearch.value = "";
+      await fetchInternships();
+    } else {
+      statusOk.value = false;
+      statusMessage.value = result.error || "Something went wrong.";
+    }
+  } catch (err) {
+    statusOk.value = false;
+    statusMessage.value = "Could not connect to server.";
+    console.error(err);
+  } finally {
+    submitting.value = false;
+  }
+}
+
+async function removeInternship(id) {
+  if (!confirm("Delete this internship?")) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/internships/${id}`, {
+      method: "DELETE",
+    });
+    const result = await res.json();
+    if (result.success) {
+      submissions.value = submissions.value.filter((s) => s.InternshipId !== id);
+    } else {
+      alert(result.error || "Could not delete.");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Could not connect to server.");
+  }
 }
 
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
+  fetchInternships();
 });
 
 onBeforeUnmount(() => {
