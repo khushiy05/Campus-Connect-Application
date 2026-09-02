@@ -43,6 +43,141 @@
 </div>
 <!-- Page Header End -->
 
+<!-- Upcoming Internships Section Start -->
+<div class="container-fluid py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h1 class="display-4 text-dark">Upcoming <span class="text-primary">Internships</span></h1>
+        </div>
+        <div class="row">
+
+            <!-- Left Side: Search by City -->
+            <div class="col-lg-3 mb-4">
+                <div class="border rounded shadow-sm p-4">
+                    <h5 class="mb-3 text-dark"><i class="fa fa-map-marker-alt text-primary mr-2"></i>Search by City</h5>
+                    <input type="text" id="citySearch" class="form-control mb-3" placeholder="Type a city..." onkeyup="filterInternships()">
+                    <ul class="list-unstyled mb-0" id="cityList">
+                        <li class="mb-2"><a href="#" class="city-filter text-dark" data-city="all"><i class="fa fa-globe mr-2 text-primary"></i>All Cities</a></li>
+                        <li class="mb-2"><a href="#" class="city-filter text-dark" data-city="Nagpur"><i class="fa fa-map-marker-alt mr-2 text-primary"></i>Nagpur</a></li>
+                        <li class="mb-2"><a href="#" class="city-filter text-dark" data-city="Pune"><i class="fa fa-map-marker-alt mr-2 text-primary"></i>Pune</a></li>
+                        <li class="mb-2"><a href="#" class="city-filter text-dark" data-city="Mumbai"><i class="fa fa-map-marker-alt mr-2 text-primary"></i>Mumbai</a></li>
+                        <li class="mb-2"><a href="#" class="city-filter text-dark" data-city="Delhi"><i class="fa fa-map-marker-alt mr-2 text-primary"></i>Delhi</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Right Side: Internship Cards -->
+            <div class="col-lg-9">
+                <div id="internshipList">
+
+                    <!-- Card 1 -->
+                    <div class="internship-card border rounded shadow-sm p-3 mb-3" data-city="Nagpur">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 text-center mb-3 mb-md-0">
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto" style="width:60px; height:60px;">
+                                    <i class="fa fa-building fa-lg text-primary"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <h5 class="mb-1 text-dark">Software Developer Intern</h5>
+                                <p class="mb-0 text-muted">
+                                    <i class="fa fa-map-marker-alt text-primary mr-1"></i>Nagpur, India
+                                    &nbsp;|&nbsp;
+                                    <span class="badge badge-info">Private</span>
+                                </p>
+                            </div>
+                            <div class="col-md-3 text-md-right text-center mt-3 mt-md-0">
+                                <a href="#" class="btn btn-primary btn-sm">Apply Now</a>
+                                <p class="small text-muted mb-0 mt-2">Deadline: 15 Sep, 2026</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="internship-card border rounded shadow-sm p-3 mb-3" data-city="Pune">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 text-center mb-3 mb-md-0">
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto" style="width:60px; height:60px;">
+                                    <i class="fa fa-bullhorn fa-lg text-primary"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <h5 class="mb-1 text-dark">Marketing Intern</h5>
+                                <p class="mb-0 text-muted">
+                                    <i class="fa fa-map-marker-alt text-primary mr-1"></i>Pune, India
+                                    &nbsp;|&nbsp;
+                                    <span class="badge badge-warning">Startup</span>
+                                </p>
+                            </div>
+                            <div class="col-md-3 text-md-right text-center mt-3 mt-md-0">
+                                <a href="#" class="btn btn-primary btn-sm">Apply Now</a>
+                                <p class="small text-muted mb-0 mt-2">Deadline: 20 Sep, 2026</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div class="internship-card border rounded shadow-sm p-3 mb-3" data-city="Mumbai">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 text-center mb-3 mb-md-0">
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto" style="width:60px; height:60px;">
+                                    <i class="fa fa-landmark fa-lg text-primary"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <h5 class="mb-1 text-dark">Government Internship - Data Entry</h5>
+                                <p class="mb-0 text-muted">
+                                    <i class="fa fa-map-marker-alt text-primary mr-1"></i>Mumbai, India
+                                    &nbsp;|&nbsp;
+                                    <span class="badge badge-secondary">Government</span>
+                                </p>
+                            </div>
+                            <div class="col-md-3 text-md-right text-center mt-3 mt-md-0">
+                                <a href="#" class="btn btn-primary btn-sm">Apply Now</a>
+                                <p class="small text-muted mb-0 mt-2">Deadline: 25 Sep, 2026</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- No results message -->
+                    <div id="noResults" class="text-center text-muted py-4" style="display:none;">
+                        No internships found for this city.
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Upcoming Internships Section End -->
+
+<script>
+function filterInternships() {
+    const value = document.getElementById('citySearch').value.toLowerCase();
+    const cards = document.querySelectorAll('.internship-card');
+    let anyVisible = false;
+    cards.forEach(card => {
+        const city = card.getAttribute('data-city').toLowerCase();
+        if (city.includes(value)) {
+            card.style.display = 'block';
+            anyVisible = true;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    document.getElementById('noResults').style.display = anyVisible ? 'none' : 'block';
+}
+
+document.querySelectorAll('.city-filter').forEach(link => {
+    link.addEventListener('click', function (e) {
+        e.preventDefault();
+        const city = this.getAttribute('data-city');
+        document.getElementById('citySearch').value = (city === 'all') ? '' : city;
+        filterInternships();
+    });
+});
+</script>
+
 
     {% include 'footer.html' %}
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
