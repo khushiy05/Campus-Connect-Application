@@ -262,7 +262,7 @@ document.addEventListener('DOMContentLoaded', loadInternships);
             box.innerHTML = '';
         } else {
             box.innerHTML = matches.map(c =>
-                `<div class="px-3 py-2" style="cursor:pointer;" onmousedown="pickCity('${c}')" onmouseover="this.style.background='#fff3ea'" onmouseout="this.style.background='#fff'">${c}</div>`
+                <div class="px-3 py-2" style="cursor:pointer;" onmousedown="pickCity('${c}')" onmouseover="this.style.background='#fff3ea'" onmouseout="this.style.background='#fff'">${c}</div>
             ).join('');
             box.style.display = 'block';
         }

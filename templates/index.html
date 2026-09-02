@@ -59,10 +59,10 @@
     <!-- Topbar End -->
 
 
-    <!-- Navbar Start -->
+   <!-- Navbar Start -->
     <div class="container-fluid">
         <div class="row border-top px-xl-5">
-            <div class="col-lg-3 d-none d-lg-block">
+            <div id="citySection" class="col-lg-3 d-none d-lg-block">
                 <a class="d-flex align-items-center justify-content-between bg-secondary w-100 text-decoration-none" data-toggle="collapse" href="#navbar-vertical" style="height: 67px; padding: 0 30px;">
                     <h5 class="text-primary m-0"><i class="fa fa-city mr-2"></i>City</h5>
                     <i class="fa fa-angle-down text-primary"></i>
@@ -75,22 +75,29 @@
                     </div>
                 </nav>
             </div>
-            <div class="col-lg-9">
+            <div class="col-lg-9 registration-navbar">
                 <nav class="navbar navbar-expand-lg bg-light navbar-light py-3 py-lg-0 px-0">
-                    <a href="" class="text-decoration-none d-block d-lg-none">
+                    <a href="{{ url_for('home') }}" class="text-decoration-none d-block d-lg-none">
                         <h1 class="m-0"><span class="text-primary">CAMPUS</span>CONNECT AI</h1>
                     </a>
                     <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
                         <span class="navbar-toggler-icon"></span>
                     </button>
-                    <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
-                    <div class="navbar-nav py-0 mx-auto">
-                        <a href="/" class="nav-item nav-link active">Home</a>
-                        <a href="/internship.html" class="nav-item nav-link">Internship</a>
-                        <a href="/rojgarsetu.html" class="nav-item nav-link">RojgarSetu</a>
-                        <a href="/advertisement.html" class="nav-item nav-link">Advertisement</a>
-                        <a href="/contact.html" class="nav-item nav-link">Contact</a>
+
+                    <div class="collapse navbar-collapse justify-content-center" id="navbarCollapse">
+                    <div class="navbar-nav py-0 mx-auto justify-content-center">
+                        <a href="{{ url_for('home') }}" class="nav-item nav-link {% if request.endpoint == 'home' %}active{% endif %}">Home</a>
+                        <a href="{{ url_for('internship') }}" class="nav-item nav-link {% if request.endpoint == 'internship' %}active{% endif %}">Internship</a>
+                        <a href="{{ url_for('rojgarsetu') }}" class="nav-item nav-link {% if request.endpoint == 'rojgarsetu' %}active{% endif %}">RojgarSetu</a>
+                        <a href="{{ url_for('advertisement') }}" class="nav-item nav-link {% if request.endpoint == 'advertisement' %}active{% endif %}">Advertisement</a>
+                        <a href="{{ url_for('contact') }}" class="nav-item nav-link {% if request.endpoint == 'contact' %}active{% endif %}">Contact</a>
                     </div>
+                        <a id="registrationBtn"
+                        class="btn btn-primary py-2 px-4 ml-auto d-none d-lg-block"
+                        href="{{ url_for('registration') }}" target="_blank">
+                        Campus Registration
+                        </a>
+                        <!-- Campus Agent Button -->
                     </div>
                 </nav>
             </div>
@@ -113,8 +120,10 @@
                         <div class="p-5" style="width: 100%; max-width: 900px;">
                             <h5 class="text-white text-uppercase mb-md-3">Best Online Courses</h5>
                             <h1 class="display-3 text-white mb-md-4">Your Campus, Smarter Connected</h1>
-                            <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2 mr-2" href="/registration.html" target="_blank">Campus Registration</a>
                             <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2" href="">Learn More</a>
+                            <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2 " href="/registration.html" target="_blank">Campus Registration</a>
+                            <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2 "href="{{ url_for('campus_agent') }}"target="_blank">Campus Agent</a>
+                            
                         </div>
                     </div>
                 </div>
@@ -124,8 +133,9 @@
                         <div class="p-5" style="width: 100%; max-width: 900px;">
                             <h5 class="text-white text-uppercase mb-md-3">Best Online Courses</h5>
                             <h1 class="display-3 text-white mb-md-4">Bridging Students and Success with AI</h1>
-                            <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2 mr-2" href="/registration.html" target="_blank">Campus Registration</a>
                             <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2" href="">Learn More</a>
+                            <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2 " href="/registration.html" target="_blank">Campus Registration</a>
+                            <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2 "href="{{ url_for('campus_agent') }}"target="_blank">Campus Agent</a>
                         </div>
                     </div>
                 </div>
@@ -135,8 +145,9 @@
                         <div class="p-5" style="width: 100%; max-width: 900px;">
                             <h5 class="text-white text-uppercase mb-md-3">Best Online Courses</h5>
                             <h1 class="display-3 text-white mb-md-4">Where Campus Meets Intelligence.</h1>
-                            <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2 mr-2" href="/registration.html" target="_blank">Campus Registration</a>
                             <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2" href="">Learn More</a>
+                            <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2 " href="/registration.html" target="_blank">Campus Registration</a>
+                            <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2 "href="{{ url_for('campus_agent') }}"target="_blank">Campus Agent</a>
                         </div>
                     </div>
                 </div>
@@ -417,9 +428,10 @@
                             {% endif %}
                         </div>
                         <div class="bg-secondary p-4">
-                            <h5>{{ e.Domain }}</h5>
-                            <a class="btn btn-primary btn-sm mt-3" href="{{ url_for('expert_detail', expert_id=e.ID) }}">Learn More</a>
-                        </div>
+    <h5>{{ e.Name }}</h5>
+    <p class="text-primary mb-0">{{ e.Domain }}</p>
+    <a class="btn btn-primary btn-sm mt-3" href="{{ url_for('expert_detail', expert_id=e.ID) }}">Learn More</a>
+</div>
                     </div>
                 </div>
                 {% else %}
@@ -429,8 +441,45 @@
         </div>
     </div>
     <!-- Team End -->
-
-
+{% if selected_expert %}
+<div class="modal fade" id="expertModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ selected_expert.Name }}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        {% if selected_expert.Photo %}
+                            <img class="img-fluid rounded" src="{{ url_for('static', filename='uploads/experts/' ~ selected_expert.Photo) }}" alt="{{ selected_expert.Name }}">
+                        {% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <p><strong>Domain:</strong> {{ selected_expert.Domain }}</p>
+                        {% if selected_expert.City %}<p><strong>City:</strong> {{ selected_expert.City }}</p>{% endif %}
+                        {% if selected_expert.Email %}<p><strong>Email:</strong> {{ selected_expert.Email }}</p>{% endif %}
+                        {% if selected_expert.Mobile %}<p><strong>Mobile:</strong> {{ selected_expert.Mobile }}</p>{% endif %}
+                        {% if selected_expert.LinkedinURL %}
+                        <p><strong>LinkedIn:</strong>
+                            <a href="{{ selected_expert.LinkedinURL }}" target="_blank" rel="noopener">{{ selected_expert.LinkedinURL }}</a>
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        $('#expertModal').modal('show');
+    });
+</script>
+{% endif %}
     <!-- Testimonial Start -->
     <div class="container-fluid py-5">
         <div class="container py-5">

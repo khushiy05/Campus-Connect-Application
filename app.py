@@ -306,7 +306,7 @@ def home():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT ID, Photo, Domain FROM Expertdb ORDER BY ID DESC")
+        cursor.execute("SELECT ID, Name, Photo, Domain FROM Expertdb ORDER BY ID DESC")
         columns = [col[0] for col in cursor.description]
         experts = [dict(zip(columns, row)) for row in cursor.fetchall()]
         cursor.close()
@@ -350,8 +350,14 @@ def auth_google_callback():
     if not user_info:
         return redirect('/registration.html?error=google_failed')
 
-    session['user_email'] = user_info.get('email')
-    session['user_name'] = user_info.get('name')
+    # NOTE: these are dedicated one-time "prefill" keys used ONLY to pre-fill
+    # the registration form after Google sign-in. They are intentionally
+    # separate from session['user_email'] / session['role'], which track an
+    # actual logged-in admin/expert session. Reusing the same key caused the
+    # registration form to prefill with whichever account was last logged in
+    # (e.g. the admin's email) instead of the Google account that just signed in.
+    session['oauth_prefill_email'] = user_info.get('email')
+    session['oauth_prefill_name'] = user_info.get('name')
 
     print(f"Signed in via Google: {user_info.get('name')} ({user_info.get('email')})")
 
@@ -360,8 +366,8 @@ def auth_google_callback():
 
 @app.route('/registration.html')
 def registration():
-    prefill_name = session.pop('user_name', '')
-    prefill_email = session.pop('user_email', '')
+    prefill_name = session.pop('oauth_prefill_name', '')
+    prefill_email = session.pop('oauth_prefill_email', '')
     return render_template('registration.html', prefill_name=prefill_name, prefill_email=prefill_email)
 
 
@@ -572,6 +578,15 @@ def login_student():
     email = data.get('email')
     password = data.get('password')
 
+    # Optional: the page the user was trying to reach before being sent to
+    # login (e.g. /expert/12). login.html should read `?next=` from its own
+    # URL and pass it through here so we can send the user back to it.
+    # Only allow relative, same-site paths (must start with "/") to avoid
+    # open-redirect vulnerabilities.
+    next_url = data.get('next')
+    if not next_url or not isinstance(next_url, str) or not next_url.startswith('/'):
+        next_url = None
+
     if not email or not password:
         return {
             "success": False,
@@ -604,8 +619,22 @@ def login_student():
                 "error": "Invalid email or password."
             }, 401
 
-        # Check password
-        if row.password != password:
+        # Check password.
+        # logindb currently has a mix of legacy plain-text passwords and
+        # (going forward) hashed ones. check_password_hash() safely fails
+        # instead of throwing if row.password isn't a valid hash, so we
+        # fall back to a plain-text comparison for old rows. Once every
+        # row in logindb has been migrated to a hash, drop the fallback.
+        password_ok = False
+        try:
+            password_ok = check_password_hash(row.password, password)
+        except Exception:
+            password_ok = False
+
+        if not password_ok and row.password == password:
+            password_ok = True
+
+        if not password_ok:
             return {
                 "success": False,
                 "error": "Invalid email or password."
@@ -619,10 +648,12 @@ def login_student():
             session['user_email'] = row.email
             session['role'] = row.role
 
+            # Admins go to the admin dashboard unless they were sent here
+            # from a specific page (rare, but honor it if present).
             return {
                 "success": True,
                 "role": "admin",
-                "redirect": "http://localhost:5173/"
+                "redirect": next_url or "http://localhost:5173/"
             }, 200
 
         if role == "expert":
@@ -630,9 +661,12 @@ def login_student():
             session['user_email'] = row.email
             session['role'] = row.role
 
+            # Send the expert back to whatever page they clicked "Learn
+            # More" from (e.g. /expert/12). Falls back to the homepage.
             return {
                 "success": True,
-                "role": "expert"
+                "role": "expert",
+                "redirect": next_url or "/"
             }, 200
 
         return {
@@ -815,7 +849,7 @@ def add_expert():
         if not already_has_login:
             cursor.execute(
                 "INSERT INTO logindb (email, password, role) VALUES (?, ?, ?)",
-                (email, generated_password, 'expert')
+                (email, generate_password_hash(generated_password), 'expert')
             )
 
         conn.commit()
@@ -1127,6 +1161,8 @@ def delete_job_posting(job_id):
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
 
-
+@app.route('/campus-agent')
+def campus_agent():
+    return render_template('campus_agent.html')
 if __name__ == '__main__':
     app.run(debug=True)
