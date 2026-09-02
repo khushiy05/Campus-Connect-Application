@@ -1169,21 +1169,49 @@ function handleClickOutside(event) {
   }
 }
 
-// ---- Submissions (kept in local state; wire to a real API when ready) ----
+// ---- Submissions (loaded from the database via the API) ----
 const submissions = ref([]);
 const showTable = ref(false);
 
-function submitForm() {
-  submissions.value.push({ ...form });
+async function fetchInternships() {
+  try {
+    const res = await fetch('/api/internships');
+    const result = await res.json();
+    if (result.success) submissions.value = result.data;
+  } catch (err) {
+    console.error('Failed to load internships:', err);
+  }
+}
 
-  // Reset form
-  Object.keys(form).forEach((key) => (form[key] = ""));
-  citySearch.value = "";
-  branchSearch.value = "";
+async function submitForm() {
+  try {
+    const res = await fetch('/api/internships', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form),
+    });
+    const result = await res.json();
+
+    if (!result.success) {
+      alert('Error: ' + result.error);
+      return;
+    }
+
+    await fetchInternships(); // refresh the table with real DB data
+
+    // Reset form
+    Object.keys(form).forEach((key) => (form[key] = ""));
+    citySearch.value = "";
+    branchSearch.value = "";
+  } catch (err) {
+    console.error(err);
+    alert('Could not connect to server.');
+  }
 }
 
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
+  fetchInternships();
 });
 
 onBeforeUnmount(() => {
