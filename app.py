@@ -578,6 +578,15 @@ def login_student():
     email = data.get('email')
     password = data.get('password')
 
+    # Optional: the page the user was trying to reach before being sent to
+    # login (e.g. /expert/12). login.html should read `?next=` from its own
+    # URL and pass it through here so we can send the user back to it.
+    # Only allow relative, same-site paths (must start with "/") to avoid
+    # open-redirect vulnerabilities.
+    next_url = data.get('next')
+    if not next_url or not isinstance(next_url, str) or not next_url.startswith('/'):
+        next_url = None
+
     if not email or not password:
         return {
             "success": False,
@@ -639,10 +648,12 @@ def login_student():
             session['user_email'] = row.email
             session['role'] = row.role
 
+            # Admins go to the admin dashboard unless they were sent here
+            # from a specific page (rare, but honor it if present).
             return {
                 "success": True,
                 "role": "admin",
-                "redirect": "http://localhost:5173/"
+                "redirect": next_url or "http://localhost:5173/"
             }, 200
 
         if role == "expert":
@@ -650,9 +661,12 @@ def login_student():
             session['user_email'] = row.email
             session['role'] = row.role
 
+            # Send the expert back to whatever page they clicked "Learn
+            # More" from (e.g. /expert/12). Falls back to the homepage.
             return {
                 "success": True,
-                "role": "expert"
+                "role": "expert",
+                "redirect": next_url or "/"
             }, 200
 
         return {
