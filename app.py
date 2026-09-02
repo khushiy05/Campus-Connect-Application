@@ -965,5 +965,168 @@ def delete_advertisement(adv_id):
         return {"success": False, "error": str(e)}, 500
 
 
+# ---- Internship routes ----
+@app.route('/api/internships', methods=['GET'])
+def get_internships():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT InternshipId, Company AS company, Email AS email, Mobile AS mobile,
+                   CompanyType AS companyType, Duration AS duration, Stipend AS stipend,
+                   ApplicationLink AS link, Location AS location, Branch AS branch,
+                   Status AS status, PostedOn AS postedOn
+            FROM Internship ORDER BY InternshipId DESC
+        """)
+        columns = [col[0] for col in cursor.description]
+        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        cursor.close()
+        conn.close()
+        for r in rows:
+            for k, v in r.items():
+                if not isinstance(v, (str, int, float, type(None))):
+                    r[k] = str(v)
+        return {"success": True, "data": rows}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/internships', methods=['POST'])
+def add_internship():
+    # Keys match the Vue form's `form` object exactly:
+    # company, email, mobile, companyType, duration, stipend, link, location, branch, status
+    data = request.get_json()
+
+    company = data.get('company')
+    email = data.get('email')
+    mobile = data.get('mobile')
+    company_type = data.get('companyType')
+    duration = data.get('duration')
+    stipend = data.get('stipend')
+    link = data.get('link')
+    location = data.get('location')
+    branch = data.get('branch')
+    status = data.get('status')
+
+    if not company or not email or not mobile:
+        return {"success": False, "error": "Company, Email and Mobile are required"}, 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """INSERT INTO Internship
+               (Company, Email, Mobile, CompanyType, Duration, Stipend, ApplicationLink, Location, Branch, Status)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (company, email, mobile, company_type, duration, stipend, link, location, branch, status)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"success": True}, 201
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/internships/<int:internship_id>', methods=['DELETE'])
+def delete_internship(internship_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM Internship WHERE InternshipId = ?", (internship_id,))
+        conn.commit()
+        deleted = cursor.rowcount
+        cursor.close()
+        conn.close()
+
+        if deleted == 0:
+            return {"success": False, "error": "Internship not found."}, 404
+
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+# ---- RojgarSetu routes ----
+@app.route('/api/rojgarsetu', methods=['GET'])
+def get_job_postings():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM RojgarSetu ORDER BY JobId DESC")
+        columns = [col[0] for col in cursor.description]
+        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        cursor.close()
+        conn.close()
+        for r in rows:
+            for k, v in r.items():
+                if not isinstance(v, (str, int, float, type(None))):
+                    r[k] = str(v)
+        return {"success": True, "data": rows}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/rojgarsetu', methods=['POST'])
+def add_job_posting():
+    # Keys here match the Vue form's `form` object exactly:
+    # category, jobTitle, companyName, location, email, mobile, experience, salary, link
+    data = request.get_json()
+
+    job_category = data.get('category')
+    job_title = data.get('jobTitle')
+    company_name = data.get('companyName')
+    location = data.get('location')
+    email = data.get('email')
+    mobile = data.get('mobile')
+    experience = data.get('experience')
+    salary = data.get('salary')
+    link = data.get('link')
+
+    if not job_title or not company_name:
+        return {"success": False, "error": "Job Title and Company Name are required"}, 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """INSERT INTO RojgarSetu
+               (JobCategory, JobTitle, CompanyName, Location, Email, Mobile, Experience, SalaryLPA, ApplicationLink)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (job_category, job_title, company_name, location, email, mobile, experience, salary, link)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"success": True}, 201
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/rojgarsetu/<int:job_id>', methods=['DELETE'])
+def delete_job_posting(job_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM RojgarSetu WHERE JobId = ?", (job_id,))
+        conn.commit()
+        deleted = cursor.rowcount
+        cursor.close()
+        conn.close()
+
+        if deleted == 0:
+            return {"success": False, "error": "Job posting not found."}, 404
+
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
 if __name__ == '__main__':
     app.run(debug=True)
