@@ -1111,6 +1111,11 @@ def update_internship_status(internship_id):
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
 
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    session.clear()
+    return {"success": True}, 200
+
 # ---- RojgarSetu routes ----
 @app.route('/api/rojgarsetu', methods=['GET'])
 def get_job_postings():
