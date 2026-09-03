@@ -279,14 +279,35 @@
                   <td class="px-3 py-2">{{ item.stipend }}</td>
                   <td class="px-3 py-2">{{ item.location }}</td>
                   <td class="px-3 py-2">{{ item.branch }}</td>
+
+                  <!-- Status: Open/Close toggle buttons -->
                   <td class="px-3 py-2">
-                    <span
-                      class="rounded-full px-2 py-0.5 text-xs font-medium"
-                      :class="item.status === 'Open' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
-                    >
-                      {{ item.status }}
-                    </span>
+                    <div class="inline-flex overflow-hidden rounded-full border border-gray-200 dark:border-gray-700">
+                      <button
+                        type="button"
+                        :disabled="updatingStatusId === item.InternshipId"
+                        @click="toggleStatus(item, 'Open')"
+                        class="px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50"
+                        :class="item.status === 'Open'
+                          ? 'bg-green-500 text-white'
+                          : 'bg-transparent text-gray-500 hover:bg-green-50 dark:text-gray-400'"
+                      >
+                        Open
+                      </button>
+                      <button
+                        type="button"
+                        :disabled="updatingStatusId === item.InternshipId"
+                        @click="toggleStatus(item, 'Closed')"
+                        class="px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50"
+                        :class="item.status === 'Closed'
+                          ? 'bg-red-500 text-white'
+                          : 'bg-transparent text-gray-500 hover:bg-red-50 dark:text-gray-400'"
+                      >
+                        Close
+                      </button>
+                    </div>
                   </td>
+
                   <td class="px-3 py-2">
                     <a :href="item.link" target="_blank" class="text-orange-500 hover:underline">Link</a>
                   </td>
@@ -327,7 +348,7 @@ const companyTypes = [
   "Government (Gov)",
   "NGO",
   "Startup",
-  "Multinational Corporation (MNC)",
+  "MNC",
   "Non-Profit Organization",
   "Educational Institution",
   "Public Sector Undertaking (PSU)",
@@ -1195,35 +1216,41 @@ function handleClickOutside(event) {
 }
 
 // ---- Submissions — now backed by Flask + SQL Server via /api/internships ----
+
 const submissions = ref([]);
 const showTable = ref(false);
 const submitting = ref(false);
 const statusMessage = ref("");
 const statusOk = ref(false);
 
+// Tracks which row's status is currently being updated (used to disable
+// the Open/Close buttons for that row while the request is in flight).
+const updatingStatusId = ref(null);
+
 async function fetchInternships() {
   try {
     const res = await fetch(`${API_BASE}/api/internships`);
     const result = await res.json();
+
     if (result.success) {
       submissions.value = result.data;
+    } else {
+      console.error("Could not load internships:", result.error);
     }
   } catch (err) {
-    console.error("Could not load internships:", err);
+    console.error("Failed to load internships:", err);
   }
 }
 
 async function submitForm() {
-  // These two fields are validated here (instead of via the native `required`
-  // attribute) because their visible <input> is bound to a separate search
-  // string (citySearch / branchSearch), not to form.location / form.branch.
-  // Validating the wrong variable let the browser silently block submission
-  // even when the fields *looked* filled in.
+  // Validate city
   if (!form.location) {
     statusOk.value = false;
     statusMessage.value = "Please select a city from the dropdown list.";
     return;
   }
+
+  // Validate branch
   if (!form.branch) {
     statusOk.value = false;
     statusMessage.value = "Please select a branch from the dropdown list.";
@@ -1236,28 +1263,71 @@ async function submitForm() {
   try {
     const res = await fetch(`${API_BASE}/api/internships`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(form)
     });
+
     const result = await res.json();
 
-    if (result.success) {
-      statusOk.value = true;
-      statusMessage.value = "Internship posted successfully!";
-      Object.keys(form).forEach((key) => (form[key] = ""));
-      citySearch.value = "";
-      branchSearch.value = "";
-      await fetchInternships();
-    } else {
+    if (!result.success) {
       statusOk.value = false;
       statusMessage.value = result.error || "Something went wrong.";
+      return;
     }
+
+    statusOk.value = true;
+    statusMessage.value = "Internship posted successfully!";
+
+    // Reset form
+    Object.keys(form).forEach((key) => {
+      form[key] = "";
+    });
+
+    citySearch.value = "";
+    branchSearch.value = "";
+
+    // Refresh table
+    await fetchInternships();
+
   } catch (err) {
     statusOk.value = false;
     statusMessage.value = "Could not connect to server.";
     console.error(err);
   } finally {
     submitting.value = false;
+  }
+}
+
+// Toggles a single internship's status between "Open" and "Closed" using
+// the PATCH /api/internships/<id>/status endpoint. Updates optimistically
+// so the button feels instant, and rolls back if the request fails.
+async function toggleStatus(item, newStatus) {
+  if (item.status === newStatus) return; // already in this state, nothing to do
+
+  updatingStatusId.value = item.InternshipId;
+  const previousStatus = item.status;
+  item.status = newStatus; // optimistic update
+
+  try {
+    const res = await fetch(`${API_BASE}/api/internships/${item.InternshipId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus })
+    });
+    const result = await res.json();
+
+    if (!result.success) {
+      item.status = previousStatus; // revert on failure
+      alert(result.error || "Could not update status.");
+    }
+  } catch (err) {
+    item.status = previousStatus; // revert on failure
+    console.error(err);
+    alert("Could not connect to server.");
+  } finally {
+    updatingStatusId.value = null;
   }
 }
 
@@ -1276,6 +1346,7 @@ async function removeInternship(id) {
   } catch (err) {
     console.error(err);
     alert("Could not connect to server.");
+
   }
 }
 

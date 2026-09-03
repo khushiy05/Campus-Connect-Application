@@ -1082,7 +1082,34 @@ def delete_internship(internship_id):
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
+    
+@app.route('/api/internships/<int:internship_id>/status', methods=['PATCH'])
+def update_internship_status(internship_id):
+    data = request.get_json(silent=True) or {}
+    status = data.get('status')
 
+    if status not in ('Open', 'Closed'):
+        return {"success": False, "error": "Status must be 'Open' or 'Closed'."}, 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE Internship SET Status = ? WHERE InternshipId = ?",
+            (status, internship_id)
+        )
+        conn.commit()
+        updated = cursor.rowcount
+        cursor.close()
+        conn.close()
+
+        if updated == 0:
+            return {"success": False, "error": "Internship not found."}, 404
+
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
 
 # ---- RojgarSetu routes ----
 @app.route('/api/rojgarsetu', methods=['GET'])
