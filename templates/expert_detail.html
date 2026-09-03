@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ expert.Name }} — CampusConnect AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background-color: #f4f4f7;
+      color: #2d2d3a;
+    }
+    .topbar {
+      background-color: #2d2d3a;
+      padding: 20px 40px;
+    }
+    .topbar h1 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 22px;
+    }
+    .topbar span { color: #ff6b35; }
+    .topbar a {
+      color: #cccccc;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 40px;
+      background: #f9f9fb;
+      border-bottom: 1px solid #eaeaea;
+    }
+    .profile-header img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #ff6b35;
+    }
+    .profile-header .placeholder {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: #e0e0e5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      color: #999;
+      font-weight: bold;
+    }
+    .profile-header h2 {
+      margin: 0 0 6px 0;
+      font-size: 26px;
+    }
+    .profile-header .domain {
+      color: #ff6b35;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .profile-header .city {
+      color: #777;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+    .details {
+      padding: 30px 40px;
+    }
+    .details table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .details td {
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 15px;
+    }
+    .details td.label {
+      color: #999;
+      width: 160px;
+      font-weight: 600;
+    }
+    .details td a {
+      color: #fd7e14;
+      text-decoration: none;
+    }
+    .badge {
+      display: inline-block;
+      background: #eafaf0;
+      color: #1f9d55;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .actions {
+      padding: 0 40px 40px 40px;
+    }
+    .actions a.button {
+      display: inline-block;
+      background-color: #fd7e14;
+      color: #ffffff;
+      text-decoration: none;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .back-link {
+      display: block;
+      max-width: 800px;
+      margin: 24px auto 0 auto;
+      padding: 0 4px;
+      font-size: 14px;
+    }
+    .back-link a {
+      color: #555;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <h1><span>CAMPUS</span>CONNECT AI</h1>
+  </div>
+
+  <div class="container">
+    <div class="profile-header">
+      {% if expert.Photo %}
+        <img src="{{ url_for('static', filename='uploads/experts/' + expert.Photo) }}" alt="{{ expert.Name }}">
+      {% else %}
+        <div class="placeholder">{{ expert.Name[0] if expert.Name else '?' }}</div>
+      {% endif %}
+      <div>
+        <h2>{{ expert.Name }}</h2>
+        <div class="domain">{{ expert.Domain }}</div>
+        {% if expert.City %}<div class="city">{{ expert.City }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="details">
+      <table>
+        {% if expert.Email %}
+        <tr>
+          <td class="label">Email</td>
+          <td><a href="mailto:{{ expert.Email }}">{{ expert.Email }}</a></td>
+        </tr>
+        {% endif %}
+        {% if expert.Mobile %}
+        <tr>
+          <td class="label">Mobile</td>
+          <td>{{ expert.Mobile }}</td>
+        </tr>
+        {% endif %}
+        {% if expert.LinkedinURL %}
+        <tr>
+          <td class="label">LinkedIn</td>
+          <td><a href="{{ expert.LinkedinURL }}" target="_blank" rel="noopener">{{ expert.LinkedinURL }}</a></td>
+        </tr>
+        {% endif %}
+        {% if expert.PlanType %}
+        <tr>
+          <td class="label">Plan</td>
+          <td>{{ expert.PlanType }}</td>
+        </tr>
+        {% endif %}
+        {% if expert.ExpiryDate %}
+        <tr>
+          <td class="label">Active Until</td>
+          <td><span class="badge">{{ expert.ExpiryDate }}</span></td>
+        </tr>
+        {% endif %}
+      </table>
+    </div>
+
+    <div class="actions">
+      {% if expert.Email %}
+        <a class="button" href="mailto:{{ expert.Email }}">Contact {{ expert.Name.split(' ')[0] if expert.Name else 'Expert' }}</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="back-link">
+    <a href="/">&larr; Back to all experts</a>
+  </div>
+
+</body>
+</html>
