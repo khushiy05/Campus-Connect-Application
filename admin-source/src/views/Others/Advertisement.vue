@@ -147,7 +147,10 @@
 
         <!-- Show list table -->
         <div v-if="showList" class="border-t border-gray-200 p-6 dark:border-gray-800">
-          <div v-if="advertisements.length === 0" class="py-6 text-center text-gray-500 dark:text-gray-400">
+          <div v-if="loadingList" class="py-6 text-center text-gray-500 dark:text-gray-400">
+            Loading advertisements...
+          </div>
+          <div v-else-if="advertisements.length === 0" class="py-6 text-center text-gray-500 dark:text-gray-400">
             No advertisements added yet.
           </div>
           <div v-else class="overflow-x-auto">
@@ -162,12 +165,13 @@
                   <th class="py-2 pr-4">Duration</th>
                   <th class="py-2 pr-4">Reg. Date</th>
                   <th class="py-2 pr-4">Expiry Date</th>
+                  <th class="py-2 pr-4">Action</th>
                 </tr>
               </thead>
               <tbody>
                 <tr
-                  v-for="(ad, index) in advertisements"
-                  :key="index"
+                  v-for="ad in advertisements"
+                  :key="ad.AdvertisementId ?? ad.id ?? ad.name"
                   class="border-b border-gray-100 text-gray-700 dark:border-gray-800 dark:text-gray-300"
                 >
                   <td class="py-2 pr-4">{{ ad.name }}</td>
@@ -186,6 +190,16 @@
                   <td class="py-2 pr-4">{{ ad.duration }}</td>
                   <td class="py-2 pr-4">{{ ad.registrationDateDisplay }}</td>
                   <td class="py-2 pr-4">{{ ad.expiryDateDisplay }}</td>
+                  <td class="py-2 pr-4">
+                    <button
+                      type="button"
+                      @click="deleteAdvertisement(ad.AdvertisementId)"
+                      :disabled="deletingId === ad.AdvertisementId"
+                      class="rounded-md bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
+                    >
+                      {{ deletingId === ad.AdvertisementId ? "Deleting..." : "Delete" }}
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -197,7 +211,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
@@ -210,6 +224,14 @@ const formatDate = (date) => {
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const yyyy = date.getFullYear();
   return `${dd}-${mm}-${yyyy}`;
+};
+
+// Format a yyyy-mm-dd (or any parseable) date string as dd-mm-yyyy for display
+const formatDateString = (value) => {
+  if (!value) return "";
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return String(value);
+  return formatDate(d);
 };
 
 const form = ref({
@@ -235,6 +257,45 @@ const expiryDateDisplay = computed(() => {
 const logoInput = ref(null);
 const advertisements = ref([]);
 const showList = ref(false);
+const loadingList = ref(false);
+const deletingId = ref(null); // tracks which row is currently being deleted
+
+// ---- Load existing advertisements from the database on page load ----
+// This is what makes the list survive a page refresh: previously the
+// `advertisements` array only ever got filled in-memory right after a
+// successful submit, so refreshing the page always started it empty
+// even though the row was safely saved in SQL Server the whole time.
+const fetchAdvertisements = async () => {
+  loadingList.value = true;
+  try {
+    const res = await fetch("/api/advertisements");
+    if (!res.ok) throw new Error("Failed to load advertisements");
+    const result = await res.json();
+    const rows = result.data || [];
+
+    advertisements.value = rows.map((row) => ({
+      name: row.Name,
+      email: row.Email,
+      mobile: row.Mobile,
+      logoPreview: row.LogoPath
+        ? `/static/uploads/advertisements/${row.LogoPath}`
+        : null,
+      cost: row.Cost,
+      duration: row.Duration,
+      registrationDateDisplay: formatDateString(row.RegistrationDate),
+      expiryDateDisplay: formatDateString(row.ExpiryDate),
+      AdvertisementId: row.AdvertisementId,
+    }));
+  } catch (err) {
+    console.error(err);
+  } finally {
+    loadingList.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchAdvertisements();
+});
 
 const handleLogoUpload = (e) => {
   const file = e.target.files[0];
@@ -265,7 +326,7 @@ const handleSubmit = async () => {
   payload.append("mobile", form.value.mobile);
   payload.append("cost", form.value.cost);
   payload.append("duration", form.value.duration);
-  payload.append("registration_date", form.value.registrationDate); // yyyy-mm-dd — FIXED: was "registrationDate"
+  payload.append("registration_date", form.value.registrationDate); // yyyy-mm-dd
   if (form.value.logoFile) payload.append("logo", form.value.logoFile);
   // expiryDate intentionally not sent — it's a computed column in SQL Server,
   // the Flask /api/advertisements POST route ignores/does not expect it.
@@ -276,23 +337,41 @@ const handleSubmit = async () => {
       body: payload,
     });
     if (!res.ok) throw new Error("Failed to save advertisement");
-    const saved = await res.json();
+    await res.json();
 
-    advertisements.value.push({
-      name: form.value.name,
-      email: form.value.email,
-      mobile: form.value.mobile,
-      logoPreview: form.value.logoPreview,
-      cost: form.value.cost,
-      duration: form.value.duration,
-      registrationDateDisplay: regDateFormatted,
-      expiryDateDisplay: expiryDateDisplay.value,
-    });
+    // Re-fetch from the server instead of just pushing the local form data,
+    // so the list always reflects what's actually stored in the DB
+    // (correct AdvertisementId, server-saved logo path, computed ExpiryDate, etc.)
+    await fetchAdvertisements();
 
     resetForm();
   } catch (err) {
     console.error(err);
     alert("Something went wrong while saving. Please try again.");
+  }
+};
+
+// ---- Delete an advertisement ----
+const deleteAdvertisement = async (id) => {
+  if (!id) return;
+  if (!confirm("Are you sure you want to delete this advertisement?")) return;
+
+  deletingId.value = id;
+  try {
+    const res = await fetch(`/api/advertisements/${id}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error("Failed to delete advertisement");
+
+    // Remove locally instead of re-fetching everything, for a snappier UI
+    advertisements.value = advertisements.value.filter(
+      (ad) => ad.AdvertisementId !== id
+    );
+  } catch (err) {
+    console.error(err);
+    alert("Something went wrong while deleting. Please try again.");
+  } finally {
+    deletingId.value = null;
   }
 };
 </script>
