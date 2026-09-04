@@ -29,7 +29,7 @@
     {% include 'header.html' %}
 
     <!-- Page Header Start -->
-<div class="container-fluid page-header" style="margin-bottom: 90px;">
+<div class="container-fluid page-header" style="margin-bottom: 30px;">
     <div class="container">
         <div class="d-flex flex-column justify-content-center" style="min-height: 300px">
             <h3 class="display-4 text-white text-uppercase">RojgarSetu</h3>
@@ -43,10 +43,194 @@
 </div>
 <!-- Page Header End -->
 
+<!-- Job Listings Section Start -->
+<div class="container-fluid pt-3 pb-5">
+    <div class="container">
+        <div class="text-center mb-4">
+            <h1 class="display-4 text-dark">Latest <span class="text-primary">Job Openings</span></h1>
+        </div>
+        <div class="row">
+
+            <!-- Left Side: Search by City -->
+            <div class="col-lg-3 mb-4">
+                <div class="border rounded shadow-sm p-4" style="position: relative;">
+                    <h5 class="mb-3 text-dark"><i class="fa fa-map-marker-alt text-primary mr-2"></i>Search by City</h5>
+                    <input type="text" id="citySearch" class="form-control mb-2" placeholder="Type a city..." autocomplete="off" onkeyup="handleCityInput()" onfocus="handleCityInput()">
+                    <div id="citySuggestions" class="border rounded shadow-sm bg-white" style="display:none; position:absolute; z-index:20; max-height:250px; overflow-y:auto; width:calc(100% - 3rem);"></div>
+                    <a href="#" onclick="clearCityFilter(); return false;" class="d-inline-block mt-2 text-primary"><i class="fa fa-globe mr-2"></i>Show All Cities</a>
+                </div>
+            </div>
+
+            <!-- Right Side: Job Cards -->
+            <div class="col-lg-9">
+                <div id="jobList">
+                    {% for job in jobs %}
+                    <div class="job-card border rounded shadow-sm p-3 mb-3" data-city="{{ job.Location }}">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 text-center mb-3 mb-md-0">
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto" style="width:60px; height:60px;">
+                                    <i class="fa fa-briefcase fa-lg text-primary"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <h5 class="mb-1 text-dark">{{ job.JobTitle }} — {{ job.CompanyName }}</h5>
+                                <p class="mb-0 text-muted">
+                                    <i class="fa fa-map-marker-alt text-primary mr-1"></i>{{ job.Location }}, India
+                                    &nbsp;|&nbsp;
+                                    <span class="badge badge-secondary">{{ job.JobCategory }}</span>
+                                    &nbsp;|&nbsp;
+                                    <span class="text-muted small">Exp: {{ job.Experience }}</span>
+                                </p>
+                            </div>
+                            <div class="col-md-3 text-md-right text-center mt-3 mt-md-0">
+                                <a href="{{ job.ApplicationLink }}" target="_blank" class="btn btn-primary btn-sm">Apply Now</a>
+                                <p class="small text-muted mb-0 mt-2">Salary: {{ job.SalaryLPA }} LPA</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted py-4">No job postings yet. Check back soon!</p>
+                    {% endfor %}
+
+                    <div id="noResults" class="text-center text-muted py-4" style="display:none;">
+                        No jobs found for this city.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Job Listings Section End -->
+
     {% include 'footer.html' %}
 
     <!-- Back to Top -->
     <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="fa fa-angle-double-up"></i></a>
+
+    <script>
+    // Full India city list — used only for search suggestions
+    const ALL_INDIA_CITIES = [
+        "Adilabad","Agra","Ahmadabad","Ahmadnagar","Aizawl","Ajmer","Akola","Alappuzha","Aligarh","Alirajpur",
+        "Allahabad","Almora","Alwar","Ambala","Ambedkar Nagar","Amravati","Amreli","Amritsar","Anand","Anantapur",
+        "Anantnag","Anjaw","Anugul","Anuppur","Araria","Ariyalur","Arwal","Ashoknagar","Auraiya","Aurangabad",
+        "Azamgarh","Badgam","Bagalkot","Bageshwar","Baghpat","Bahraich","Baksa","Balaghat","Balangir","Baleshwar",
+        "Ballia","Balrampur","Banaskantha","Banda","Bandipora","Banka","Bankura","Banswara","Bara Banki","Baramula",
+        "Baran","Bardhaman","Barddhaman","Bargarh","Barmer","Barnala","Barpeta","Barwani","Bastar","Basti",
+        "Bathinda","Baudh","Beed","Begusarai","Belgaum","Bellary","Betul","Bhadrak","Bhagalpur","Bharatpur",
+        "Bharuch","Bhavnagar","Bhilwara","Bhind","Bhiwani","Bhojpur","Bhopal","Bidar","Bijapur","Bijnor",
+        "Bikaner","Bilaspur","Bishnupur","Bokaro","Bongaigaon","Budaun","Bulandshahar","Buldana","Bundi","Burhanpur",
+        "Buxar","Cachar","Chamarajanagar","Chamba","Champawat","Champhai","Chandauli","Chandel","Chandigarh","Chandrapur",
+        "Changlang","Chatra","Chennai","Chhatarpur","Chhindwara","Chikkaballapura","Chikmagalur","Chirang","Chitradurga","Chitrakoot",
+        "Chittoor","Chittaurgarh","Churachandpur","Churu","Coimbatore","Cuddalore","Cuttack","Dahod","Dakshin Dinajpur","Dakshina Kannada",
+        "Daman","Damoh","Dantewada","Darbhanga","Darjiling","Darrang","Datia","Dausa","Davanagere","Dehradun",
+        "Deoghar","Deoria","Dewas","Dhalai","Dhamtari","Dhanbad","Dhar","Dharmapuri","Dharwad","Dhemaji",
+        "Dhenkanal","Dholpur","Dhubri","Dhule","Dibang Valley","Dibrugarh","Dima Hasao","Dindigul","Dindori","Diu",
+        "Dohad","Doda","Dumka","Dungarpur","Durg","East Champaran","East Delhi","East Garo Hills","East Godavari","East Kameng",
+        "East Khasi Hills","East Siang","East Sikkim","Erode","Etah","Etawah","Faizabad","Faridabad","Faridkot","Farrukhabad",
+        "Fatehabad","Fatehgarh Sahib","Fatehpur","Firozabad","Firozpur","Gadag","Gadchiroli","Ganderbal","Gandhinagar","Ganganagar",
+        "Ganjam","Garhwa","Gaya","Ghaziabad","Ghazipur","Giridih","Goalpara","Godda","Golaghat","Gomati",
+        "Gonda","Gondiya","Gopalganj","Gorakhpur","Gulbarga","Gumla","Guna","Guntur","Gurdaspur","Gurgaon",
+        "Gwalior","Hailakandi","Hamirpur","Hanumangarh","Hapur","Harda","Hardoi","Haridwar","Hassan","Haveri",
+        "Hazaribagh","Hingoli","Hisar","Hooghly","Hoshangabad","Hoshiarpur","Howrah","Hyderabad","Idukki","Imphal East",
+        "Imphal West","Indore","Jabalpur","Jaipur","Jaisalmer","Jajapur","Jalandhar","Jalaun","Jalgaon","Jalna",
+        "Jalor","Jalpaiguri","Jamnagar","Jammu","Jamnagar","Jamtara","Jamui","Jamshedpur","Janjgir Champa","Jashpur",
+        "Jaunpur","Jehanabad","Jhabua","Jhajjar","Jhalawar","Jhansi","Jharsuguda","Jhunjhunun","Jind","Jodhpur",
+        "Jorhat","Junagadh","Kabirdham","Kachchh","Kaimur","Kaithal","Kalahandi","Kamrup","Kanchipuram","Kandhamal",
+        "Kangra","Kanker","Kannauj","Kannur","Kanpur","Kanshiram Nagar","Kanyakumari","Kapurthala","Karauli","Karbi Anglong",
+        "Kargil","Karimganj","Karimnagar","Karnal","Karur","Kasaragod","Kasganj","Katihar","Kathua","Katni",
+        "Kaushambi","Kendrapara","Kendujhar","Khagaria","Khammam","Khandwa","Kheda","Kheri","Khordha","Khunti",
+        "Kinnaur","Kiphire","Kishanganj","Kishtwar","Koch Bihar","Kodagu","Kodarma","Kohima","Kokrajhar","Kolar",
+        "Kolasib","Kolhapur","Kolkata","Kollam","Koppal","Koraput","Korba","Kota","Kottayam","Kozhikode",
+        "Krishna","Krishnagiri","Kulgam","Kullu","Kupwara","Kurnool","Kurukshetra","Kurung Kumey","Kushinagar","Lahaul and Spiti",
+        "Lakhimpur","Lakhisarai","Lalitpur","Latehar","Latur","Lawngtlai","Leh","Lohardaga","Lohit","Longleng",
+        "Lower Dibang Valley","Lower Subansiri","Lucknow","Ludhiana","Lunglei","Madhepura","Madhubani","Madurai","Mahasamund","Mahbubnagar",
+        "Mahendragarh","Mahesana","Mahoba","Mainpuri","Malappuram","Malda","Malkangiri","Mamit","Mandla","Mandsaur",
+        "Mandya","Mansa","Marigaon","Mathura","Mau","Mayurbhanj","Medak","Meerut","Mehsana","Mewat",
+        "Mirzapur","Moga","Mohali","Mokokchung","Moradabad","Morena","Morigaon","Mumbai","Mungeli","Munger",
+        "Murshidabad","Muzaffarnagar","Muzaffarpur","Mysore","Nabarangpur","Nadia","Nagaon","Nagapattinam","Nagaur","Nagpur",
+        "Nainital","Nalanda","Nalbari","Nalgonda","Namakkal","Nanded","Nandurbar","Narayanpur","Narmada","Narsinghpur",
+        "Nashik","Navsari","Nawada","Nawanshahr","Neemuch","Nellore","New Delhi","Nicobar","Nizamabad","Noida",
+        "North Delhi","North Garo Hills","North Goa","North Sikkim","North Tripura","Nuapada","Osmanabad","Pakur","Palakkad","Palamu",
+        "Pali","Palwal","Panchkula","Panchmahal","Panipat","Panna","Papum Pare","Parbhani","Paschim Medinipur","Patan",
+        "Pathanamthitta","Patiala","Patna","Pauri Garhwal","Perambalur","Phek","Pilibhit","Pithoragarh","Pratapgarh","Puducherry",
+        "Pulwama","Pune","Punch","Puri","Purnia","Purulia","Raebareli","Raichur","Raigad","Raigarh",
+        "Raipur","Raisen","Rajgarh","Rajkot","Rajnandgaon","Rajouri","Rajsamand","Ramanathapuram","Ramban","Ramgarh",
+        "Rampur","Ranchi","Ratlam","Ratnagiri","Rayagada","Reasi","Rewa","Rewari","Ri Bhoi","Rohtak",
+        "Rohtas","Rudraprayag","Rupnagar","Sabarkantha","Sagar","Saharanpur","Saharsa","Sahibganj","Saiha","Salem",
+        "Samastipur","Sambalpur","Samba","Sangli","Sangrur","Sant Kabir Nagar","Sant Ravidas Nagar","Saran","Sawai Madhopur","Sehore",
+        "Senapati","Seoni","Serchhip","Shahdol","Shahjahanpur","Shajapur","Shimla","Shimoga","Shivpuri","Shopian",
+        "Shrawasti","Sibsagar","Siddharthnagar","Sidhi","Sikar","Simdega","Sindhudurg","Singrauli","Sirmaur","Sirohi",
+        "Sirsa","Sitamarhi","Sitapur","Sivaganga","Sivasagar","Siwan","Solan","Solapur","Sonbhadra","Sonipat",
+        "Sonitpur","South Delhi","South Garo Hills","South Goa","South Sikkim","South Tripura","Sri Ganganagar","Srikakulam","Srinagar","Sundargarh",
+        "Supaul","Surat","Surendranagar","Surguja","Tawang","Tehri Garhwal","Thane","Thanjavur","Theni","Thiruvananthapuram",
+        "Thiruvarur","Thoothukudi","Thoubal","Thrissur","Tikamgarh","Tinsukia","Tirap","Tiruchirappalli","Tirunelveli","Tirupur",
+        "Tiruvallur","Tiruvannamalai","Tonk","Tuensang","Tumkur","Udaipur","Udalguri","Udham Singh Nagar","Udhampur","Udupi",
+        "Ujjain","Ukhrul","Umaria","Una","Unnao","Upper Siang","Upper Subansiri","Uttar Dinajpur","Uttarkashi","Vadodara",
+        "Vaishali","Valsad","Varanasi","Vellore","Vidisha","Vijayapura","Viluppuram","Virudhunagar","Visakhapatnam","Vizianagaram",
+        "Wardha","Warangal","Washim","Wayanad","West Champaran","West Delhi","West Garo Hills","West Godavari","West Kameng","West Khasi Hills",
+        "West Siang","West Sikkim","West Tripura","Wokha","Yadgir","Yamunanagar","Yanam","Yavatmal","Zunheboto"
+    ];
+
+    function handleCityInput() {
+        const input = document.getElementById('citySearch');
+        const box = document.getElementById('citySuggestions');
+        const value = input.value.trim().toLowerCase();
+
+        if (!value) {
+            box.style.display = 'none';
+            box.innerHTML = '';
+            filterJobs('');
+            return;
+        }
+
+        const matches = ALL_INDIA_CITIES.filter(c => c.toLowerCase().includes(value)).slice(0, 20);
+
+        if (matches.length === 0) {
+            box.style.display = 'none';
+            box.innerHTML = '';
+        } else {
+            box.innerHTML = matches.map(c =>
+                `<div class="px-3 py-2" style="cursor:pointer;" onmousedown="pickCity('${c}')" onmouseover="this.style.background='#fff3ea'" onmouseout="this.style.background='#fff'">${c}</div>`
+            ).join('');
+            box.style.display = 'block';
+        }
+
+        filterJobs(value);
+    }
+
+    function pickCity(city) {
+        document.getElementById('citySearch').value = city;
+        document.getElementById('citySuggestions').style.display = 'none';
+        filterJobs(city.toLowerCase());
+    }
+
+    function clearCityFilter() {
+        document.getElementById('citySearch').value = '';
+        document.getElementById('citySuggestions').style.display = 'none';
+        filterJobs('');
+    }
+
+    function filterJobs(value) {
+        const cards = document.querySelectorAll('.job-card');
+        let anyVisible = false;
+        cards.forEach(card => {
+            const city = card.getAttribute('data-city').toLowerCase();
+            if (!value || city.includes(value)) {
+                card.style.display = 'block';
+                anyVisible = true;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        document.getElementById('noResults').style.display = anyVisible ? 'none' : 'block';
+    }
+
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('#citySearch') && !e.target.closest('#citySuggestions')) {
+            document.getElementById('citySuggestions').style.display = 'none';
+        }
+    });
+    </script>
 
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>

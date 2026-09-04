@@ -323,8 +323,18 @@ def internship():
 
 @app.route('/rojgarsetu.html')
 def rojgarsetu():
-    return render_template('rojgarsetu.html')
-
+    jobs = []
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM RojgarSetu ORDER BY JobId DESC")
+        columns = [col[0] for col in cursor.description]
+        jobs = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print("DB ERROR:", e)
+    return render_template('rojgarsetu.html', jobs=jobs)
 
 @app.route('/advertisement.html')
 def advertisement():
