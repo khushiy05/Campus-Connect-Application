@@ -167,7 +167,7 @@
               />
             </div>
 
-            <!-- Submit -->
+            <!-- Buttons -->
             <div class="md:col-span-2 flex gap-3 pt-2">
               <button
                 type="submit"
@@ -176,6 +176,13 @@
               >
                 {{ submitting ? 'Submitting...' : 'Submit' }}
               </button>
+              <button
+                type="button"
+                @click="showTable = !showTable"
+                class="rounded-lg bg-gray-800 px-6 py-2.5 text-sm font-medium text-white hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600"
+              >
+                {{ showTable ? 'Hide' : 'Show' }}
+              </button>
             </div>
 
             <p v-if="statusMessage" class="md:col-span-2 text-sm" :class="statusOk ? 'text-green-600' : 'text-red-600'">
@@ -183,6 +190,64 @@
             </p>
 
           </form>
+        </div>
+
+        <!-- Submitted Job Postings Table -->
+        <div v-if="showTable" class="border-t border-gray-100 p-6 dark:border-gray-800">
+          <h4 class="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">
+            Submitted Job Postings ({{ postings.length }})
+          </h4>
+
+          <div v-if="!postings.length" class="py-6 text-center text-sm text-gray-400">
+            No job postings submitted yet.
+          </div>
+
+          <div v-else class="overflow-x-auto">
+            <table class="w-full min-w-[1000px] text-left text-sm">
+              <thead>
+                <tr class="border-b border-gray-200 text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                  <th class="px-3 py-2 font-medium">Category</th>
+                  <th class="px-3 py-2 font-medium">Job Title</th>
+                  <th class="px-3 py-2 font-medium">Company</th>
+                  <th class="px-3 py-2 font-medium">Location</th>
+                  <th class="px-3 py-2 font-medium">Email</th>
+                  <th class="px-3 py-2 font-medium">Mobile</th>
+                  <th class="px-3 py-2 font-medium">Experience</th>
+                  <th class="px-3 py-2 font-medium">Salary</th>
+                  <th class="px-3 py-2 font-medium">Link</th>
+                  <th class="px-3 py-2 font-medium"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="item in postings"
+                  :key="item.JobId"
+                  class="border-b border-gray-100 text-gray-700 dark:border-gray-800 dark:text-gray-300"
+                >
+                  <td class="px-3 py-2">{{ item.JobCategory }}</td>
+                  <td class="px-3 py-2">{{ item.JobTitle }}</td>
+                  <td class="px-3 py-2">{{ item.CompanyName }}</td>
+                  <td class="px-3 py-2">{{ item.Location }}</td>
+                  <td class="px-3 py-2">{{ item.Email }}</td>
+                  <td class="px-3 py-2">{{ item.Mobile }}</td>
+                  <td class="px-3 py-2">{{ item.Experience }}</td>
+                  <td class="px-3 py-2">{{ item.SalaryLPA }}</td>
+                  <td class="px-3 py-2">
+                    <a :href="item.ApplicationLink" target="_blank" class="text-orange-500 hover:underline">Link</a>
+                  </td>
+                  <td class="px-3 py-2">
+                    <button
+                      type="button"
+                      @click="removePosting(item.JobId)"
+                      class="text-xs font-medium text-red-500 hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </ComponentCard>
     </div>
@@ -196,6 +261,10 @@ import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
 
 const currentPageTitle = ref("RojgarSetu");
+
+// Base URL of the Flask API. Vue (Vite) runs on :5173, Flask runs on :5000 —
+// change this if your Flask server runs somewhere else.
+const API_BASE = "http://127.0.0.1:5000";
 
 // Adjust this list to match your actual job categories
 const categories = [
@@ -978,16 +1047,34 @@ const form = reactive({
   link: "",
 });
 
+// ---- Submissions table ----
+const postings = ref([]);
+const showTable = ref(false);
 const submitting = ref(false);
 const statusMessage = ref("");
 const statusOk = ref(false);
+
+async function fetchPostings() {
+  try {
+    const res = await fetch(`${API_BASE}/api/rojgarsetu`);
+    const result = await res.json();
+
+    if (result.success) {
+      postings.value = result.data;
+    } else {
+      console.error("Could not load job postings:", result.error);
+    }
+  } catch (err) {
+    console.error("Failed to load job postings:", err);
+  }
+}
 
 async function submitForm() {
   submitting.value = true;
   statusMessage.value = "";
 
   try {
-    const res = await fetch("http://127.0.0.1:5000/api/rojgarsetu", {
+    const res = await fetch(`${API_BASE}/api/rojgarsetu`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
@@ -999,6 +1086,9 @@ async function submitForm() {
       statusMessage.value = "Job posted successfully!";
       Object.keys(form).forEach((key) => (form[key] = ""));
       citySearch.value = "";
+
+      // Refresh table
+      await fetchPostings();
     } else {
       statusOk.value = false;
       statusMessage.value = result.error || "Something went wrong.";
@@ -1012,8 +1102,27 @@ async function submitForm() {
   }
 }
 
+async function removePosting(id) {
+  if (!confirm("Delete this job posting?")) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/rojgarsetu/${id}`, {
+      method: "DELETE",
+    });
+    const result = await res.json();
+    if (result.success) {
+      postings.value = postings.value.filter((p) => p.JobId !== id);
+    } else {
+      alert(result.error || "Could not delete.");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Could not connect to server.");
+  }
+}
+
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
+  fetchPostings();
 });
 
 onBeforeUnmount(() => {

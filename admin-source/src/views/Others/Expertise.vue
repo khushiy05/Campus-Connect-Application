@@ -16,9 +16,39 @@
             <label class="block text-sm mb-1 text-gray-700 dark:text-gray-300">Mobile</label>
             <input v-model="form.mobile" required class="w-full rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 px-3 py-2 text-sm" />
           </div>
-          <div>
+          <div class="relative">
             <label class="block text-sm mb-1 text-gray-700 dark:text-gray-300">City</label>
-            <input v-model="form.city" required class="w-full rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 px-3 py-2 text-sm" />
+            <input
+              v-model="citySearch"
+              @input="onCityInput"
+              @focus="showCityDropdown = true"
+              @blur="hideCityDropdown"
+              required
+              autocomplete="off"
+              placeholder="Select your city"
+              class="w-full rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 px-3 py-2 text-sm"
+            />
+            <div
+              v-if="showCityDropdown"
+              class="absolute z-20 mt-1 w-full max-h-72 overflow-y-auto rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg"
+            >
+              <template v-for="group in filteredCityGroups" :key="group.state">
+                <div class="sticky top-0 px-3 py-2 text-sm font-semibold bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-b border-gray-100 dark:border-gray-700">
+                  {{ group.state }}
+                </div>
+                <div
+                  v-for="c in group.cities"
+                  :key="c"
+                  @mousedown.prevent="pickCity(c)"
+                  class="px-5 py-2 text-sm cursor-pointer hover:bg-orange-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
+                >
+                  {{ c }}
+                </div>
+              </template>
+              <div v-if="filteredCityGroups.length === 0" class="px-3 py-3 text-sm text-gray-400">
+                No cities found
+              </div>
+            </div>
           </div>
           <div>
             <label class="block text-sm mb-1 text-gray-700 dark:text-gray-300">Domain</label>
@@ -112,10 +142,10 @@
                   <button
                     @click="deleteExpert(e.ID)"
                     :disabled="deletingId === e.ID"
-                    class="px-3 py-1.5 rounded-md bg-error-500 text-white text-xs font-medium hover:bg-error-600 disabled:opacity-50"
-                  >
+                    class="text-error-500 hover:text-error-600 text-sm font-medium disabled:opacity-50"
+                    >
                     {{ deletingId === e.ID ? "Deleting..." : "Delete" }}
-                  </button>
+                    </button>
                 </td>
               </tr>
             </tbody>
@@ -130,7 +160,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
@@ -148,6 +178,33 @@ const photoFile = ref(null);
 const experts = ref([]);
 const showTable = ref(false);
 const deletingId = ref(null);
+
+// ---- City dropdown state (grouped by state) ----
+const citiesByState = ref({});   // raw { "State Name": ["City1", "City2", ...], ... } from /api/cities
+const citySearch = ref("");      // text shown in the City input
+const showCityDropdown = ref(false);
+
+// Groups shown in the dropdown, filtered by whatever's typed in citySearch.
+// - No search text: show every state with all of its cities.
+// - Search text: keep a state's group if the state name matches, OR keep
+//   just the matching cities within a state whose name doesn't match.
+const filteredCityGroups = computed(() => {
+  const query = citySearch.value.trim().toLowerCase();
+  const states = Object.keys(citiesByState.value).sort();
+
+  return states
+    .map((state) => {
+      const cities = citiesByState.value[state] || [];
+      if (!query) return { state, cities };
+
+      if (state.toLowerCase().includes(query)) {
+        return { state, cities };
+      }
+      const matchingCities = cities.filter((c) => c.toLowerCase().includes(query));
+      return matchingCities.length ? { state, cities: matchingCities } : null;
+    })
+    .filter(Boolean);
+});
 
 watch(() => form.value.payment_date, (newDate) => {
   if (newDate) {
@@ -167,6 +224,34 @@ async function fetchExperts() {
   if (data.success) experts.value = data.data;
 }
 
+// ---- City dropdown logic ----
+async function fetchCities() {
+  try {
+    const res = await fetch(`${API_BASE}/api/cities`);
+    const data = await res.json();
+    // /api/cities returns cities grouped by state, e.g. { "Andhra Pradesh": ["Adilabad", "Anantapur", ...], ... }
+    citiesByState.value = data;
+  } catch (e) {
+    console.error("Failed to load cities:", e);
+  }
+}
+
+function onCityInput() {
+  form.value.city = citySearch.value; // keep the submitted value in sync with what's typed
+  showCityDropdown.value = true;
+}
+
+function pickCity(city) {
+  citySearch.value = city;
+  form.value.city = city;
+  showCityDropdown.value = false;
+}
+
+function hideCityDropdown() {
+  // small delay so the @mousedown on a suggestion fires before the list is hidden
+  setTimeout(() => (showCityDropdown.value = false), 150);
+}
+
 async function submitForm() {
   const fd = new FormData();
   Object.entries(form.value).forEach(([key, val]) => fd.append(key, val));
@@ -183,6 +268,8 @@ async function submitForm() {
       plan_type: "Yearly", amount: 1200,
       transaction_id: "", payment_date: "", expiry_date: ""
     };
+    citySearch.value = "";
+    showCityDropdown.value = false;
     photoFile.value = null;
     fetchExperts();
   } else {
@@ -210,5 +297,8 @@ async function deleteExpert(id) {
   }
 }
 
-onMounted(fetchExperts);
+onMounted(() => {
+  fetchExperts();
+  fetchCities();
+});
 </script>
