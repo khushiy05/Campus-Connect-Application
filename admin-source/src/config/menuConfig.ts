@@ -59,6 +59,11 @@ const menuConfig = [
             path: "/rojgarsetu",
             component: () => import("../views/Others/RojgarSetu.vue"),
           },
+          {
+            name: "Add News",
+            path: "/add-news",
+            component: () => import("../views/Others/AddNews.vue"),
+          },
         ],
       },
     ],

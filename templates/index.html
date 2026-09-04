@@ -189,13 +189,11 @@
     <div class="border rounded p-5 h-100 d-flex flex-column">
         <h4 class="mb-2"><i class="fa fa-calendar-alt text-primary mr-2"></i>Events 2026</h4>
         <p class="mb-3" style="font-size: 14px;">Tap a college to see their upcoming events.</p>
-        <!-- Scrolling announcements ticker -->
+        <!-- Scrolling announcements ticker — content is loaded live from
+             /api/news (populated via Admin > Add News), not hardcoded. -->
         <div class="ticker-wrap mt-4">
-            <div class="ticker-content">
-                <p class="mb-3">📢 New event added: AI Symposium at RCOEM - Mar 28</p>
-                <p class="mb-3">📢 TechFest registrations open now!</p>
-                <p class="mb-3">📢 Placement drive at Raisoni - Apr 2</p>
-                <p class="mb-3">📢 Cultural Fest at YCCE - Apr 10</p>
+            <div class="ticker-content" id="newsTickerContent">
+                <p class="mb-3 text-muted">Loading updates...</p>
             </div>
         </div>
 </div>
@@ -232,7 +230,7 @@
         padding-top: 10px;
     }
     .ticker-content {
-        animation: scroll-up 10s linear infinite;
+        animation: scroll-up 25s linear infinite;
     }
     .ticker-content p {
         font-size: 14px;
@@ -246,6 +244,54 @@
         100% { transform: translateY(-100%); }
     }
 </style>
+<script>
+    // Loads the "Events 2026" ticker content live from /api/news, which is
+    // populated via Admin > Add News. Replaces the previously hardcoded
+    // announcement list.
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str || '';
+        return div.innerHTML;
+    }
+
+    async function loadNewsTicker() {
+        const container = document.getElementById('newsTickerContent');
+        try {
+            const res = await fetch('/api/news');
+            const result = await res.json();
+
+            if (result.success && result.data.length) {
+                container.innerHTML = result.data
+                    .map(item => {
+                        const titleHtml = escapeHtml(item.Title);
+                        const descriptionHtml = item.Description
+                            ? `<br><span style="font-size: 12px; color: #888;">${escapeHtml(item.Description)}</span>`
+                            : '';
+
+                        let titleLine;
+                        if (item.FilePath) {
+                            // Title links to the uploaded file (PDF/image/doc)
+                            const fileUrl = `/static/uploads/news/${encodeURIComponent(item.FilePath)}`;
+                            titleLine = `<a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="text-dark" style="text-decoration: underline;">${titleHtml}</a>`;
+                        } else {
+                            // No file attached — plain text, not clickable
+                            titleLine = titleHtml;
+                        }
+
+                        return `<p class="mb-3">📢 ${titleLine}${descriptionHtml}</p>`;
+                    })
+                    .join('');
+            } else {
+                container.innerHTML = '<p class="mb-3 text-muted">No updates yet.</p>';
+            }
+        } catch (err) {
+            console.error('Failed to load news ticker:', err);
+            container.innerHTML = '<p class="mb-3 text-muted">Could not load updates.</p>';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadNewsTicker);
+</script>
 <!-- About End -->
 
 <!-- Courses Start -->

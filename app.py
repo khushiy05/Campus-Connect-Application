@@ -1116,6 +1116,116 @@ def logout():
     session.clear()
     return {"success": True}, 200
 
+# ---- News routes ----
+# Add this block to app.py, e.g. right after the Advertisement routes.
+
+NEWS_UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'news')
+ALLOWED_NEWS_EXT = {'png', 'jpg', 'jpeg', 'pdf', 'doc', 'docx'}
+
+def allowed_news_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_NEWS_EXT
+
+
+def ensure_news_table():
+    """Creates the News table automatically on startup if it doesn't
+    already exist yet — no manual SSMS/SQL setup required."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='News' AND xtype='U')
+            CREATE TABLE News (
+                NewsId INT IDENTITY(1,1) PRIMARY KEY,
+                Title NVARCHAR(255) NOT NULL,
+                Description NVARCHAR(MAX) NOT NULL,
+                FilePath NVARCHAR(255) NULL,
+                PostedOn DATETIME NOT NULL DEFAULT GETDATE()
+            )
+        """)
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print("Could not ensure News table exists:", e)
+
+
+# Runs once when this module is imported (i.e. when Flask starts up).
+ensure_news_table()
+
+
+@app.route('/api/news', methods=['GET'])
+def get_news():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM News ORDER BY NewsId DESC")
+        columns = [col[0] for col in cursor.description]
+        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        cursor.close()
+        conn.close()
+        for r in rows:
+            for k, v in r.items():
+                if not isinstance(v, (str, int, float, type(None))):
+                    r[k] = str(v)
+        return {"success": True, "data": rows}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/news', methods=['POST'])
+def add_news():
+    title = request.form.get('title')
+    description = request.form.get('description')
+
+    if not title or not description:
+        return {"success": False, "error": "Title and Description are required"}, 400
+
+    file_filename = None
+    uploaded_file = request.files.get('file')
+    if uploaded_file and uploaded_file.filename:
+        if not allowed_news_file(uploaded_file.filename):
+            return {"success": False, "error": "Unsupported file type."}, 400
+        os.makedirs(NEWS_UPLOAD_FOLDER, exist_ok=True)
+        file_filename = secure_filename(uploaded_file.filename)
+        uploaded_file.save(os.path.join(NEWS_UPLOAD_FOLDER, file_filename))
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """INSERT INTO News (Title, Description, FilePath)
+               VALUES (?, ?, ?)""",
+            (title, description, file_filename)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"success": True}, 201
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/news/<int:news_id>', methods=['DELETE'])
+def delete_news(news_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM News WHERE NewsId = ?", (news_id,))
+        conn.commit()
+        deleted = cursor.rowcount
+        cursor.close()
+        conn.close()
+
+        if deleted == 0:
+            return {"success": False, "error": "News not found."}, 404
+
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+    
 # ---- RojgarSetu routes ----
 @app.route('/api/rojgarsetu', methods=['GET'])
 def get_job_postings():
