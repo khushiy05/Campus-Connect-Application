@@ -1159,7 +1159,7 @@ function selectCity(city) {
   form.location = city;
   citySearch.value = city;
   cityDropdownOpen.value = false;
-}
+
 
 // ---- Branch searchable dropdown ----
 const branchSearch = ref("");
@@ -1196,7 +1196,6 @@ function handleClickOutside(event) {
 
 
 // ---- Submissions (loaded from the database via the API) ----
-=======
 // ---- Submissions — now backed by Flask + SQL Server via /api/internships ----
 
 const submissions = ref([]);
@@ -1221,7 +1220,6 @@ async function fetchInternships() {
     }
   } catch (err) {
     console.error("Could not load internships:", err);
->>>>>>> 61c3be393de36a13014fd52a3aef675eb6d06ea2
   }
 }
 
@@ -1255,7 +1253,7 @@ async function submitForm() {
     const res = await fetch(`${API_BASE}/api/internships`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
->>>>>>> 61c3be393de36a13014fd52a3aef675eb6d06ea2
+
       body: JSON.stringify(form),
     });
     const result = await res.json();
