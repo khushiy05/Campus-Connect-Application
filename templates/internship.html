@@ -121,7 +121,9 @@ async function loadInternships() {
         const res = await fetch('/api/internships');
         const result = await res.json();
         if (result.success) {
-            ALL_INTERNSHIPS = result.data.filter(i => i.status === 'Open');
+            // Show every internship (Open and Closed) — status is now
+            // displayed as a badge on each card instead of being filtered out.
+            ALL_INTERNSHIPS = result.data;
             renderInternships(ALL_INTERNSHIPS);
         }
     } catch (err) {
@@ -148,6 +150,9 @@ function renderInternships(list) {
     noResults.style.display = 'none';
 
     list.forEach(item => {
+        const isOpen = item.status === 'Open';
+        const statusBadgeClass = isOpen ? 'badge-success' : 'badge-danger';
+
         const card = document.createElement('div');
         card.className = 'internship-card border rounded shadow-sm p-3 mb-3';
         card.setAttribute('data-city', (item.location || '').toLowerCase());
@@ -164,10 +169,12 @@ function renderInternships(list) {
                         <i class="fa fa-map-marker-alt text-primary mr-1"></i>${escapeHtml(item.location)}, India
                         &nbsp;|&nbsp;
                         <span class="badge badge-info">${escapeHtml(item.companyType)}</span>
+                        &nbsp;
+                        <span class="badge ${statusBadgeClass}">${escapeHtml(item.status)}</span>
                     </p>
                 </div>
                 <div class="col-md-3 text-md-right text-center mt-3 mt-md-0">
-                    <a href="${item.link || '#'}" target="_blank" class="btn btn-primary btn-sm">Apply Now</a>
+                    <a href="{{ url_for('registration') }}" class="btn btn-primary btn-sm ${isOpen ? '' : 'disabled'}" ${isOpen ? '' : 'tabindex="-1" aria-disabled="true"'}>Apply Now</a>
                     <p class="small text-muted mb-0 mt-2">${escapeHtml(item.duration)}</p>
                 </div>
             </div>
@@ -262,7 +269,7 @@ document.addEventListener('DOMContentLoaded', loadInternships);
             box.innerHTML = '';
         } else {
             box.innerHTML = matches.map(c =>
-                <div class="px-3 py-2" style="cursor:pointer;" onmousedown="pickCity('${c}')" onmouseover="this.style.background='#fff3ea'" onmouseout="this.style.background='#fff'">${c}</div>
+                `<div class="px-3 py-2" style="cursor:pointer;" onmousedown="pickCity('${c}')" onmouseover="this.style.background='#fff3ea'" onmouseout="this.style.background='#fff'">${c}</div>`
             ).join('');
             box.style.display = 'block';
         }
