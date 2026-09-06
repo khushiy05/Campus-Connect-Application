@@ -122,7 +122,7 @@
                             <h1 class="display-3 text-white mb-md-4">Your Campus, Smarter Connected</h1>
                             <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2" href="">Learn More</a>
                             <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2 " href="/registration.html" target="_blank">Campus Registration</a>
-                            <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2 "href="{{ url_for('campus_agent') }}"target="_blank">Campus Agent</a>
+                            <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2" href="{{ url_for('campus_agent') }}">Campus Agent</a>
                             
                         </div>
                     </div>
@@ -135,7 +135,7 @@
                             <h1 class="display-3 text-white mb-md-4">Bridging Students and Success with AI</h1>
                             <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2" href="">Learn More</a>
                             <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2 " href="/registration.html" target="_blank">Campus Registration</a>
-                            <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2 "href="{{ url_for('campus_agent') }}"target="_blank">Campus Agent</a>
+                           <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2" href="{{ url_for('campus_agent') }}">Campus Agent</a>
                         </div>
                     </div>
                 </div>
@@ -147,7 +147,7 @@
                             <h1 class="display-3 text-white mb-md-4">Where Campus Meets Intelligence.</h1>
                             <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2" href="">Learn More</a>
                             <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2 " href="/registration.html" target="_blank">Campus Registration</a>
-                            <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2 "href="{{ url_for('campus_agent') }}"target="_blank">Campus Agent</a>
+                            <a class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2" href="{{ url_for('campus_agent') }}">Campus Agent</a>
                         </div>
                     </div>
                 </div>
@@ -563,6 +563,15 @@
         </div>
     </div>
     <!-- Testimonial End -->
+<!-- Campus Agent Slide-in Drawer -->
+<div id="campusAgentOverlay" class="campus-agent-overlay"></div>
+<div id="campusAgentDrawer" class="campus-agent-drawer">
+    <div class="campus-agent-drawer-header">
+        <span>🤖 Campus Agent</span>
+        <button id="campusAgentCloseBtn" class="campus-agent-close-btn">&times;</button>
+    </div>
+    <iframe id="campusAgentFrame" class="campus-agent-iframe" src="about:blank"></iframe>
+</div>
 
 
     {% include 'footer.html' %}
@@ -614,6 +623,8 @@ document.getElementById('enquiryForm').addEventListener('submit', async function
     }
 });
 </script>
+
+
 
 </body>
 

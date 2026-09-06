@@ -1127,8 +1127,6 @@ def logout():
     return {"success": True}, 200
 
 # ---- News routes ----
-# Add this block to app.py, e.g. right after the Advertisement routes.
-
 NEWS_UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'news')
 ALLOWED_NEWS_EXT = {'png', 'jpg', 'jpeg', 'pdf', 'doc', 'docx'}
 
@@ -1215,6 +1213,11 @@ def add_news():
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/campus-agent')
+def campus_agent():
+    return render_template('campus_agent.html')
 
 
 @app.route('/api/news/<int:news_id>', methods=['DELETE'])
@@ -1313,8 +1316,6 @@ def delete_job_posting(job_id):
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
 
-@app.route('/campus-agent')
-def campus_agent():
-    return render_template('campus_agent.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
