@@ -1,1754 +1,467 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NR Agent — AI Resume Analyzer</title>
-  <meta name="description" content="NR Agent: Advanced AI-powered resume analyzer chatbot with ATS scoring, skill suggestions, experience detection, and resume improvement." />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --bg: #060614;
-      --bg2: #0d0d2b;
-      --glass: rgba(255,255,255,0.05);
-      --glass2: rgba(255,255,255,0.08);
-      --border: rgba(255,255,255,0.08);
-      --primary: #8b5cf6;
-      --primary2: #7c3aed;
-      --cyan: #22d3ee;
-      --amber: #f59e0b;
-      --green: #10b981;
-      --red: #ef4444;
-      --text: #f1f5f9;
-      --muted: #94a3b8;
-      --card-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    }
-    *{margin:0;padding:0;box-sizing:border-box;}
-    html,body{height:100%;overflow:hidden;}
-    body{
-      font-family:'Inter',sans-serif;
-      background:var(--bg);
-      color:var(--text);
-      display:flex;
-      height:100vh;
-      overflow:hidden;
-    }
-
-    /* ── Animated Background Orbs ── */
-    .orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
-    .orb{position:absolute;border-radius:50%;filter:blur(80px);animation:orbFloat 12s ease-in-out infinite;}
-    .orb1{width:500px;height:500px;background:radial-gradient(circle,rgba(139,92,246,0.18),transparent 70%);top:-120px;left:-120px;animation-delay:0s;}
-    .orb2{width:400px;height:400px;background:radial-gradient(circle,rgba(34,211,238,0.12),transparent 70%);bottom:-80px;right:-80px;animation-delay:-4s;}
-    .orb3{width:300px;height:300px;background:radial-gradient(circle,rgba(245,158,11,0.08),transparent 70%);top:40%;left:40%;animation-delay:-8s;}
-    @keyframes orbFloat{
-      0%,100%{transform:translate(0,0) scale(1);}
-      33%{transform:translate(30px,-30px) scale(1.05);}
-      66%{transform:translate(-20px,20px) scale(0.95);}
-    }
-
-    /* ── Sidebar ── */
-    .sidebar{
-      width:260px;min-width:260px;
-      background:rgba(13,13,43,0.7);
-      backdrop-filter:blur(20px);
-      border-right:1px solid var(--border);
-      display:flex;flex-direction:column;
-      z-index:10;
-      position:relative;
-    }
-    .sidebar-logo{
-      padding:28px 24px 20px;
-      border-bottom:1px solid var(--border);
-    }
-    .logo-badge{
-      display:inline-flex;align-items:center;gap:10px;
-      background:linear-gradient(135deg,var(--primary),var(--cyan));
-      border-radius:14px;
-      padding:10px 16px;
-      font-family:'Outfit',sans-serif;
-      font-size:18px;font-weight:800;
-      letter-spacing:0.3px;
-      box-shadow:0 4px 20px rgba(139,92,246,0.4);
-    }
-    .logo-icon{font-size:22px;}
-    .sidebar-tagline{
-      margin-top:10px;
-      font-size:11px;color:var(--muted);
-      line-height:1.5;
-    }
-    .sidebar-nav{
-      flex:1;padding:20px 16px;
-      display:flex;flex-direction:column;gap:6px;
-    }
-    .nav-section-label{
-      font-size:10px;font-weight:600;
-      color:var(--muted);letter-spacing:1px;
-      text-transform:uppercase;margin:8px 8px 4px;
-    }
-    .nav-item{
-      display:flex;align-items:center;gap:10px;
-      padding:10px 12px;border-radius:10px;
-      font-size:13px;font-weight:500;color:var(--muted);
-      cursor:pointer;transition:all 0.2s;
-    }
-    .nav-item:hover,.nav-item.active{background:var(--glass2);color:var(--text);}
-    .nav-item.active{border-left:3px solid var(--primary);}
-    .nav-item .nav-icon{font-size:16px;width:20px;text-align:center;}
-    .sidebar-footer{
-      padding:16px;border-top:1px solid var(--border);
-    }
-    .status-badge{
-      display:flex;align-items:center;gap:8px;
-      padding:10px 12px;border-radius:10px;
-      background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);
-      font-size:12px;color:#34d399;font-weight:500;
-    }
-    .status-dot{
-      width:8px;height:8px;border-radius:50%;
-      background:#10b981;
-      box-shadow:0 0 8px #10b981;
-      animation:pulse 2s ease-in-out infinite;
-    }
-    @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
-
-    /* ── Main Chat Area ── */
-    .chat-main{
-      flex:1;display:flex;flex-direction:column;
-      position:relative;z-index:1;
-      overflow:hidden;
-    }
-    .chat-header{
-      padding:16px 24px;
-      background:rgba(6,6,20,0.6);backdrop-filter:blur(20px);
-      border-bottom:1px solid var(--border);
-      display:flex;align-items:center;gap:14px;
-    }
-    .agent-avatar{
-      width:40px;height:40px;border-radius:50%;
-      background:linear-gradient(135deg,var(--primary),var(--cyan));
-      display:flex;align-items:center;justify-content:center;
-      font-size:18px;
-      box-shadow:0 0 16px rgba(139,92,246,0.5);
-      flex-shrink:0;
-    }
-    .agent-info h2{font-size:15px;font-weight:700;font-family:'Outfit',sans-serif;}
-    .agent-info p{font-size:11px;color:var(--muted);}
-    .header-actions{margin-left:auto;display:flex;gap:8px;}
-    .icon-btn{
-      width:36px;height:36px;border-radius:8px;
-      background:var(--glass);border:1px solid var(--border);
-      display:flex;align-items:center;justify-content:center;
-      cursor:pointer;font-size:16px;
-      transition:all 0.2s;color:var(--muted);
-    }
-    .icon-btn:hover{background:var(--glass2);color:var(--text);}
-
-    /* ── Chat Messages ── */
-    .chat-messages{
-      flex:1;overflow-y:auto;
-      padding:24px;
-      display:flex;flex-direction:column;gap:20px;
-      scroll-behavior:smooth;
-    }
-    .chat-messages::-webkit-scrollbar{width:4px;}
-    .chat-messages::-webkit-scrollbar-track{background:transparent;}
-    .chat-messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
-
-    .msg{
-      display:flex;gap:12px;
-      animation:msgIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
-      max-width:100%;
-    }
-    @keyframes msgIn{
-      from{opacity:0;transform:translateY(16px);}
-      to{opacity:1;transform:translateY(0);}
-    }
-    .msg-avatar{
-      width:36px;height:36px;border-radius:50%;
-      background:linear-gradient(135deg,var(--primary),var(--cyan));
-      display:flex;align-items:center;justify-content:center;
-      font-size:16px;flex-shrink:0;margin-top:2px;
-      box-shadow:0 0 12px rgba(139,92,246,0.4);
-    }
-    .msg-body{flex:1;max-width:800px;}
-    .msg-name{font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500;}
-    .msg-bubble{
-      background:var(--glass);
-      border:1px solid var(--border);
-      border-radius:4px 16px 16px 16px;
-      padding:14px 18px;
-      font-size:14px;line-height:1.6;
-      backdrop-filter:blur(8px);
-    }
-    .msg-bubble p{margin-bottom:6px;}
-    .msg-bubble p:last-child{margin-bottom:0;}
-
-    /* Typing indicator */
-    .typing-msg .msg-bubble{padding:14px 18px;}
-    .typing-dots{display:flex;gap:4px;align-items:center;height:18px;}
-    .typing-dots span{
-      width:7px;height:7px;border-radius:50%;
-      background:var(--primary);
-      animation:typingBounce 1.2s ease-in-out infinite;
-    }
-    .typing-dots span:nth-child(2){animation-delay:0.15s;}
-    .typing-dots span:nth-child(3){animation-delay:0.3s;}
-    @keyframes typingBounce{
-      0%,60%,100%{transform:translateY(0);opacity:0.5;}
-      30%{transform:translateY(-6px);opacity:1;}
-    }
-
-    /* ── Analysis Cards (inside messages) ── */
-    .analysis-card{
-      margin-top:10px;
-      background:rgba(13,13,43,0.6);
-      border:1px solid var(--border);
-      border-radius:14px;
-      overflow:hidden;
-      backdrop-filter:blur(12px);
-    }
-    .card-header{
-      padding:14px 18px;
-      display:flex;align-items:center;gap:10px;
-      border-bottom:1px solid var(--border);
-    }
-    .card-icon{
-      width:34px;height:34px;border-radius:10px;
-      display:flex;align-items:center;justify-content:center;
-      font-size:16px;flex-shrink:0;
-    }
-    .icon-purple{background:rgba(139,92,246,0.2);}
-    .icon-cyan{background:rgba(34,211,238,0.2);}
-    .icon-amber{background:rgba(245,158,11,0.2);}
-    .icon-green{background:rgba(16,185,129,0.2);}
-    .icon-red{background:rgba(239,68,68,0.2);}
-    .card-title{font-size:14px;font-weight:700;font-family:'Outfit',sans-serif;}
-    .card-subtitle{font-size:11px;color:var(--muted);margin-top:1px;}
-    .card-body{padding:16px 18px;}
-
-    /* ATS Score */
-    .ats-container{display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
-    .ats-gauge{position:relative;width:120px;height:120px;flex-shrink:0;}
-    .ats-gauge svg{transform:rotate(-90deg);}
-    .ats-gauge circle{fill:none;stroke-width:10;stroke-linecap:round;}
-    .ats-track{stroke:rgba(255,255,255,0.07);}
-    .ats-fill{
-      stroke-dasharray:0 1000;
-      transition:stroke-dasharray 1.5s cubic-bezier(0.34,1.2,0.64,1);
-    }
-    .ats-label{
-      position:absolute;inset:0;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-    }
-    .ats-num{font-size:26px;font-weight:800;font-family:'Outfit',sans-serif;}
-    .ats-of{font-size:10px;color:var(--muted);margin-top:-2px;}
-    .ats-details{flex:1;}
-    .ats-grade{font-size:16px;font-weight:700;margin-bottom:4px;}
-    .ats-desc{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px;}
-    .ats-breakdown{display:flex;flex-direction:column;gap:6px;}
-    .breakdown-item{display:flex;align-items:center;gap:8px;font-size:12px;}
-    .breakdown-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-    .dot-pass{background:var(--green);}
-    .dot-warn{background:var(--amber);}
-    .dot-fail{background:var(--red);}
-    .breakdown-label{flex:1;color:var(--muted);}
-    .breakdown-pts{font-weight:600;font-size:11px;}
-
-    /* Experience */
-    .exp-item{
-      display:flex;gap:14px;padding:10px 0;
-      border-bottom:1px solid var(--border);
-    }
-    .exp-item:last-child{border-bottom:none;}
-    .exp-dot{
-      width:12px;height:12px;border-radius:50%;
-      background:var(--primary);flex-shrink:0;margin-top:4px;
-      box-shadow:0 0 8px var(--primary);
-    }
-    .exp-role{font-size:13px;font-weight:600;}
-    .exp-period{font-size:11px;color:var(--cyan);margin-top:2px;}
-    .exp-total{
-      display:inline-flex;align-items:center;gap:6px;
-      padding:6px 12px;border-radius:20px;
-      background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);
-      font-size:13px;font-weight:600;color:var(--primary);
-      margin-bottom:12px;
-    }
-
-    /* Skills / Suggestions */
-    .skill-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
-    .chip{
-      padding:5px 12px;border-radius:20px;
-      font-size:12px;font-weight:500;
-      border:1px solid;cursor:default;
-      transition:transform 0.2s;
-    }
-    .chip:hover{transform:translateY(-2px);}
-    .chip-purple{background:rgba(139,92,246,0.15);border-color:rgba(139,92,246,0.4);color:#c4b5fd;}
-    .chip-cyan{background:rgba(34,211,238,0.1);border-color:rgba(34,211,238,0.3);color:#67e8f9;}
-    .chip-amber{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:#fcd34d;}
-    .chip-green{background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.3);color:#6ee7b7;}
-
-    .suggestion-block{
-      padding:12px 14px;border-radius:10px;
-      background:rgba(255,255,255,0.03);
-      border:1px solid var(--border);
-      margin-bottom:10px;
-    }
-    .suggestion-block:last-child{margin-bottom:0;}
-    .suggestion-label{
-      font-size:11px;font-weight:700;
-      text-transform:uppercase;letter-spacing:0.8px;
-      color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:6px;
-    }
-    .suggestion-list{list-style:none;display:flex;flex-direction:column;gap:4px;}
-    .suggestion-list li{
-      font-size:12px;color:var(--text);opacity:0.85;
-      padding-left:12px;position:relative;line-height:1.5;
-    }
-    .suggestion-list li::before{
-      content:'→';position:absolute;left:0;
-      color:var(--primary);font-size:11px;
-    }
-
-    /* Format Check */
-    .format-list{display:flex;flex-direction:column;gap:8px;}
-    .format-item{
-      display:flex;align-items:flex-start;gap:10px;
-      padding:10px 12px;border-radius:8px;font-size:12px;line-height:1.5;
-    }
-    .fi-pass{background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);}
-    .fi-fail{background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);}
-    .fi-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
-
-    /* Improved Resume Download */
-    .download-card{
-      text-align:center;padding:24px;
-    }
-    .download-icon{font-size:48px;margin-bottom:12px;}
-    .download-title{font-family:'Outfit',sans-serif;font-size:18px;font-weight:800;margin-bottom:6px;}
-    .download-desc{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;}
-    .download-btn{
-      display:inline-flex;align-items:center;gap:10px;
-      padding:14px 32px;border-radius:12px;
-      background:linear-gradient(135deg,var(--primary),var(--primary2));
-      color:white;font-size:14px;font-weight:700;
-      border:none;cursor:pointer;
-      box-shadow:0 4px 20px rgba(139,92,246,0.5);
-      transition:all 0.3s;font-family:'Inter',sans-serif;
-      text-decoration:none;
-    }
-    .download-btn:hover{
-      transform:translateY(-2px);
-      box-shadow:0 8px 28px rgba(139,92,246,0.6);
-    }
-    .download-btn:active{transform:translateY(0);}
-
-    /* ── Upload Area ── */
-    .upload-zone{
-      margin-top:10px;
-      border:2px dashed rgba(139,92,246,0.4);
-      border-radius:16px;
-      padding:32px 24px;
-      text-align:center;
-      cursor:pointer;
-      transition:all 0.3s;
-      background:rgba(139,92,246,0.04);
-    }
-    .upload-zone:hover,.upload-zone.drag-over{
-      border-color:var(--primary);
-      background:rgba(139,92,246,0.1);
-      transform:scale(1.01);
-    }
-    .upload-icon{font-size:40px;margin-bottom:12px;}
-    .upload-title{font-size:15px;font-weight:700;margin-bottom:6px;}
-    .upload-sub{font-size:12px;color:var(--muted);margin-bottom:16px;}
-    .upload-btn-inner{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:10px 24px;border-radius:10px;
-      background:linear-gradient(135deg,var(--primary),var(--cyan));
-      font-size:13px;font-weight:600;color:white;
-      transition:all 0.2s;
-    }
-    .upload-zone:hover .upload-btn-inner{opacity:0.9;}
-    #fileInput{display:none;}
-
-    /* Input Area */
-    .chat-input-area{
-      padding:16px 24px;
-      background:rgba(6,6,20,0.6);backdrop-filter:blur(20px);
-      border-top:1px solid var(--border);
-    }
-    .input-hint{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;}
-
-    /* Reset btn */
-    .reset-btn{
-      display:none;
-      align-items:center;gap:8px;
-      padding:10px 20px;border-radius:10px;
-      background:var(--glass);border:1px solid var(--border);
-      color:var(--muted);font-size:13px;font-weight:500;
-      cursor:pointer;transition:all 0.2s;margin:0 auto;
-      font-family:'Inter',sans-serif;
-    }
-    .reset-btn:hover{background:var(--glass2);color:var(--text);}
-    .reset-btn.visible{display:flex;}
-
-    /* Progress bar */
-    .progress-bar-wrap{
-      height:4px;background:rgba(255,255,255,0.05);border-radius:4px;margin-top:10px;overflow:hidden;
-    }
-    .progress-bar-fill{
-      height:100%;border-radius:4px;
-      background:linear-gradient(90deg,var(--primary),var(--cyan));
-      width:0;transition:width 0.6s ease;
-    }
-
-    /* Welcome message */
-    .welcome-chip{
-      display:inline-flex;align-items:center;gap:6px;
-      padding:4px 12px;border-radius:20px;
-      background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);
-      font-size:11px;color:#c4b5fd;font-weight:500;margin-bottom:10px;
-    }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar{width:6px;}
-    ::-webkit-scrollbar-track{background:transparent;}
-    ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:4px;}
-
-    /* Job dropdown */
-    .job-select{
-      width:100%;padding:11px 14px;border-radius:10px;
-      background:rgba(255,255,255,0.05);
-      border:1px solid var(--border);
-      color:var(--text);font-size:13px;font-weight:500;
-      font-family:'Inter',sans-serif;
-      margin-bottom:14px;cursor:pointer;
-      appearance:none;-webkit-appearance:none;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394a3b8' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
-      background-repeat:no-repeat;
-      background-position:right 14px center;
-      padding-right:36px;
-    }
-    .job-select option{background:#0d0d2b;color:var(--text);}
-    .job-select:focus{outline:none;border-color:var(--primary);}
-    .job-links-row{display:flex;gap:10px;}
-    .job-link-btn{
-      flex:1;text-align:center;padding:10px;border-radius:8px;
-      text-decoration:none;font-size:12px;font-weight:600;
-      transition:all 0.2s;
-    }
-    .job-link-linkedin{background:rgba(10,102,194,0.15);border:1px solid rgba(10,102,194,0.4);color:#60a5fa;}
-    .job-link-linkedin:hover{background:rgba(10,102,194,0.25);}
-    .job-link-indeed{background:rgba(37,87,167,0.15);border:1px solid rgba(37,87,167,0.4);color:#93c5fd;}
-    .job-link-indeed:hover{background:rgba(37,87,167,0.25);}
-
-    /* ── Student Info Bar ── */
-    .student-bar{
-      background:linear-gradient(90deg,rgba(139,92,246,0.1),rgba(34,211,238,0.06));
-      border-bottom:1px solid var(--border);
-      padding:14px 24px;
-      position:relative;
-      z-index:5;
-      transition:padding 0.25s ease;
-    }
-    .student-bar.saved{padding:8px 24px;}
-    .student-bar-inner{
-      display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;
-    }
-    .student-bar-field{display:flex;flex-direction:column;gap:5px;transition:opacity 0.2s;}
-    .student-bar.saved .student-bar-field{display:none;}
-    .student-bar-field label{
-      font-size:10px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--muted);
-    }
-    .student-bar-field input{
-      width:170px;padding:9px 12px;border-radius:8px;
-      background:rgba(255,255,255,0.06);
-      border:1px solid var(--border);
-      color:var(--text);font-size:13px;font-family:'Inter',sans-serif;
-      transition:border-color 0.2s;
-    }
-    .student-bar-field input:disabled{opacity:0.6;cursor:not-allowed;}
-    .student-bar-field input:focus{outline:none;border-color:var(--primary);}
-    .student-bar-btn{
-      display:inline-flex;align-items:center;gap:6px;
-      padding:9px 18px;border-radius:8px;
-      background:linear-gradient(135deg,var(--primary),var(--primary2));
-      color:#fff;font-size:13px;font-weight:700;
-      border:none;cursor:pointer;font-family:'Inter',sans-serif;
-      box-shadow:0 4px 16px rgba(139,92,246,0.4);
-      transition:all 0.2s;height:37px;
-    }
-    .student-bar-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(139,92,246,0.5);}
-    .student-bar-status{
-      font-size:12.5px;color:#34d399;display:flex;align-items:center;gap:10px;height:37px;
-    }
-    .student-bar-status a{color:var(--cyan);text-decoration:none;font-weight:600;}
-    .student-bar-status a:hover{text-decoration:underline;}
-    .student-bar-warning{
-      display:none;
-      margin-top:10px;padding:8px 12px;border-radius:8px;
-      background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);
-      color:#fca5a5;font-size:12px;font-weight:500;
-    }
-    .student-bar-warning.visible{display:block;}
-    .student-bar-warning.shake{animation:shakeWarn 0.4s;}
-    @keyframes shakeWarn{
-      0%,100%{transform:translateX(0);}
-      25%{transform:translateX(-6px);}
-      75%{transform:translateX(6px);}
-    }
-    .upload-zone.locked{opacity:0.45;cursor:not-allowed;}
-    .upload-zone.locked:hover{border-color:rgba(139,92,246,0.4);background:rgba(139,92,246,0.04);transform:none;}
-
-    /* Responsive */
-    @media(max-width:768px){
-      .sidebar{display:none;}
-      .chat-messages{padding:16px;}
-      .ats-container{flex-direction:column;align-items:flex-start;}
-      .ats-gauge{width:100px;height:100px;}
-    }
-
-    /* Score colors */
-    .score-great{color:#10b981;}
-    .score-good{color:#22d3ee;}
-    .score-avg{color:#f59e0b;}
-    .score-low{color:#ef4444;}
-  </style>
-</head>
-<body>
-
-<div class="orbs">
-  <div class="orb orb1"></div>
-  <div class="orb orb2"></div>
-  <div class="orb orb3"></div>
-</div>
-
-<!-- Sidebar -->
-<aside class="sidebar">
-  <div class="sidebar-logo">
-    <div class="logo-badge"><span class="logo-icon">🤖</span> NR Agent</div>
-    <p class="sidebar-tagline">AI-powered resume analyzer — ATS scoring, skills & more</p>
-  </div>
-  <nav class="sidebar-nav">
-    <div class="nav-section-label">Analysis</div>
-    <div class="nav-item active"><span class="nav-icon">📄</span> Resume Upload</div>
-    <div class="nav-item"><span class="nav-icon">📊</span> ATS Score</div>
-    <div class="nav-item"><span class="nav-icon">💼</span> Experience</div>
-    <div class="nav-item"><span class="nav-icon">💡</span> Suggestions</div>
-    <div class="nav-item"><span class="nav-icon">🚀</span> Skill Growth</div>
-    <div class="nav-item"><span class="nav-icon">✅</span> Format Check</div>
-    <div class="nav-item"><span class="nav-icon">⬇️</span> Improved Resume</div>
-    <div class="nav-section-label" style="margin-top:16px;">Info</div>
-    <div class="nav-item"><span class="nav-icon">🔒</span> 100% Private</div>
-    <div class="nav-item"><span class="nav-icon">⚡</span> Instant Analysis</div>
-  </nav>
-  <div class="sidebar-footer">
-    <div class="status-badge"><div class="status-dot"></div> Agent Online &amp; Ready</div>
-  </div>
-</aside>
-
-<!-- Main Chat -->
-<main class="chat-main">
-  <div class="chat-header">
-    <div class="agent-avatar">🤖</div>
-    <div class="agent-info">
-      <h2>NR Agent — Resume Analyzer</h2>
-      <p>Upload your resume to get started • ATS Score • Skills • Suggestions</p>
-    </div>
-    <div class="header-actions">
-      <div class="icon-btn" title="Secure" id="secureBtn">🔒</div>
-      <div class="icon-btn" title="New chat" id="newChatBtn" onclick="resetChat()">🔄</div>
-    </div>
-  </div>
-
-  <div class="student-bar" id="studentBar">
-    <div class="student-bar-inner">
-      <div class="student-bar-field">
-        <label for="rollNoInput">Roll No.</label>
-        <input type="text" id="rollNoInput" placeholder="e.g. 21" autocomplete="off" />
-      </div>
-      <div class="student-bar-field">
-        <label for="studentNameInput">Name</label>
-        <input type="text" id="studentNameInput" placeholder="Your full name" autocomplete="off" />
-      </div>
-      <button class="student-bar-btn" id="studentSaveBtn" onclick="submitStudentInfo()">💾 Save & Continue</button>
-      <div class="student-bar-status" id="studentBarStatus"></div>
-    </div>
-    <div class="student-bar-warning" id="studentBarWarning">⚠️ Please enter your Roll No. and Name and click "Save & Continue" before uploading your resume.</div>
-  </div>
-
-  <div class="chat-messages" id="chatMessages"></div>
-
-  <div class="chat-input-area">
-    <div id="uploadArea">
-      <div class="upload-zone" id="uploadZone">
-        <div class="upload-icon">📤</div>
-        <div class="upload-title">Drop your Resume PDF here</div>
-        <div class="upload-sub">Supports PDF format only • Max 10MB • 100% processed in your browser</div>
-        <div class="upload-btn-inner">📄 Choose PDF Resume</div>
-        <input type="file" id="fileInput" accept=".pdf" />
-      </div>
-      <div class="input-hint">🔒 Your resume never leaves your device. All analysis is done locally.</div>
-    </div>
-    <button class="reset-btn" id="resetBtn" onclick="resetChat()">🔄 Analyze Another Resume</button>
-  </div>
-</main>
-
-<script>
-// ── PDF.js Setup ──
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-// ── Skills Database ──
-const SKILLS_DB = {
-  'javascript': {
-    courses: ['Advanced JavaScript — Udemy (Jonas Schmedtmann)', 'JavaScript Algorithms & DS — freeCodeCamp', 'Eloquent JavaScript (Free Book)'],
-    improvements: ['Master TypeScript for type safety', 'Learn React, Vue, or Angular framework', 'Study browser APIs & Web Performance API', 'Practice LeetCode challenges in JavaScript'],
-    complementary: ['TypeScript', 'React.js', 'Node.js', 'Vue.js', 'GraphQL']
-  },
-  'python': {
-    courses: ['100 Days of Code: Python — Udemy (Angela Yu)', 'Python Bootcamp — Jose Portilla (Udemy)', 'CS50P — Harvard (Free)'],
-    improvements: ['Build REST APIs with Django or FastAPI', 'Explore Machine Learning with scikit-learn & Pandas', 'Master async programming with asyncio', 'Study Python design patterns & clean code'],
-    complementary: ['Django', 'FastAPI', 'NumPy', 'Pandas', 'TensorFlow']
-  },
-  'react': {
-    courses: ['React: The Complete Guide — Udemy (Maximilian)', 'Epic React — Kent C. Dodds', 'Official React Docs (react.dev)'],
-    improvements: ['Master Next.js for SSR & SSG', 'Learn React Query / TanStack for server state', 'Study Zustand or Redux Toolkit for state', 'Write tests with React Testing Library & Vitest'],
-    complementary: ['Next.js', 'TypeScript', 'Redux Toolkit', 'Vite', 'Tailwind CSS']
-  },
-  'node.js': {
-    courses: ['Node.js Complete Guide — Udemy (Maximilian)', 'Node.js Design Patterns (Book)', 'The Odin Project — Node Path (Free)'],
-    improvements: ['Build REST APIs with Express.js or Fastify', 'Learn JWT & OAuth 2.0 for authentication', 'Study microservices & event-driven architecture', 'Master streams, buffers & event emitters'],
-    complementary: ['Express.js', 'Fastify', 'MongoDB', 'PostgreSQL', 'Docker']
-  },
-  'java': {
-    courses: ['Java Masterclass — Tim Buchalka (Udemy)', 'Spring Boot 3 & Spring Security — Amigoscode (YouTube)', 'Effective Java — Joshua Bloch (Book)'],
-    improvements: ['Master Spring Boot, JPA & Hibernate', 'Learn Spring Security & OAuth2', 'Study microservices with Spring Cloud', 'Practice algorithms & design patterns in Java'],
-    complementary: ['Spring Boot', 'Hibernate', 'Maven / Gradle', 'Docker', 'Microservices']
-  },
-  'sql': {
-    courses: ['Complete SQL Bootcamp — Jose Portilla (Udemy)', 'PostgreSQL Full Course — YouTube', 'Use the Index, Luke (free site on SQL optimization)'],
-    improvements: ['Learn query optimization & indexing strategies', 'Master window functions, CTEs & subqueries', 'Study database normalization & design', 'Explore NoSQL (MongoDB) alongside SQL'],
-    complementary: ['PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Database Design']
-  },
-  'machine learning': {
-    courses: ['ML Specialization — Andrew Ng (Coursera)', 'Fast.ai Practical Deep Learning (Free)', 'Hands-On ML — Aurélien Géron (Book)'],
-    improvements: ['Deep-dive into deep learning with PyTorch', 'Master feature engineering & selection', 'Learn MLOps: model deployment & monitoring', 'Compete on Kaggle to build a portfolio'],
-    complementary: ['Deep Learning', 'TensorFlow', 'PyTorch', 'MLflow', 'Kubeflow']
-  },
-  'docker': {
-    courses: ['Docker & Kubernetes — Stephen Grider (Udemy)', 'Docker Mastery — Bret Fisher (Udemy)', 'Play with Docker (Free Labs, labs.play-with-docker.com)'],
-    improvements: ['Learn Kubernetes for container orchestration', 'Master Docker Compose for local dev environments', 'Set up CI/CD pipelines with Docker + GitHub Actions', 'Study Docker networking, volumes & security'],
-    complementary: ['Kubernetes', 'CI/CD', 'GitHub Actions', 'Terraform', 'AWS / GCP']
-  },
-  'aws': {
-    courses: ['AWS SAA-C03 — Stéphane Maarek (Udemy)', 'AWS Free Tier — hands-on practice', 'A Cloud Guru — AWS courses'],
-    improvements: ['Earn AWS certifications (SAA → Developer → DevOps)', 'Learn Infrastructure as Code with Terraform or CDK', 'Master serverless: Lambda, API Gateway, DynamoDB', 'Study AWS Well-Architected Framework'],
-    complementary: ['Terraform', 'Docker', 'Kubernetes', 'Serverless', 'DevOps']
-  },
-  'git': {
-    courses: ['Git & GitHub — Colt Steele (Udemy)', 'Pro Git Book (free at git-scm.com)', 'GitHub Learning Lab (Free)'],
-    improvements: ['Master GitFlow & trunk-based development', 'Learn advanced Git: rebase, squash, cherry-pick', 'Set up CI/CD with GitHub Actions', 'Contribute to open-source projects on GitHub'],
-    complementary: ['GitHub Actions', 'GitLab CI', 'CI/CD', 'DevOps', 'Code Review']
-  },
-  'html': {
-    courses: ['HTML & CSS Full Course — freeCodeCamp (YouTube, Free)', 'The Odin Project (Free)', 'MDN Web Docs (Free)'],
-    improvements: ['Master HTML5 semantic elements & accessibility (ARIA)', 'Learn SEO meta tags & structured data (Schema.org)', 'Study web components & custom elements', 'Build with progressive enhancement principles'],
-    complementary: ['CSS', 'JavaScript', 'Accessibility (WCAG)', 'SEO', 'Web Components']
-  },
-  'css': {
-    courses: ['CSS 2024 — Kevin Powell (YouTube, Free)', 'Advanced CSS & SASS — Jonas Schmedtmann (Udemy)', 'CSS Tricks (css-tricks.com)'],
-    improvements: ['Master CSS Grid and Flexbox deeply', 'Learn CSS custom properties & animations', 'Study SASS/SCSS preprocessor', 'Build mobile-first, responsive design systems'],
-    complementary: ['SCSS / SASS', 'Tailwind CSS', 'CSS Modules', 'Framer Motion', 'Design Systems']
-  },
-  'typescript': {
-    courses: ['TypeScript Bootcamp — Udemy', 'TypeScript Deep Dive (Free eBook — basarat.gitbook.io)', 'No BS TypeScript — Jack Herrington (YouTube)'],
-    improvements: ['Master generics, utility types & conditional types', 'Learn advanced type inference patterns', 'Use Zod for runtime validation alongside TypeScript', 'Configure strict mode & enforce type safety everywhere'],
-    complementary: ['React', 'Next.js', 'Node.js', 'Zod', 'tRPC']
-  },
-  'kubernetes': {
-    courses: ['Kubernetes for Beginners — KodeKloud (Udemy)', 'CKA Certification Prep — Mumshad Mannambeth (Udemy)', 'Kubernetes.io Official Docs (Free)'],
-    improvements: ['Get CKA (Certified Kubernetes Administrator)', 'Learn Helm for Kubernetes package management', 'Study service mesh with Istio or Linkerd', 'Master cluster security, RBAC & network policies'],
-    complementary: ['Docker', 'Helm', 'Terraform', 'Istio / Service Mesh', 'GitOps']
-  },
-  'flutter': {
-    courses: ['Flutter & Dart Bootcamp — Angela Yu (Udemy)', 'Flutter Official Docs & Codelabs (free)', 'Flutter Crash Course — Net Ninja (YouTube)'],
-    improvements: ['Master Bloc or Riverpod for state management', 'Learn Flutter unit, widget & integration testing', 'Study native platform channels for device APIs', 'Deploy to both App Store & Google Play'],
-    complementary: ['Dart', 'Firebase', 'REST APIs', 'Riverpod / Bloc', 'UI/UX Design']
-  },
-  'react native': {
-    courses: ['React Native — The Practical Guide (Udemy)', 'Expo Documentation & Snack (free)', 'React Native School (YouTube)'],
-    improvements: ['Master Expo for rapid prototyping & deployment', 'Study navigation with React Navigation v6', 'Learn native modules for platform-specific features', 'Implement OTA updates with EAS Update'],
-    complementary: ['Expo', 'TypeScript', 'Redux Toolkit', 'Firebase', 'UI/UX']
-  },
-  'figma': {
-    courses: ['Figma UI Design — DesignCode (YouTube)', 'Figma Tutorial — Official Learn Platform (Free)', 'UI Design Bootcamp — Udemy'],
-    improvements: ['Master Auto Layout & Variants for scalable components', 'Build a design system & component library', 'Learn Figma-to-code workflows (CSS, React)', 'Study interaction design & smart animate'],
-    complementary: ['UI/UX Design', 'Prototyping', 'Design Systems', 'User Research', 'CSS']
-  },
-  'data analysis': {
-    courses: ['Data Analysis with Python — freeCodeCamp (YouTube)', 'Google Data Analytics Certificate (Coursera)', 'Alex The Analyst Bootcamp (YouTube)'],
-    improvements: ['Master Pandas for data wrangling & manipulation', 'Learn visualization with Plotly, Seaborn & Matplotlib', 'Study statistics & hypothesis testing deeply', 'Build dashboards with Tableau or Power BI'],
-    complementary: ['Python', 'SQL', 'Tableau', 'Power BI', 'Statistics']
-  },
-  'excel': {
-    courses: ['Excel Masterclass — Udemy', 'Excel Skills for Business — Coursera (Macquarie)', 'ExcelJet Tips & Formulas Reference (Free)'],
-    improvements: ['Learn Power Query for ETL & data transformation', 'Master VBA macros for workflow automation', 'Study advanced pivot tables & Power Pivot', 'Transition to Power BI for advanced visual analytics'],
-    complementary: ['Power BI', 'SQL', 'Python', 'Power Query', 'Tableau']
-  },
-  'c++': {
-    courses: ['C++ Tutorial — The Cherno (YouTube, Free)', 'Accelerated C++ — Andrew Koenig (Book)', 'CP Algorithms (cpalgorithms.com, Free)'],
-    improvements: ['Master modern C++ features (C++17/20/23)', 'Deep dive into STL containers & algorithms', 'Practice competitive programming on Codeforces & LeetCode', 'Learn game dev with Unreal Engine or SFML'],
-    complementary: ['Data Structures & Algorithms', 'System Programming', 'Game Dev', 'Embedded Systems', 'Rust']
-  },
-  'deep learning': {
-    courses: ['Deep Learning Specialization — Andrew Ng (Coursera)', 'Fast.ai (Free)', 'PyTorch for Deep Learning — Zero to Mastery (Udemy)'],
-    improvements: ['Master transformer architectures (BERT, GPT)', 'Study computer vision with CNNs & YOLO', 'Learn NLP & large language model fine-tuning', 'Practice on Kaggle NLP & CV competitions'],
-    complementary: ['PyTorch', 'TensorFlow', 'Hugging Face Transformers', 'CUDA', 'MLflow']
-  },
-  'angular': {
-    courses: ['Angular — The Complete Guide — Udemy (Maximilian)', 'Angular University Courses', 'Angular Official Docs (angular.io)'],
-    improvements: ['Master RxJS & reactive programming patterns', 'Learn NgRx for state management', 'Study Angular performance optimization & lazy loading', 'Write comprehensive unit & e2e tests with Karma & Cypress'],
-    complementary: ['TypeScript', 'RxJS', 'NgRx', 'Node.js', 'GraphQL']
-  },
-  'vue': {
-    courses: ['Vue 3 Complete Guide — Udemy (Maximilian)', 'Vue Mastery (vueMastery.com)', 'Official Vue 3 Docs (vuejs.org)'],
-    improvements: ['Master Vue Composition API & composables', 'Learn Pinia for state management (replacing Vuex)', 'Study Nuxt 3 for SSR & SSG', 'Write tests with Vitest & Vue Testing Library'],
-    complementary: ['TypeScript', 'Nuxt.js', 'Pinia', 'Vite', 'Tailwind CSS']
-  },
-};
-
-// ── Resume validation keywords ──
-const RESUME_WORDS = ['experience','education','skills','work','employment','degree','university','college','objective','summary','certification','professional','bachelor','master','internship','project','portfolio','reference','resume','curriculum','vitae','career','qualification'];
-
-// ── ATS Action Verbs ──
-const ACTION_VERBS = ['developed','designed','implemented','managed','led','created','built','improved','optimized','analyzed','delivered','achieved','increased','reduced','launched','coordinated','established','generated','collaborated','architected','deployed','maintained','spearheaded','streamlined','mentored','negotiated','resolved','automated','integrated','engineered','oversaw','directed','executed','facilitated','formulated','identified','leveraged','modernized','migrated'];
-
-// ── State ──
-let chatStarted = false;
-let studentSaved = false;
-
-// ── Init ──
-window.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => addWelcomeMessage(), 400);
-  setupUpload();
-  const rollInput = document.getElementById('rollNoInput');
-  const nameInput = document.getElementById('studentNameInput');
-  [rollInput, nameInput].forEach(inp => {
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter') submitStudentInfo(); });
-  });
-});
-
-// ── Student Info Bar ──
-function flashStudentWarning() {
-  const warningEl = document.getElementById('studentBarWarning');
-  warningEl.classList.add('visible', 'shake');
-  setTimeout(() => warningEl.classList.remove('shake'), 400);
-}
-
-function submitStudentInfo() {
-  const rollNo = document.getElementById('rollNoInput').value.trim();
-  const name = document.getElementById('studentNameInput').value.trim();
-
-  if (!rollNo || !name) {
-    flashStudentWarning();
-    return;
-  }
-  document.getElementById('studentBarWarning').classList.remove('visible');
-
-  window._studentInfo = { rollNo, name };
-  studentSaved = true;
-
-  document.getElementById('rollNoInput').disabled = true;
-  document.getElementById('studentNameInput').disabled = true;
-  document.getElementById('studentSaveBtn').style.display = 'none';
-  document.getElementById('studentBar').classList.add('saved');
-  document.getElementById('studentBarStatus').innerHTML =
-    `✅ Saved: <strong>${escapeHtml(name)}</strong> (Roll No. ${escapeHtml(rollNo)}) <a href="#" onclick="editStudentInfo();return false;">Edit</a>`;
-
-  document.getElementById('uploadZone').classList.remove('locked');
-  downloadStudentSQL(rollNo, name);
-}
-
-function editStudentInfo() {
-  studentSaved = false;
-  document.getElementById('studentBar').classList.remove('saved');
-  document.getElementById('rollNoInput').disabled = false;
-  document.getElementById('studentNameInput').disabled = false;
-  document.getElementById('studentSaveBtn').style.display = 'inline-flex';
-  document.getElementById('studentBarStatus').innerHTML = '';
-  document.getElementById('uploadZone').classList.add('locked');
-}
-
-// Generates a .sql file (CREATE TABLE if needed + INSERT) the student can run
-// directly in SSMS, since a browser page cannot connect to SQL Server itself.
-function downloadStudentSQL(rollNo, name) {
-  const safeRoll = rollNo.replace(/'/g, "''");
-  const safeName = name.replace(/'/g, "''");
-  const ts = new Date().toISOString().slice(0, 19).replace('T', ' ');
-  const sql = `-- NR Agent Resume Analyzer — Student Submission
--- Run this script in SQL Server Management Studio (SSMS)
-
-IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='ResumeSubmissions' AND xtype='U')
-CREATE TABLE ResumeSubmissions (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    RollNo NVARCHAR(50) NOT NULL,
-    StudentName NVARCHAR(200) NOT NULL,
-    SubmittedAt DATETIME NOT NULL
-);
-
-INSERT INTO ResumeSubmissions (RollNo, StudentName, SubmittedAt)
-VALUES ('${safeRoll}', '${safeName}', '${ts}');
-`;
-  const blob = new Blob([sql], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `student_${safeRoll.replace(/[^a-zA-Z0-9]/g, '_') || 'record'}.sql`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-function setupUpload() {
-  const zone = document.getElementById('uploadZone');
-  const input = document.getElementById('fileInput');
-  zone.classList.add('locked');
-  zone.addEventListener('click', () => {
-    if (!studentSaved) { flashStudentWarning(); return; }
-    input.click();
-  });
-  zone.addEventListener('dragover', e => { e.preventDefault(); if (studentSaved) zone.classList.add('drag-over'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault(); zone.classList.remove('drag-over');
-    if (!studentSaved) { flashStudentWarning(); return; }
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  });
-  input.addEventListener('change', () => { if (input.files[0]) handleFile(input.files[0]); });
-}
-
-// ── Messages ──
-let msgDelay = 0;
-
-function addWelcomeMessage() {
-  const info = window._studentInfo || {};
-  const greetName = info.name ? escapeHtml(info.name) : 'there';
-  const html = `
-    <div class="welcome-chip">✨ NR Agent v2.0</div>
-    <p>👋 Hello <strong>${greetName}</strong>! I'm <strong>NR Agent</strong>, your AI-powered resume analyzer.</p>
-    <p>I'll help you:</p>
-    <ul style="list-style:none;margin:8px 0;display:flex;flex-direction:column;gap:4px;">
-      <li>📊 Calculate your <strong>ATS Score</strong> (Applicant Tracking System)</li>
-      <li>💼 Detect your <strong>Work Experience</strong></li>
-      <li>💡 Suggest <strong>Complementary Skills & Courses</strong></li>
-      <li>🚀 Show <strong>How to Improve</strong> your existing skills</li>
-      <li>✅ Check your <strong>Resume Format</strong></li>
-      <li>🎯 Find <strong>Job Matches</strong> on LinkedIn & Indeed</li>
-      <li>⬇️ Generate a <strong>Downloadable Improved Resume</strong></li>
-    </ul>
-    <p style="margin-top:8px;color:var(--muted);font-size:13px;">👇 Upload your resume PDF below to get started!</p>
-  `;
-  appendBotMessage(html);
-}
-
-function appendBotMessage(html, delay = 0) {
-  const messages = document.getElementById('chatMessages');
-  const div = document.createElement('div');
-  div.className = 'msg';
-  div.style.animationDelay = delay + 'ms';
-  div.innerHTML = `
-    <div class="msg-avatar">🤖</div>
-    <div class="msg-body">
-      <div class="msg-name">NR Agent</div>
-      <div class="msg-bubble">${html}</div>
-    </div>
-  `;
-  messages.appendChild(div);
-  scrollToBottom();
-  return div;
-}
-
-function showTyping() {
-  const messages = document.getElementById('chatMessages');
-  const div = document.createElement('div');
-  div.className = 'msg typing-msg';
-  div.id = 'typingIndicator';
-  div.innerHTML = `
-    <div class="msg-avatar">🤖</div>
-    <div class="msg-body">
-      <div class="msg-name">NR Agent</div>
-      <div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>
-    </div>
-  `;
-  messages.appendChild(div);
-  scrollToBottom();
-}
-
-function hideTyping() {
-  const t = document.getElementById('typingIndicator');
-  if (t) t.remove();
-}
-
-function queueMessage(htmlFn, typingMs = 1400) {
-  msgDelay += typingMs;
-  const d = msgDelay;
-  setTimeout(() => { showTyping(); }, d - typingMs + 200);
-  setTimeout(() => {
-    hideTyping();
-    appendBotMessage(typeof htmlFn === 'function' ? htmlFn() : htmlFn);
-  }, d);
-}
-
-function scrollToBottom() {
-  const m = document.getElementById('chatMessages');
-  m.scrollTop = m.scrollHeight;
-}
-
-// ── File Handler ──
-async function handleFile(file) {
-  if (file.type !== 'application/pdf') {
-    showErrorMsg('⚠️ Only <strong>PDF files</strong> are accepted. Please upload a PDF resume.');
-    return;
-  }
-  if (file.size > 10 * 1024 * 1024) {
-    showErrorMsg('⚠️ File too large. Please upload a PDF smaller than <strong>10MB</strong>.');
-    return;
-  }
-  // Hide upload zone
-  document.getElementById('uploadArea').style.display = 'none';
-  // Add user message
-  addUserMessage(`📄 ${file.name} (${(file.size/1024).toFixed(0)} KB)`);
-  msgDelay = 0;
-  queueMessage(`⏳ Reading your PDF... <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar"></div></div>`, 600);
-  setTimeout(() => {
-    const pb = document.getElementById('progressBar');
-    if (pb) { pb.style.width = '70%'; setTimeout(() => { if(pb) pb.style.width='100%'; }, 500); }
-  }, 800);
-
-  let text = '';
-  try {
-    text = await extractPdfText(file);
-  } catch(e) {
-    showErrorMsg('❌ Could not read the PDF. Please make sure the file is not password-protected or corrupted.');
-    document.getElementById('uploadArea').style.display = 'block';
-    return;
-  }
-
-  runAnalysis(text, file.name);
-}
-
-function addUserMessage(text) {
-  const messages = document.getElementById('chatMessages');
-  const div = document.createElement('div');
-  div.className = 'msg';
-  div.style.justifyContent = 'flex-end';
-  div.innerHTML = `
-    <div class="msg-body" style="max-width:400px;align-items:flex-end;">
-      <div class="msg-name" style="text-align:right;">You</div>
-      <div class="msg-bubble" style="border-radius:16px 4px 16px 16px;background:linear-gradient(135deg,rgba(139,92,246,0.25),rgba(34,211,238,0.15));border-color:rgba(139,92,246,0.3);">${text}</div>
-    </div>
-  `;
-  messages.appendChild(div);
-  scrollToBottom();
-}
-
-function showErrorMsg(html) {
-  appendBotMessage(`<span style="color:var(--red)">${html}</span>`);
-  document.getElementById('uploadArea').style.display = 'block';
-}
-
-// ── PDF Text Extraction (line-aware, groups text items by vertical position) ──
-async function extractPdfText(file) {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  let fullText = '';
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    const lineMap = new Map();
-    content.items.forEach(item => {
-      const y = Math.round(item.transform[5]);
-      if (!lineMap.has(y)) lineMap.set(y, []);
-      lineMap.get(y).push(item);
-    });
-    const sortedY = [...lineMap.keys()].sort((a, b) => b - a);
-    sortedY.forEach(y => {
-      const items = lineMap.get(y).sort((a, b) => a.transform[4] - b.transform[4]);
-      const lineText = items.map(it => it.str).join(' ').replace(/\s+/g, ' ').trim();
-      if (lineText) fullText += lineText + '\n';
-    });
-  }
-  return fullText;
-}
-
-// ── Main Analysis ──
-function runAnalysis(text, filename) {
-  const lower = text.toLowerCase();
-
-  // 1) Validate
-  const validationResult = validateResume(text, lower);
-  queueMessage(() => validationResult.isValid
-    ? `✅ <strong>Valid Resume Detected!</strong><br>I found <strong>${validationResult.sectionsFound} clear resume sections</strong> and <strong>${validationResult.matchCount} resume indicators</strong> in your document. Excellent! Let me now run a full analysis on <em>${filename}</em>.`
-    : `❌ <strong>This doesn't look like a resume.</strong><br>I couldn't find clearly labeled resume sections (Experience, Education, Skills) or enough contact/resume indicators in this PDF — it looks like a different type of document. Please upload your actual resume.<br><br><span style="color:var(--muted);font-size:12px;">Found ${validationResult.sectionsFound}/3 recognizable sections and ${validationResult.matchCount} keyword/contact indicators (5+ needed).</span>`
-  );
-
-  if (!validationResult.isValid) {
-    setTimeout(() => {
-      document.getElementById('uploadArea').style.display = 'block';
-    }, msgDelay + 500);
-    return;
-  }
-
-  // Run all analysis
-  const ats = calculateATS(text, lower);
-  const exp = detectExperience(text, lower);
-  const skills = detectSkills(lower);
-  const format = checkFormat(text, lower);
-  const name = extractName(text);
-
-  // 2) ATS Score
-  queueMessage(() => buildATSCard(ats), 2000);
-
-  // 3) Experience (only if >= 2 years)
-  if (exp.totalYears >= 2) {
-    queueMessage(() => buildExpCard(exp), 2000);
-  } else {
-    queueMessage(() => `ℹ️ <strong>Experience Note:</strong> I detected <strong>${exp.totalYears < 1 ? 'less than 1 year' : exp.totalYears.toFixed(1) + ' years'}</strong> of work experience. The experience section will not be shown (requires ≥ 2 years). <span style="color:var(--muted);font-size:12px;">Keep building your experience — internships & projects count!</span>`, 1800);
-  }
-
-  // 4) Suggestions
-  queueMessage(() => buildSuggestionsCard(skills), 2200);
-
-  // 5) Skill Improvement
-  queueMessage(() => buildImprovementCard(skills), 2200);
-
-  // 6) Format Check
-  queueMessage(() => buildFormatCard(format), 2000);
-
-  // 6.5) Job Search Links
-  queueMessage(() => buildJobsCard(skills), 2200);
-
-  // 7) Improved Resume
-  queueMessage(() => buildDownloadCard(text, name, skills, ats, exp, format), 2000);
-
-  // Show reset button after all messages
-  setTimeout(() => {
-    const resetBtn = document.getElementById('resetBtn');
-    resetBtn.classList.add('visible');
-  }, msgDelay + 1500);
-}
-
-// ── Section Detection Helpers ──
-const SECTION_HEADERS = {
-  experience: ['experience', 'work experience', 'professional experience', 'employment history', 'work history', 'career history'],
-  education: ['education', 'academic background', 'academic history', 'educational qualification', 'educational qualifications'],
-  skills: ['skills', 'technical skills', 'core competencies', 'key skills', 'technologies', 'skill set'],
-  projects: ['projects', 'personal projects', 'academic projects', 'portfolio'],
-  certifications: ['certifications', 'certificates', 'licenses', 'awards', 'awards & certifications'],
-  summary: ['summary', 'objective', 'profile', 'about me', 'professional summary', 'career objective']
-};
-
-function normalizeHeaderLine(line) {
-  return line.replace(/[:•\-–—]+$/, '').trim().toLowerCase();
-}
-
-function isHeaderLine(line, headerList) {
-  const norm = normalizeHeaderLine(line);
-  if (!norm || norm.length > 45) return false;
-  return headerList.some(h => norm === h || norm.startsWith(h + ' ') || norm.replace(/\s+/g, '') === h.replace(/\s+/g, ''));
-}
-
-// Extracts the raw text belonging to a named section (between its header and the next
-// recognized section header). Returns null if the section header can't be found.
-function extractSectionText(lines, sectionKey) {
-  const target = SECTION_HEADERS[sectionKey];
-  const allKeys = Object.keys(SECTION_HEADERS);
-  let start = -1;
-  for (let i = 0; i < lines.length; i++) {
-    if (isHeaderLine(lines[i], target)) { start = i + 1; break; }
-  }
-  if (start === -1) return null;
-  let end = lines.length;
-  for (let j = start; j < lines.length; j++) {
-    const isOtherHeader = allKeys.some(k => k !== sectionKey && isHeaderLine(lines[j], SECTION_HEADERS[k]));
-    if (isOtherHeader) { end = j; break; }
-  }
-  const sectionLines = lines.slice(start, end).filter(l => l.length > 0);
-  return sectionLines.length ? sectionLines.join('\n') : null;
-}
-
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-// ── Validation ──
-function validateResume(text, lower) {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  let matchCount = 0;
-  RESUME_WORDS.forEach(w => { if (lower.includes(w)) matchCount++; });
-  const hasEmail = /[\w.\-+]+@[\w\-]+\.\w+/.test(text);
-  const hasPhone = /(\+?\d[\d\s\-().]{8,14}\d)/.test(text);
-  if (hasEmail) matchCount++;
-  if (hasPhone) matchCount++;
-
-  // Require actual recognizable section headers (Experience / Education / Skills),
-  // not just those words appearing anywhere in running text — this is what lets us
-  // reject non-resume PDFs (invoices, ebooks, reports, etc.) that happen to contain
-  // a few overlapping words.
-  const sectionKeys = ['experience', 'education', 'skills'];
-  const sectionsFound = sectionKeys.filter(k => !!extractSectionText(lines, k)).length;
-
-  const isValid = (hasEmail || hasPhone) && sectionsFound >= 2 && matchCount >= 5;
-  return { isValid, matchCount, sectionsFound };
-}
-
-// ── ATS Score ──
-function calculateATS(text, lower) {
-  let score = 0;
-  const details = [];
-
-  const hasEmail = /[\w.\-+]+@[\w\-]+\.\w+/.test(text);
-  const hasPhone = /(\+?\d[\d\s\-().]{8,14}\d)/.test(text);
-  const hasLinkedIn = /linkedin\.com/i.test(text);
-  const hasGitHub = /github\.com/i.test(text);
-
-  if (hasEmail) { score += 8; details.push({ label: 'Email address', pts: 8, status: 'pass' }); }
-  else details.push({ label: 'Email missing', pts: 0, status: 'fail' });
-
-  if (hasPhone) { score += 7; details.push({ label: 'Phone number', pts: 7, status: 'pass' }); }
-  else details.push({ label: 'Phone number missing', pts: 0, status: 'fail' });
-
-  if (hasLinkedIn) { score += 3; details.push({ label: 'LinkedIn profile', pts: 3, status: 'pass' }); }
-  if (hasGitHub) { score += 2; details.push({ label: 'GitHub profile', pts: 2, status: 'pass' }); }
-
-  const sectionChecks = [
-    { terms: ['experience', 'work history', 'employment'], label: 'Experience section' },
-    { terms: ['education', 'academic'], label: 'Education section' },
-    { terms: ['skills', 'technologies', 'competencies'], label: 'Skills section' },
-    { terms: ['summary', 'objective', 'profile', 'about'], label: 'Professional summary' },
-    { terms: ['project', 'portfolio'], label: 'Projects section' },
-    { terms: ['certification', 'certificate', 'award'], label: 'Certifications/Awards' },
-  ];
-  sectionChecks.forEach(s => {
-    const found = s.terms.some(t => lower.includes(t));
-    if (found) { score += 4; details.push({ label: s.label, pts: 4, status: 'pass' }); }
-    else details.push({ label: `${s.label} missing`, pts: 0, status: 'warn' });
-  });
-
-  const foundVerbs = ACTION_VERBS.filter(v => lower.includes(v));
-  const vScore = Math.min(foundVerbs.length * 2, 15);
-  score += vScore;
-  details.push({ label: `${foundVerbs.length} action verbs`, pts: vScore, status: foundVerbs.length >= 3 ? 'pass' : 'warn' });
-
-  const quantPatt = /\d+\s*%|\$\s*[\d,.]+|\d+\s*(million|thousand|k\b|x\b|times|users|clients|projects|team)/i;
-  if (quantPatt.test(text)) { score += 12; details.push({ label: 'Quantified achievements', pts: 12, status: 'pass' }); }
-  else details.push({ label: 'No quantified results (add numbers!)', pts: 0, status: 'fail' });
-
-  const wc = text.split(/\s+/).filter(w => w.length > 0).length;
-  if (wc >= 200 && wc <= 900) { score += 8; details.push({ label: `Good length (${wc} words)`, pts: 8, status: 'pass' }); }
-  else if (wc > 900) { score += 4; details.push({ label: `Slightly long (${wc} words)`, pts: 4, status: 'warn' }); }
-  else { score += 2; details.push({ label: `Too short (${wc} words)`, pts: 2, status: 'fail' }); }
-
-  const techFound = Object.keys(SKILLS_DB).filter(k => lower.includes(k));
-  const kwScore = Math.min(techFound.length * 2, 8);
-  score += kwScore;
-  details.push({ label: `${techFound.length} tech keywords`, pts: kwScore, status: techFound.length >= 3 ? 'pass' : 'warn' });
-
-  return { score: Math.min(score, 100), details };
-}
-
-function buildATSCard(ats) {
-  const s = ats.score;
-  let grade, gradeClass, desc, strokeColor;
-  if (s >= 80) { grade = 'Excellent 🏆'; gradeClass = 'score-great'; desc = 'Your resume is ATS-optimized. Most ATS filters will pass this resume to recruiters.'; strokeColor = '#10b981'; }
-  else if (s >= 65) { grade = 'Good 👍'; gradeClass = 'score-good'; desc = 'Your resume is well-optimized. A few improvements can push you to the top of the pile.'; strokeColor = '#22d3ee'; }
-  else if (s >= 45) { grade = 'Average ⚡'; gradeClass = 'score-avg'; desc = 'Your resume needs some work. Follow the suggestions below to improve your ATS ranking.'; strokeColor = '#f59e0b'; }
-  else { grade = 'Needs Work ⚠️'; gradeClass = 'score-low'; desc = 'Your resume may get filtered out by ATS systems. Significant improvements are needed.'; strokeColor = '#ef4444'; }
-
-  const circ = 2 * Math.PI * 50;
-  const fill = (s / 100) * circ;
-  const topDetails = ats.details.slice(0, 6);
-
-  const detailsHtml = topDetails.map(d => `
-    <div class="breakdown-item">
-      <div class="breakdown-dot dot-${d.status}"></div>
-      <span class="breakdown-label">${d.label}</span>
-      <span class="breakdown-pts" style="color:${d.status==='pass'?'#10b981':d.status==='warn'?'#f59e0b':'#ef4444'}">${d.pts > 0 ? '+'+d.pts : '0'} pts</span>
-    </div>
-  `).join('');
-
-  return `
-    <div class="analysis-card">
-      <div class="card-header">
-        <div class="card-icon icon-purple">📊</div>
-        <div><div class="card-title">ATS Score Analysis</div><div class="card-subtitle">Applicant Tracking System compatibility</div></div>
-      </div>
-      <div class="card-body">
-        <div class="ats-container">
-          <div class="ats-gauge">
-            <svg width="120" height="120" viewBox="0 0 120 120">
-              <circle class="ats-track" cx="60" cy="60" r="50"/>
-              <circle class="ats-fill" cx="60" cy="60" r="50" stroke="${strokeColor}" id="atsFillCircle"
-                stroke-dasharray="0 ${circ}" style="stroke-dasharray:${fill} ${circ};"/>
-            </svg>
-            <div class="ats-label">
-              <span class="ats-num ${gradeClass}">${s}</span>
-              <span class="ats-of">/100</span>
-            </div>
-          </div>
-          <div class="ats-details">
-            <div class="ats-grade ${gradeClass}">${grade}</div>
-            <div class="ats-desc">${desc}</div>
-            <div class="ats-breakdown">${detailsHtml}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-// ── Experience (calculated ONLY from the resume's Experience section) ──
-function detectExperience(text, lower) {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  const sectionText = extractSectionText(lines, 'experience');
-  const sectionFound = !!sectionText;
-  // If we can't isolate a clear Experience section, fall back to the whole document
-  // (better than showing nothing), but we flag this so the UI can be transparent about it.
-  const scopedText = sectionText || text;
-
-  let totalYears = 0;
-  const ranges = [];
-
-  const expPattern = /(\d+(?:\.\d+)?)\+?\s*years?\s*(?:of\s+)?(?:experience|exp)/gi;
-  let m;
-  while ((m = expPattern.exec(scopedText)) !== null) {
-    const y = parseFloat(m[1]);
-    if (y > totalYears) totalYears = y;
-    ranges.push({ label: `${y}+ years of experience`, period: m[0] });
-  }
-
-  const months = 'jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?';
-  const dateRange = new RegExp(`(?:(?:${months})\\s+)?(20\\d{2}|19\\d{2})\\s*[-–—]\\s*(?:(?:${months})\\s+)?(20\\d{2}|19\\d{2}|present|current|now)`, 'gi');
-  let totalFromRanges = 0;
-  while ((m = dateRange.exec(scopedText)) !== null) {
-    const y1 = parseInt(m[1]);
-    const rawEnd = m[2];
-    const y2 = /present|current|now/i.test(rawEnd) ? new Date().getFullYear() : parseInt(rawEnd);
-    if (!isNaN(y1) && !isNaN(y2) && y2 >= y1) {
-      const dur = y2 - y1;
-      totalFromRanges += dur;
-      ranges.push({ label: `Role (${y1}–${/present|current|now/i.test(rawEnd)?'Present':y2})`, period: `${y1} – ${/present|current|now/i.test(rawEnd)?'Present':y2}` });
-    }
-  }
-
-  if (totalFromRanges > totalYears) totalYears = Math.min(totalFromRanges, 30);
-  return { totalYears: Math.round(totalYears * 10) / 10, ranges, sectionFound };
-}
-
-function buildExpCard(exp) {
-  const rangesHtml = exp.ranges.slice(0, 5).map(r => `
-    <div class="exp-item">
-      <div class="exp-dot"></div>
-      <div>
-        <div class="exp-role">${r.label}</div>
-        <div class="exp-period">${r.period}</div>
-      </div>
-    </div>
-  `).join('');
-
-  const fallbackNote = !exp.sectionFound
-    ? `<div style="margin-top:10px;font-size:11px;color:var(--amber);">⚠️ I couldn't clearly isolate an "Experience" section, so this is an approximate estimate based on the whole document. Add a clearly labeled "Experience" section for a more accurate number.</div>`
-    : '';
-
-  return `
-    <div class="analysis-card">
-      <div class="card-header">
-        <div class="card-icon icon-cyan">💼</div>
-        <div><div class="card-title">Work Experience</div><div class="card-subtitle">Calculated from your Experience section only</div></div>
-      </div>
-      <div class="card-body">
-        <div class="exp-total">⏱ Total Experience: <strong>${exp.totalYears >= 1 ? exp.totalYears + ' years' : Math.round(exp.totalYears * 12) + ' months'}</strong></div>
-        <div>${rangesHtml || '<div style="color:var(--muted);font-size:13px;">Date ranges detected in resume — add specific company names and roles for better ATS parsing.</div>'}</div>
-        ${fallbackNote}
-      </div>
-    </div>
-  `;
-}
-
-// ── Skills Detection ──
-function detectSkills(lower) {
-  const found = [];
-  const extra = ['communication','leadership','teamwork','agile','scrum','rest api','graphql','mongodb','postgresql','mysql','redis','linux','bash','tableau','power bi','tensorflow','pytorch','keras','android','ios','swift','kotlin','dart','c#','php','ruby','go','rust','solidity','blockchain'];
-  Object.keys(SKILLS_DB).forEach(k => { if (lower.includes(k)) found.push(k); });
-  extra.forEach(k => { if (lower.includes(k) && !found.includes(k)) found.push(k); });
-  return found;
-}
-
-// ── Suggestions Card ──
-function buildSuggestionsCard(skills) {
-  if (skills.length === 0) {
-    return `
-      <div class="analysis-card">
-        <div class="card-header"><div class="card-icon icon-amber">💡</div><div><div class="card-title">Skill Suggestions</div></div></div>
-        <div class="card-body"><p style="color:var(--muted);font-size:13px;">No specific technical skills detected. Add a clear <strong>Skills</strong> section to your resume with specific tools & technologies.</p></div>
-      </div>
-    `;
-  }
-
-  const detectedChips = skills.slice(0, 12).map(s => `<span class="chip chip-purple">${s}</span>`).join('');
-
-  // Collect complementary skills across all detected skills
-  const allComplementary = new Set();
-  skills.forEach(s => {
-    const db = SKILLS_DB[s];
-    if (db) db.complementary.forEach(c => allComplementary.add(c));
-  });
-  // Remove already-detected
-  skills.forEach(s => allComplementary.delete(s));
-  const suggestedChips = [...allComplementary].slice(0, 10).map(s => `<span class="chip chip-cyan">${s}</span>`).join('');
-
-  // Collect courses from first 3 skills
-  const courses = [];
-  skills.slice(0, 3).forEach(s => {
-    if (SKILLS_DB[s]) SKILLS_DB[s].courses.forEach(c => { if (!courses.includes(c)) courses.push(c); });
-  });
-
-  const courseItems = courses.slice(0, 6).map(c => `<li>${c}</li>`).join('');
-
-  return `
-    <div class="analysis-card">
-      <div class="card-header">
-        <div class="card-icon icon-amber">💡</div>
-        <div><div class="card-title">Skill Suggestions</div><div class="card-subtitle">Based on your current skills</div></div>
-      </div>
-      <div class="card-body">
-        <div class="suggestion-block">
-          <div class="suggestion-label">🎯 Your Detected Skills</div>
-          <div class="skill-chips">${detectedChips}</div>
-        </div>
-        <div class="suggestion-block">
-          <div class="suggestion-label">🔗 Complementary Skills to Learn Next</div>
-          <div class="skill-chips">${suggestedChips || '<span style="color:var(--muted);font-size:12px;">Great skill set already!</span>'}</div>
-        </div>
-        <div class="suggestion-block">
-          <div class="suggestion-label">📚 Recommended Courses</div>
-          <ul class="suggestion-list">${courseItems}</ul>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-// ── Improvement Card ──
-function buildImprovementCard(skills) {
-  const dbSkills = skills.filter(s => SKILLS_DB[s]).slice(0, 4);
-
-  if (dbSkills.length === 0) {
-    return `
-      <div class="analysis-card">
-        <div class="card-header"><div class="card-icon icon-green">🚀</div><div><div class="card-title">Skill Improvement</div></div></div>
-        <div class="card-body"><p style="color:var(--muted);font-size:13px;">Add specific technical skills to your resume (e.g., Python, React, SQL) to get personalized improvement tips.</p></div>
-      </div>
-    `;
-  }
-
-  const blocks = dbSkills.map(s => {
-    const db = SKILLS_DB[s];
-    const items = db.improvements.map(i => `<li>${i}</li>`).join('');
-    return `
-      <div class="suggestion-block">
-        <div class="suggestion-label">🚀 ${s.charAt(0).toUpperCase() + s.slice(1)}</div>
-        <ul class="suggestion-list">${items}</ul>
-      </div>
-    `;
-  }).join('');
-
-  return `
-    <div class="analysis-card">
-      <div class="card-header">
-        <div class="card-icon icon-green">🚀</div>
-        <div><div class="card-title">Skill Improvement Roadmap</div><div class="card-subtitle">How to level up your existing skills</div></div>
-      </div>
-      <div class="card-body">${blocks}</div>
-    </div>
-  `;
-}
-
-// ── Format Check ──
-function checkFormat(text, lower) {
-  const positives = [], issues = [];
-  const wc = text.split(/\s+/).filter(w => w.length > 0).length;
-  if (wc >= 200 && wc <= 900) positives.push('Good resume length (200–900 words)');
-  else if (wc > 900) issues.push(`Resume is too long (${wc} words). Aim for 1–2 pages (max 900 words for 1 page).`);
-  else issues.push(`Resume is too short (${wc} words). Add more details about your experience and achievements.`);
-
-  if (/[\w.\-+]+@[\w\-]+\.\w+/.test(text)) positives.push('Email address included in contact info');
-  else issues.push('Add your email address to the contact section.');
-
-  if (/(\+?\d[\d\s\-().]{8,14}\d)/.test(text)) positives.push('Phone number included in contact info');
-  else issues.push('Add your phone number to the contact section.');
-
-  ['experience','education','skills'].forEach(s => {
-    if (lower.includes(s)) positives.push(`"${s.charAt(0).toUpperCase()+s.slice(1)}" section present`);
-    else issues.push(`Add a clear "${s.charAt(0).toUpperCase()+s.slice(1)}" section — this is critical for ATS systems.`);
-  });
-
-  if (/summary|objective|profile|about/i.test(text)) positives.push('Professional summary/objective included');
-  else issues.push('Add a professional summary (2–3 lines) at the top of your resume.');
-
-  if (/20\d{2}|19\d{2}/.test(text)) positives.push('Dates included for experience/education');
-  else issues.push('Add specific date ranges (month/year) to all work experience entries.');
-
-  if (/linkedin\.com/i.test(text)) positives.push('LinkedIn profile URL included');
-  else issues.push('Add your LinkedIn profile URL to stand out to recruiters.');
-
-  if (/github\.com/i.test(text)) positives.push('GitHub profile URL included (great for tech roles)');
-
-  const verbsFound = ACTION_VERBS.filter(v => lower.includes(v));
-  if (verbsFound.length >= 3) positives.push(`${verbsFound.length} strong action verbs found (${verbsFound.slice(0,3).join(', ')}...)`);
-  else issues.push('Use strong action verbs (Developed, Implemented, Optimized, Led, Built) to describe your roles.');
-
-  const quantPatt = /\d+\s*%|\$\s*[\d,.]+|\d+\s*(million|thousand|k\b|users|clients|projects)/i;
-  if (quantPatt.test(text)) positives.push('Quantifiable achievements detected (e.g., % improvements, team size)');
-  else issues.push('Add quantifiable achievements: "Reduced load time by 40%", "Led a team of 5", etc.');
-
-  return { positives, issues };
-}
-
-function buildFormatCard(format) {
-  const passHtml = format.positives.map(p => `
-    <div class="format-item fi-pass">
-      <span class="fi-icon">✅</span>
-      <span>${p}</span>
-    </div>
-  `).join('');
-
-  const failHtml = format.issues.map(i => `
-    <div class="format-item fi-fail">
-      <span class="fi-icon">⚠️</span>
-      <span>${i}</span>
-    </div>
-  `).join('');
-
-  return `
-    <div class="analysis-card">
-      <div class="card-header">
-        <div class="card-icon icon-purple">✅</div>
-        <div><div class="card-title">Resume Format Check</div><div class="card-subtitle">${format.positives.length} positives · ${format.issues.length} issues to fix</div></div>
-      </div>
-      <div class="card-body">
-        <div class="format-list">
-          ${passHtml}
-          ${failHtml}
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-// ── Job Matches Card (dropdown-based) ──
-function buildJobsCard(skills) {
-  if (skills.length === 0) {
-    return `
-      <div class="analysis-card">
-        <div class="card-header"><div class="card-icon icon-cyan">🎯</div><div><div class="card-title">Job Opportunities</div></div></div>
-        <div class="card-body"><p style="color:var(--muted);font-size:13px;">Add specific technical skills to your resume to see relevant job matches.</p></div>
-      </div>
-    `;
-  }
-
-  const options = skills.map(s => {
-    const label = s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    return `<option value="${s}">${label}</option>`;
-  }).join('');
-
-  const firstSkill = skills[0];
-  const firstQuery = encodeURIComponent(firstSkill);
-
-  return `
-    <div class="analysis-card">
-      <div class="card-header">
-        <div class="card-icon icon-cyan">🎯</div>
-        <div><div class="card-title">Job Search Links</div><div class="card-subtitle">Pick a skill to find live job listings</div></div>
-      </div>
-      <div class="card-body">
-        <div class="suggestion-block">
-          <div class="suggestion-label">🎯 Select a Skill</div>
-          <select class="job-select" id="jobSkillSelect" onchange="updateJobLinks(this.value)">
-            ${options}
-          </select>
-          <div class="job-links-row">
-            <a href="https://www.linkedin.com/jobs/search/?keywords=${firstQuery}" target="_blank" id="linkedinJobLink" class="job-link-btn job-link-linkedin">
-              in LinkedIn Jobs
-            </a>
-            <a href="https://www.indeed.com/jobs?q=${firstQuery}" target="_blank" id="indeedJobLink" class="job-link-btn job-link-indeed">
-              Indeed Jobs
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function updateJobLinks(skill) {
-  const query = encodeURIComponent(skill);
-  const liLink = document.getElementById('linkedinJobLink');
-  const inLink = document.getElementById('indeedJobLink');
-  if (liLink) liLink.href = `https://www.linkedin.com/jobs/search/?keywords=${query}`;
-  if (inLink) inLink.href = `https://www.indeed.com/jobs?q=${query}`;
-}
-
-// ── Name Extraction ──
-function extractName(text) {
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 1);
-  for (let i = 0; i < Math.min(6, lines.length); i++) {
-    const l = lines[i];
-    if (/^[A-Z][a-z]+(?: [A-Z][a-z]+){1,3}$/.test(l) && l.length < 50 && !/@/.test(l)) return l;
-  }
-  return 'Candidate';
-}
-
-// ── Download Card ──
-function buildDownloadCard(text, name, skills, ats, exp, format) {
-  // Store for download
-  window._resumeData = { text, name, skills, ats, exp, format };
-  return `
-    <div class="analysis-card">
-      <div class="card-header">
-        <div class="card-icon icon-cyan">⬇️</div>
-        <div><div class="card-title">Your Improved Resume is Ready!</div><div class="card-subtitle">ATS-optimized, clean, professional format</div></div>
-      </div>
-      <div class="download-card">
-        <div class="download-icon">🎉</div>
-        <div class="download-title">Analysis Complete!</div>
-        <div class="download-desc">
-          I've generated an improved, ATS-friendly version of your resume based on best practices.<br>
-          Open it in a new tab, then use <strong>Ctrl+P → Save as PDF</strong> to download.
-        </div>
-        <button class="download-btn" onclick="downloadResume()">
-          ⬇️ Download Improved Resume
-        </button>
-        <div style="margin-top:12px;font-size:11px;color:var(--muted);">Opens as HTML → Print to save as PDF</div>
-      </div>
-    </div>
-    <div style="margin-top:10px;padding:12px 16px;border-radius:10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);font-size:13px;color:#34d399;">
-      🎯 <strong>Summary:</strong> ATS Score <strong>${ats.score}/100</strong> · ${skills.length} skills detected · ${format.positives.length} positives · ${format.issues.length} areas to improve
-    </div>
-  `;
-}
-
-// ── Resume Generator & Download (uses REAL extracted content, not filler text) ──
-function downloadResume() {
-  const d = window._resumeData;
-  if (!d) return;
-  const { text, name, skills, ats, exp, format } = d;
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-
-  const emailM = text.match(/[\w.\-+]+@[\w\-]+\.\w+/);
-  const phoneM = text.match(/(\+?\d[\d\s\-().]{8,14}\d)/);
-  const liM = text.match(/linkedin\.com\/in\/[\w\-]+/i);
-  const ghM = text.match(/github\.com\/[\w\-]+/i);
-
-  const email = emailM ? emailM[0] : '';
-  const phone = phoneM ? phoneM[1].trim() : '';
-  const linkedin = liM ? liM[0] : '';
-  const github = ghM ? ghM[0] : '';
-
-  // Pull the REAL content out of each section of the uploaded resume
-  const summarySection = extractSectionText(lines, 'summary');
-  const skillsSection = extractSectionText(lines, 'skills');
-  const experienceSection = extractSectionText(lines, 'experience');
-  const educationSection = extractSectionText(lines, 'education');
-  const projectsSection = extractSectionText(lines, 'projects');
-  const certSection = extractSectionText(lines, 'certifications');
-
-  function renderParagraph(sectionText) {
-    if (!sectionText) return '';
-    return `<div class="summary-text">${escapeHtml(sectionText.split('\n').join(' '))}</div>`;
-  }
-
-  function renderPlainList(sectionText) {
-    if (!sectionText) return '';
-    const items = sectionText.split('\n').map(l => l.replace(/^[-•*]\s*/, '').trim()).filter(Boolean);
-    return `<div class="skill-line">${escapeHtml(items.join(', '))}</div>`;
-  }
-
-  // Renders a section as alternating "header lines" (role/company/date lines, detected
-  // by containing a year) and bullet points underneath them — preserves the resume's
-  // real structure instead of inventing fake jobs/companies.
-  function renderTimeline(sectionText) {
-    if (!sectionText) return '';
-    const secLines = sectionText.split('\n').map(l => l.trim()).filter(Boolean);
-    let html = '';
-    let bulletBuffer = [];
-    const flush = () => {
-      if (bulletBuffer.length) {
-        html += `<ul class="exp-bullet">${bulletBuffer.map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>`;
-        bulletBuffer = [];
-      }
-    };
-    secLines.forEach(line => {
-      const looksLikeHeaderLine = /\d{4}/.test(line) && line.length < 110;
-      if (looksLikeHeaderLine) {
-        flush();
-        html += `<div class="exp-header-line">${escapeHtml(line)}</div>`;
-      } else {
-        bulletBuffer.push(line.replace(/^[-•*]\s*/, ''));
-      }
-    });
-    flush();
-    return html || renderParagraph(sectionText);
-  }
-
-  const summaryHtml = summarySection
-    ? renderParagraph(summarySection)
-    : `<div class="summary-text">${escapeHtml('Add a 2-3 line professional summary highlighting your experience in ' + (skills.slice(0, 4).join(', ') || 'your field') + '.')}</div>`;
-
-  const skillsHtml = skillsSection
-    ? renderPlainList(skillsSection)
-    : (skills.length ? `<div class="skill-line">${escapeHtml(skills.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', '))}</div>` : '');
-
-  const experienceHtml = experienceSection
-    ? renderTimeline(experienceSection)
-    : '<div class="summary-text" style="color:#666;">No detailed Experience section was found in your uploaded PDF — add your roles, companies, and dates here.</div>';
-
-  const educationHtml = educationSection
-    ? renderTimeline(educationSection)
-    : '<div class="summary-text" style="color:#666;">No Education section was found in your uploaded PDF — add your degree, institution, and graduation year here.</div>';
-
-  const projectsHtml = projectsSection ? renderTimeline(projectsSection) : '';
-  const certHtml = certSection ? renderPlainList(certSection) : '';
-
-  const improvements = format.issues.slice(0, 5).map(i => `<li>${escapeHtml(i)}</li>`).join('');
-
-  const htmlContent = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>${escapeHtml(name)} — Resume</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Campus Locator — Top Colleges Near You</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet" />
 <style>
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:'Times New Roman',Times,serif;font-size:11pt;color:#000;line-height:1.4;background:#fff;}
-  .page{max-width:850px;margin:0 auto;padding:40px 50px;}
-  .header{text-align:center;margin-bottom:16px;}
-  .name{font-size:24pt;font-weight:normal;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase;}
-  .contact{font-size:11pt;}
-  .contact span{white-space:nowrap;}
-  .contact span:not(:last-child)::after{content:" | ";margin:0 6px;}
-
-  .section{margin-bottom:16px;}
-  .section-title{font-size:13pt;font-weight:bold;text-transform:uppercase;border-bottom:1px solid #000;padding-bottom:2px;margin-bottom:8px;letter-spacing:0.5px;}
-
-  .summary-text{text-align:justify;}
-
-  .skills-wrap{display:block;}
-  .skill-line{margin-bottom:4px;}
-  .skill-label{font-weight:bold;}
-
-  .exp-header-line{font-weight:bold;margin-top:8px;margin-bottom:2px;}
-  .exp-header-line:first-child{margin-top:0;}
-  .exp-bullet{list-style:disc;margin-left:24px;margin-top:2px;margin-bottom:6px;}
-  .exp-bullet li{margin-bottom:3px;text-align:justify;}
-
-  .tips-box{background:#fef3c7;border:1px solid #f59e0b;padding:12px 16px;margin-top:30px;font-family:sans-serif;}
-  .tips-box h3{font-size:11pt;font-weight:bold;color:#92400e;margin-bottom:6px;}
-  .tips-box ul{margin-left:16px;font-size:10pt;color:#78350f;}
-  .tips-box li{margin-bottom:4px;}
-
-  @media print{
-    body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}
-    .tips-box{display:none;}
-    .no-print{display:none;}
-    .page{padding:0;max-width:100%;}
+  :root{
+    --bg:#060614; --bg2:#0d0d2b;
+    --glass:rgba(255,255,255,0.05); --glass2:rgba(255,255,255,0.08);
+    --border:rgba(255,255,255,0.08);
+    --primary:#8b5cf6; --primary2:#7c3aed; --cyan:#22d3ee;
+    --amber:#f59e0b; --green:#10b981; --red:#ef4444;
+    --text:#f1f5f9; --muted:#94a3b8;
   }
-  .print-btn{position:fixed;top:20px;right:20px;padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:4px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif;z-index:100;}
-  .print-btn:hover{background:#333;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{min-height:100%;}
+  body{
+    font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);
+    min-height:100vh;position:relative;overflow-x:hidden;
+  }
+  .orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+  .orb{position:absolute;border-radius:50%;filter:blur(80px);animation:orbFloat 12s ease-in-out infinite;}
+  .orb1{width:500px;height:500px;background:radial-gradient(circle,rgba(139,92,246,0.18),transparent 70%);top:-120px;left:-120px;}
+  .orb2{width:400px;height:400px;background:radial-gradient(circle,rgba(34,211,238,0.12),transparent 70%);bottom:-80px;right:-80px;animation-delay:-4s;}
+  @keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1);}33%{transform:translate(30px,-30px) scale(1.05);}66%{transform:translate(-20px,20px) scale(0.95);}}
+
+  header{
+    position:relative;z-index:2;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:22px 32px;border-bottom:1px solid var(--border);
+    background:rgba(6,6,20,0.6);backdrop-filter:blur(20px);
+  }
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-icon{
+    width:40px;height:40px;border-radius:12px;
+    background:linear-gradient(135deg,var(--primary),var(--cyan));
+    display:flex;align-items:center;justify-content:center;font-size:20px;
+    box-shadow:0 0 16px rgba(139,92,246,0.5);
+  }
+  .brand-name{font-family:'Outfit',sans-serif;font-size:19px;font-weight:800;}
+  .brand-sub{font-size:11px;color:var(--muted);}
+
+  /* ── Location badge, top right ── */
+  .location-badge{
+    display:flex;align-items:center;gap:10px;
+    padding:9px 16px;border-radius:30px;
+    background:var(--glass2);border:1px solid var(--border);
+    font-size:13px;font-weight:600;min-width:150px;
+    transition:all 0.3s;
+  }
+  .location-badge.found{background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.3);}
+  .location-badge.denied{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.25);}
+  .loc-dot{width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0;animation:pulse 1.4s ease-in-out infinite;}
+  .location-badge.found .loc-dot{background:var(--green);animation:none;}
+  .location-badge.denied .loc-dot{background:var(--red);animation:none;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
+  .loc-text{display:flex;flex-direction:column;line-height:1.25;}
+  .loc-city{font-size:13px;font-weight:700;}
+  .loc-caption{font-size:10px;color:var(--muted);font-weight:500;}
+  .loc-retry{
+    background:none;border:none;color:var(--cyan);font-size:11px;font-weight:600;
+    cursor:pointer;text-decoration:underline;padding:0;margin-left:4px;
+  }
+
+  main{position:relative;z-index:1;max-width:1000px;margin:0 auto;padding:40px 24px 80px;}
+
+  .hero{text-align:center;margin-bottom:36px;}
+  .hero h1{font-family:'Outfit',sans-serif;font-size:30px;font-weight:800;margin-bottom:10px;}
+  .hero p{color:var(--muted);font-size:14px;max-width:520px;margin:0 auto;}
+
+  .state-panel{
+    max-width:520px;margin:0 auto 30px;padding:20px 24px;
+    background:var(--glass);border:1px solid var(--border);border-radius:16px;
+    text-align:center;backdrop-filter:blur(12px);
+  }
+  .state-panel .spinner{
+    width:26px;height:26px;border-radius:50%;
+    border:3px solid rgba(139,92,246,0.2);border-top-color:var(--primary);
+    margin:0 auto 12px;animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .state-panel h3{font-size:15px;font-weight:700;margin-bottom:6px;}
+  .state-panel p{font-size:12px;color:var(--muted);line-height:1.5;}
+  .state-panel button{
+    margin-top:14px;padding:10px 22px;border-radius:10px;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;
+    font-size:13px;font-weight:700;font-family:'Inter',sans-serif;
+  }
+
+  /* manual city picker fallback */
+  .manual-picker{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:center;}
+  .manual-picker select,.manual-picker input{
+    padding:9px 14px;border-radius:8px;background:rgba(255,255,255,0.05);
+    border:1px solid var(--border);color:var(--text);font-size:13px;font-family:'Inter',sans-serif;
+  }
+  .manual-picker button{
+    padding:9px 18px;border-radius:8px;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--primary),var(--cyan));color:#fff;font-weight:700;font-size:13px;
+  }
+
+  .results-head{display:flex;align-items:baseline;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+  .results-head h2{font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;}
+  .results-head span{color:var(--muted);font-size:13px;}
+
+  .college-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+  .college-card{
+    background:var(--glass);border:1px solid var(--border);border-radius:14px;
+    padding:18px 20px;backdrop-filter:blur(10px);transition:transform 0.2s,border-color 0.2s;
+  }
+  .college-card:hover{transform:translateY(-3px);border-color:rgba(139,92,246,0.4);}
+  .college-rank{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:26px;height:26px;border-radius:8px;font-size:12px;font-weight:800;
+    background:rgba(139,92,246,0.18);color:#c4b5fd;margin-bottom:10px;
+  }
+  .college-name{font-size:15px;font-weight:700;margin-bottom:6px;line-height:1.3;}
+  .college-meta{font-size:12px;color:var(--cyan);margin-bottom:8px;}
+  .college-desc{font-size:12.5px;color:var(--muted);line-height:1.5;}
+
+  .empty-state{
+    text-align:center;padding:50px 20px;color:var(--muted);font-size:13px;
+  }
+  .empty-state .big{font-size:38px;margin-bottom:10px;}
+
+  footer{
+    position:relative;z-index:1;text-align:center;padding:20px;
+    font-size:11px;color:var(--muted);border-top:1px solid var(--border);
+  }
+
+  @media(max-width:640px){
+    header{flex-direction:column;gap:14px;align-items:flex-start;padding:18px 20px;}
+    .location-badge{align-self:flex-end;}
+  }
 </style>
 </head>
 <body>
-<button class="print-btn no-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
-<div class="page">
 
-  <div class="header">
-    <div class="name">${escapeHtml(name)}</div>
-    <div class="contact">
-      ${email ? `<span>${escapeHtml(email)}</span>` : ''}
-      ${phone ? `<span>${escapeHtml(phone)}</span>` : ''}
-      ${linkedin ? `<span>${escapeHtml(linkedin.replace(/https?:\/\/(www\.)?/, ''))}</span>` : ''}
-      ${github ? `<span>${escapeHtml(github.replace(/https?:\/\/(www\.)?/, ''))}</span>` : ''}
+<div class="orbs"><div class="orb orb1"></div><div class="orb orb2"></div></div>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">🎓</div>
+    <div>
+      <div class="brand-name">Campus Locator</div>
+      <div class="brand-sub">Find top colleges near you, automatically</div>
     </div>
   </div>
 
-  <div class="section">
-    <div class="section-title">Professional Summary</div>
-    ${summaryHtml}
+  <div class="location-badge" id="locationBadge">
+    <div class="loc-dot"></div>
+    <div class="loc-text">
+      <span class="loc-city" id="locCity">Detecting…</span>
+      <span class="loc-caption" id="locCaption">Locating you</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Top Colleges Near You</h1>
+    <p>We use your device location to automatically show the top-ranked colleges in your city — no searching needed.</p>
   </div>
 
-  ${skillsHtml ? `
-  <div class="section">
-    <div class="section-title">Skills</div>
-    <div class="skills-wrap">${skillsHtml}</div>
-  </div>` : ''}
-
-  <div class="section">
-    <div class="section-title">Professional Experience</div>
-    ${experienceHtml}
+  <div class="state-panel" id="statePanel">
+    <div class="spinner"></div>
+    <h3>Requesting your location…</h3>
+    <p>Your browser will ask for permission. This is only used to detect your city — nothing is stored or sent anywhere.</p>
   </div>
 
-  ${projectsHtml ? `
-  <div class="section">
-    <div class="section-title">Projects</div>
-    ${projectsHtml}
-  </div>` : ''}
-
-  <div class="section">
-    <div class="section-title">Education</div>
-    ${educationHtml}
+  <div class="results-head" id="resultsHead" style="display:none;">
+    <h2 id="resultsCity">—</h2>
+    <span id="resultsCount"></span>
   </div>
 
-  ${certHtml ? `
-  <div class="section">
-    <div class="section-title">Certifications</div>
-    ${certHtml}
-  </div>` : ''}
+  <div class="college-grid" id="collegeGrid"></div>
+</main>
 
-  ${improvements ? `
-  <div class="tips-box no-print">
-    <h3>⚡ NR Agent Improvement Tips (Not shown in printed resume):</h3>
-    <ul>${improvements}</ul>
-  </div>` : ''}
-</div>
-</body>
-</html>`;
+<footer>Location is used only in your browser to look up your city — nothing is uploaded or stored.</footer>
 
-  const blob = new Blob([htmlContent], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
+<script>
+// ─────────────────────────────────────────────
+// Top colleges database, keyed by lowercase city name
+// ─────────────────────────────────────────────
+const COLLEGES_BY_CITY = {
+  "pune": [
+    { name: "College of Engineering Pune (COEP)", meta: "Autonomous · Government", desc: "One of the oldest engineering institutes in India, known for strong core engineering programs." },
+    { name: "Pune Institute of Computer Technology (PICT)", meta: "Autonomous", desc: "Top choice for Computer Engineering and IT in Maharashtra." },
+    { name: "Vishwakarma Institute of Technology (VIT Pune)", meta: "Autonomous", desc: "Strong placements in core and IT sectors, active research culture." },
+    { name: "MIT World Peace University", meta: "Private University", desc: "Wide range of engineering, design and management programs." },
+    { name: "Symbiosis Institute of Technology (SIT)", meta: "Deemed University", desc: "Part of the Symbiosis group, known for industry-aligned curriculum." }
+  ],
+  "mumbai": [
+    { name: "Indian Institute of Technology Bombay (IIT Bombay)", meta: "IIT · Government", desc: "India's top-ranked engineering institute, globally recognized research output." },
+    { name: "Veermata Jijabai Technological Institute (VJTI)", meta: "Government Autonomous", desc: "One of Maharashtra's oldest and most respected engineering colleges." },
+    { name: "Sardar Patel Institute of Technology (SPIT)", meta: "Autonomous", desc: "Well known for Computer Engineering and IT placements." },
+    { name: "K.J. Somaiya College of Engineering", meta: "Autonomous", desc: "Strong industry connect and diverse engineering branches." },
+    { name: "Narsee Monjee Institute of Management Studies (NMIMS)", meta: "Deemed University", desc: "Popular for engineering, management and design programs." }
+  ],
+  "nagpur": [
+    { name: "Visvesvaraya National Institute of Technology (VNIT)", meta: "NIT · Government", desc: "Premier NIT with top-tier engineering programs and research." },
+    { name: "G.H. Raisoni College of Engineering (GHRCE)", meta: "Autonomous", desc: "Well-established private engineering college, strong AI/ML and CS programs." },
+    { name: "Yeshwantrao Chavan College of Engineering (YCCE)", meta: "Autonomous", desc: "Reputed for core branches and consistent placement record." },
+    { name: "Ramdeobaba College of Engineering & Management (RCOEM)", meta: "Autonomous", desc: "One of the top-ranked private colleges in Central India." },
+    { name: "Priyadarshini College of Engineering", meta: "Affiliated", desc: "Long-standing engineering college with a wide branch offering." }
+  ],
+  "delhi": [
+    { name: "Indian Institute of Technology Delhi (IIT Delhi)", meta: "IIT · Government", desc: "One of India's top technical institutes, strong research and placements." },
+    { name: "Delhi Technological University (DTU)", meta: "State University", desc: "Highly ranked, formerly Delhi College of Engineering." },
+    { name: "Netaji Subhas University of Technology (NSUT)", meta: "State University", desc: "Top choice for CS/IT among Delhi state universities." },
+    { name: "Indian Institute of Information Technology Delhi (IIIT-D)", meta: "State University", desc: "Focused on CS, AI, and design with strong tech industry links." },
+    { name: "Jamia Millia Islamia", meta: "Central University", desc: "Reputed for engineering, humanities and mass communication." }
+  ],
+  "bangalore": [
+    { name: "Indian Institute of Science (IISc)", meta: "Government · Research", desc: "India's top research institute for science and engineering." },
+    { name: "RV College of Engineering (RVCE)", meta: "Autonomous", desc: "One of the most sought-after private engineering colleges in India." },
+    { name: "BMS College of Engineering", meta: "Autonomous", desc: "Consistently ranked among India's top private engineering colleges." },
+    { name: "PES University", meta: "Deemed University", desc: "Strong in CS, AI/ML with close industry partnerships." },
+    { name: "MS Ramaiah Institute of Technology", meta: "Autonomous", desc: "Well-established with strong placement records." }
+  ],
+  "bengaluru": [
+    { name: "Indian Institute of Science (IISc)", meta: "Government · Research", desc: "India's top research institute for science and engineering." },
+    { name: "RV College of Engineering (RVCE)", meta: "Autonomous", desc: "One of the most sought-after private engineering colleges in India." },
+    { name: "BMS College of Engineering", meta: "Autonomous", desc: "Consistently ranked among India's top private engineering colleges." },
+    { name: "PES University", meta: "Deemed University", desc: "Strong in CS, AI/ML with close industry partnerships." },
+    { name: "MS Ramaiah Institute of Technology", meta: "Autonomous", desc: "Well-established with strong placement records." }
+  ],
+  "chennai": [
+    { name: "Indian Institute of Technology Madras (IIT Madras)", meta: "IIT · Government", desc: "Consistently ranked #1 engineering institute in India (NIRF)." },
+    { name: "Anna University (CEG Campus)", meta: "State University", desc: "One of Tamil Nadu's oldest and most reputed engineering colleges." },
+    { name: "SSN College of Engineering", meta: "Autonomous", desc: "Top private engineering college in Tamil Nadu." },
+    { name: "PSG College of Technology (Coimbatore region)", meta: "Autonomous", desc: "Strong reputation across South India for engineering." },
+    { name: "SRM Institute of Science and Technology", meta: "Deemed University", desc: "Large private university with wide-ranging programs." }
+  ],
+  "hyderabad": [
+    { name: "Indian Institute of Technology Hyderabad (IIT Hyderabad)", meta: "IIT · Government", desc: "Fast-rising IIT known for research and CS/AI programs." },
+    { name: "International Institute of Information Technology Hyderabad (IIIT-H)", meta: "Deemed University", desc: "Top-ranked for CS, AI and research in India." },
+    { name: "Osmania University College of Engineering", meta: "State University", desc: "One of the oldest engineering colleges in South India." },
+    { name: "BITS Pilani Hyderabad Campus", meta: "Deemed University", desc: "Highly regarded private institute with strong industry ties." },
+    { name: "Vasavi College of Engineering", meta: "Autonomous", desc: "Well-known private college with strong core branches." }
+  ],
+  "kolkata": [
+    { name: "Indian Institute of Engineering Science and Technology (IIEST Shibpur)", meta: "Government", desc: "One of the oldest technical institutes in India." },
+    { name: "Jadavpur University", meta: "State University", desc: "Top-ranked and highly reputed engineering & science university." },
+    { name: "Indian Statistical Institute (ISI) Kolkata", meta: "Government · Research", desc: "World-renowned for statistics, mathematics and data science." },
+    { name: "Heritage Institute of Technology", meta: "Autonomous", desc: "Well-regarded private engineering college in the region." },
+    { name: "Techno India University", meta: "State Private University", desc: "Large private university offering diverse programs." }
+  ],
+  "ahmedabad": [
+    { name: "Indian Institute of Technology Gandhinagar (IIT Gandhinagar)", meta: "IIT · Government", desc: "Modern IIT campus near Ahmedabad, strong interdisciplinary focus." },
+    { name: "Nirma University", meta: "Deemed University", desc: "Popular private university for engineering, management and pharmacy." },
+    { name: "L.D. College of Engineering", meta: "Government", desc: "One of Gujarat's oldest and most reputed engineering colleges." },
+    { name: "Institute of Technology, Nirma University", meta: "Deemed University", desc: "Strong industry-oriented engineering programs." },
+    { name: "Ahmedabad University", meta: "Private University", desc: "Newer private university with growing engineering & design programs." }
+  ],
+  "jaipur": [
+    { name: "Malaviya National Institute of Technology (MNIT Jaipur)", meta: "NIT · Government", desc: "Top NIT in Rajasthan with strong core engineering programs." },
+    { name: "LNM Institute of Information Technology (LNMIIT)", meta: "Deemed University", desc: "Reputed for CS/IT with strong research focus." },
+    { name: "Manipal University Jaipur", meta: "Private University", desc: "Wide range of engineering and management programs." },
+    { name: "Poornima College of Engineering", meta: "Affiliated", desc: "Well-known private engineering college in Jaipur." },
+    { name: "JECRC University", meta: "Private University", desc: "Popular for CS, AI/ML and management programs." }
+  ],
+  "lucknow": [
+    { name: "Indian Institute of Information Technology Lucknow (IIIT Lucknow)", meta: "Government", desc: "Focused institute for IT and CS programs." },
+    { name: "Babasaheb Bhimrao Ambedkar University (BBAU)", meta: "Central University", desc: "Central university offering engineering and diverse programs." },
+    { name: "Institute of Engineering and Technology, Lucknow (IET Lucknow)", meta: "State University", desc: "One of UP's oldest and reputed engineering colleges." },
+    { name: "Amity University Lucknow", meta: "Private University", desc: "Large private university with broad program offerings." },
+    { name: "Integral University", meta: "Private University", desc: "Well-known private university in the region." }
+  ],
+  "indore": [
+    { name: "Indian Institute of Technology Indore (IIT Indore)", meta: "IIT · Government", desc: "Fast-growing IIT with strong research output." },
+    { name: "Institute of Engineering and Technology, DAVV", meta: "State University", desc: "Long-standing engineering institute in Indore." },
+    { name: "Shri Govindram Seksaria Institute of Technology and Science (SGSITS)", meta: "Autonomous", desc: "Reputed government-aided engineering college." },
+    { name: "Medi-Caps University", meta: "Private University", desc: "Popular private university for engineering and CS." },
+    { name: "Prestige Institute of Management and Research", meta: "Private", desc: "Known primarily for management, also offers tech programs." }
+  ],
+  "bhopal": [
+    { name: "Maulana Azad National Institute of Technology (MANIT Bhopal)", meta: "NIT · Government", desc: "Top NIT in Madhya Pradesh with strong core branches." },
+    { name: "Lakshmi Narain College of Technology (LNCT)", meta: "Private", desc: "One of the larger private engineering colleges in the region." },
+    { name: "Oriental Institute of Science and Technology", meta: "Private", desc: "Well-established private engineering college." },
+    { name: "Technocrats Institute of Technology", meta: "Private", desc: "Popular private option for engineering in Bhopal." },
+    { name: "Sagar Institute of Science and Technology", meta: "Private", desc: "Known for CS/IT and core engineering branches." }
+  ],
+  "nashik": [
+    { name: "K.K. Wagh Institute of Engineering Education & Research", meta: "Autonomous", desc: "One of the top engineering colleges in Nashik." },
+    { name: "Sandip Institute of Technology and Research Centre", meta: "Autonomous", desc: "Well-regarded private engineering institute." },
+    { name: "Guru Gobind Singh College of Engineering & Research Centre", meta: "Affiliated", desc: "Popular choice among Nashik engineering aspirants." },
+    { name: "MET's Institute of Engineering", meta: "Affiliated", desc: "Established private engineering college." },
+    { name: "Matoshri College of Engineering and Research Centre", meta: "Affiliated", desc: "Known for core and CS branches." }
+  ],
+  "surat": [
+    { name: "Sardar Vallabhbhai National Institute of Technology (SVNIT)", meta: "NIT · Government", desc: "Top NIT in Gujarat with strong placements." },
+    { name: "C.K. Pithawalla College of Engineering & Technology", meta: "Affiliated", desc: "Well-known private engineering college in Surat." },
+    { name: "Sarvajanik College of Engineering & Technology", meta: "Autonomous", desc: "Reputed autonomous engineering institute in the city." },
+    { name: "Bhagwan Mahavir University", meta: "Private University", desc: "Growing private university with engineering programs." },
+    { name: "Uka Tarsadia University", meta: "Private University", desc: "Offers a wide range of engineering and applied science programs." }
+  ],
+  "chandigarh": [
+    { name: "Panjab University, Chandigarh", meta: "State University", desc: "Long-established, highly reputed university with strong engineering wing (UIET)." },
+    { name: "Punjab Engineering College (PEC)", meta: "Deemed University", desc: "One of India's oldest engineering institutes, highly ranked." },
+    { name: "Chandigarh University", meta: "Private University", desc: "Large private university, popular for placements and diverse programs." },
+    { name: "Chitkara University", meta: "Private University", desc: "Known for CS/IT, design and management programs." },
+    { name: "Thapar Institute (Patiala, nearby)", meta: "Deemed University", desc: "Highly reputed private institute in the wider Chandigarh region." }
+  ],
+  "kanpur": [
+    { name: "Indian Institute of Technology Kanpur (IIT Kanpur)", meta: "IIT · Government", desc: "One of India's top IITs, renowned for research and CS/AI." },
+    { name: "Harcourt Butler Technical University (HBTU)", meta: "State University", desc: "One of UP's oldest technical universities." },
+    { name: "Institute of Engineering & Technology (IET), Kanpur", meta: "State University", desc: "Reputed government engineering institute." },
+    { name: "GLA University (nearby Mathura)", meta: "Private University", desc: "Popular private university in the wider region." },
+    { name: "Kanpur Institute of Technology", meta: "Private", desc: "Well-known private engineering college in the city." }
+  ]
+};
+
+// Aliases so slightly different city name forms still resolve
+const CITY_ALIASES = {
+  "bombay": "mumbai",
+  "calcutta": "kolkata",
+  "poona": "pune",
+  "new delhi": "delhi",
+  "bangaluru": "bangalore"
+};
+
+function normalizeCity(name){
+  if(!name) return "";
+  const n = name.trim().toLowerCase();
+  return CITY_ALIASES[n] || n;
 }
 
-// ── Reset ──
-function resetChat() {
-  document.getElementById('chatMessages').innerHTML = '';
-  document.getElementById('uploadArea').style.display = 'block';
-  document.getElementById('resetBtn').classList.remove('visible');
-  document.getElementById('fileInput').value = '';
-  window._resumeData = null;
-  msgDelay = 0;
-  setTimeout(() => addWelcomeMessage(), 300);
+// ─────────────────────────────────────────────
+// UI helpers
+// ─────────────────────────────────────────────
+const badge = document.getElementById('locationBadge');
+const locCity = document.getElementById('locCity');
+const locCaption = document.getElementById('locCaption');
+const statePanel = document.getElementById('statePanel');
+const resultsHead = document.getElementById('resultsHead');
+const resultsCity = document.getElementById('resultsCity');
+const resultsCount = document.getElementById('resultsCount');
+const collegeGrid = document.getElementById('collegeGrid');
+
+function setBadge(status, cityLabel, caption){
+  badge.className = 'location-badge' + (status ? ' ' + status : '');
+  locCity.textContent = cityLabel;
+  locCaption.textContent = caption;
 }
+
+function renderColleges(cityDisplay, key){
+  const list = COLLEGES_BY_CITY[key];
+  resultsHead.style.display = 'flex';
+  resultsCity.textContent = `Top Colleges in ${cityDisplay}`;
+  collegeGrid.innerHTML = '';
+
+  if (!list) {
+    resultsCount.textContent = '';
+    collegeGrid.innerHTML = `
+      <div class="empty-state" style="grid-column:1/-1;">
+        <div class="big">🏫</div>
+        We don't have ${escapeHtml(cityDisplay)} in our college directory yet.<br>
+        Try one of the covered cities below, or add your own city's colleges.
+      </div>`;
+    return;
+  }
+
+  resultsCount.textContent = `${list.length} colleges found`;
+  list.forEach((c, i) => {
+    const card = document.createElement('div');
+    card.className = 'college-card';
+    card.innerHTML = `
+      <div class="college-rank">#${i+1}</div>
+      <div class="college-name">${escapeHtml(c.name)}</div>
+      <div class="college-meta">${escapeHtml(c.meta)}</div>
+      <div class="college-desc">${escapeHtml(c.desc)}</div>
+    `;
+    collegeGrid.appendChild(card);
+  });
+}
+
+function escapeHtml(str){
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showManualPicker(){
+  const covered = Object.keys(COLLEGES_BY_CITY);
+  const options = covered.map(c => `<option value="${c}">${c.charAt(0).toUpperCase()+c.slice(1)}</option>`).join('');
+  statePanel.innerHTML = `
+    <h3>Couldn't detect your location</h3>
+    <p>Please allow location access, or pick your city manually below.</p>
+    <div class="manual-picker">
+      <select id="manualCitySelect">${options}</select>
+      <button onclick="useManualCity()">Show Colleges</button>
+      <button onclick="requestLocation()" style="background:var(--glass2);border:1px solid var(--border);">Retry Location</button>
+    </div>
+  `;
+}
+
+function useManualCity(){
+  const sel = document.getElementById('manualCitySelect');
+  const key = sel.value;
+  const label = key.charAt(0).toUpperCase() + key.slice(1);
+  setBadge('found', label, 'Selected manually');
+  statePanel.style.display = 'none';
+  renderColleges(label, key);
+}
+
+// ─────────────────────────────────────────────
+// Geolocation → reverse geocode (BigDataCloud free, no API key) → colleges
+// ─────────────────────────────────────────────
+function requestLocation(){
+  setBadge('', 'Detecting…', 'Locating you');
+  statePanel.style.display = 'block';
+  statePanel.innerHTML = `
+    <div class="spinner"></div>
+    <h3>Requesting your location…</h3>
+    <p>Your browser will ask for permission. This is only used to detect your city — nothing is stored or sent anywhere.</p>
+  `;
+  resultsHead.style.display = 'none';
+  collegeGrid.innerHTML = '';
+
+  if (!navigator.geolocation) {
+    setBadge('denied', 'Unavailable', 'Geolocation not supported');
+    showManualPicker();
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError, {
+    enableHighAccuracy: false,
+    timeout: 10000,
+    maximumAge: 300000
+  });
+}
+
+async function onLocationSuccess(position){
+  const { latitude, longitude } = position.coords;
+  try {
+    const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+    if (!res.ok) throw new Error('Reverse geocode failed');
+    const data = await res.json();
+    const cityRaw = data.city || data.locality || data.principalSubdivision || 'Unknown';
+    const key = normalizeCity(cityRaw);
+    const displayCity = cityRaw;
+
+    setBadge('found', displayCity, 'Location detected');
+    statePanel.style.display = 'none';
+    renderColleges(displayCity, key);
+  } catch (err) {
+    setBadge('denied', 'Lookup failed', 'Could not resolve city');
+    showManualPicker();
+  }
+}
+
+function onLocationError(err){
+  let caption = 'Location unavailable';
+  if (err.code === err.PERMISSION_DENIED) caption = 'Permission denied';
+  else if (err.code === err.TIMEOUT) caption = 'Request timed out';
+  setBadge('denied', 'Not detected', caption);
+  showManualPicker();
+}
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', requestLocation);
 </script>
 </body>
 </html>
