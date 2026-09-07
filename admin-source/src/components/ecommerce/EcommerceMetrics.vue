@@ -26,31 +26,14 @@
         </svg>
       </div>
 
-      <div class="flex items-end justify-between mt-3">
-        <div>
-          <span class="text-xs text-gray-500 dark:text-gray-400">
-            Enquiry
-          </span>
-
-          <h4 class="mt-1 font-bold text-gray-800 text-lg dark:text-white/90">
-            {{ enquiryCount }}
-          </h4>
-        </div>
-
-        <span
-          class="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-          :class="enquiryChange >= 0
-            ? 'bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400'
-            : 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-400'"
-        >
-          <svg v-if="enquiryChange >= 0" class="w-3 h-3" viewBox="0 0 24 24" fill="none">
-            <path d="M12 5l7 7-1.4 1.4L13 8.8V19h-2V8.8l-4.6 4.6L5 12z" fill="currentColor" />
-          </svg>
-          <svg v-else class="w-3 h-3" viewBox="0 0 24 24" fill="none">
-            <path d="M12 19l-7-7 1.4-1.4L11 15.2V5h2v10.2l4.6-4.6L19 12z" fill="currentColor" />
-          </svg>
-          {{ Math.abs(enquiryChange) }}%
+      <div class="mt-3">
+        <span class="text-xs text-gray-500 dark:text-gray-400">
+          Enquiry
         </span>
+
+        <h4 class="mt-1 font-bold text-gray-800 text-lg dark:text-white/90">
+          {{ enquiryCount }}
+        </h4>
       </div>
     </div>
 
@@ -80,31 +63,14 @@
         </svg>
       </div>
 
-      <div class="flex items-end justify-between mt-3">
-        <div>
-          <span class="text-xs text-gray-500 dark:text-gray-400">
-            Campus Registration
-          </span>
-
-          <h4 class="mt-1 font-bold text-gray-800 text-lg dark:text-white/90">
-            {{ registrationCount }}
-          </h4>
-        </div>
-
-        <span
-          class="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-          :class="registrationChange >= 0
-            ? 'bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400'
-            : 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-400'"
-        >
-          <svg v-if="registrationChange >= 0" class="w-3 h-3" viewBox="0 0 24 24" fill="none">
-            <path d="M12 5l7 7-1.4 1.4L13 8.8V19h-2V8.8l-4.6 4.6L5 12z" fill="currentColor" />
-          </svg>
-          <svg v-else class="w-3 h-3" viewBox="0 0 24 24" fill="none">
-            <path d="M12 19l-7-7 1.4-1.4L11 15.2V5h2v10.2l4.6-4.6L19 12z" fill="currentColor" />
-          </svg>
-          {{ Math.abs(registrationChange) }}%
+      <div class="mt-3">
+        <span class="text-xs text-gray-500 dark:text-gray-400">
+          Campus Registration
         </span>
+
+        <h4 class="mt-1 font-bold text-gray-800 text-lg dark:text-white/90">
+          {{ registrationCount }}
+        </h4>
       </div>
     </div>
 
@@ -117,10 +83,6 @@ import { ref, onMounted } from "vue";
 
 const enquiryCount = ref(0);
 const registrationCount = ref(0);
-
-// Placeholder % change values — replace with real data from your API when available
-const enquiryChange = ref(11.01);
-const registrationChange = ref(-9.05);
 
 onMounted(async () => {
   try {

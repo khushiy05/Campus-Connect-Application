@@ -6,10 +6,6 @@
         <EcommerceMetrics />
       </div>
 
-      <div class="col-span-12">
-        <EcommerceMetrics />
-      </div>
-
     </div>
   </AdminLayout>
 </template>
