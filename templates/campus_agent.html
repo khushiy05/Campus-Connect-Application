@@ -235,13 +235,11 @@
   <div class="colleges-col">
     <div class="colleges-head">
       <h2 id="collegesTitle">Top Colleges Near You</h2>
-      <p id="collegesSub">Detecting your city…</p>
     </div>
     <div class="colleges-body" id="collegesBody">
       <div class="state-panel" id="statePanel">
         <div class="spinner"></div>
         <h3>Requesting your location…</h3>
-        <p>Used only to find your city — nothing is stored or sent anywhere.</p>
       </div>
     </div>
   </div>
@@ -488,7 +486,6 @@ const locCaption = document.getElementById('locCaption');
 const statePanel0 = document.getElementById('statePanel');
 const collegesBody = document.getElementById('collegesBody');
 const collegesTitle = document.getElementById('collegesTitle');
-const collegesSub = document.getElementById('collegesSub');
 
 let detectedCityKey = null;
 let detectedCityLabel = null;
@@ -506,7 +503,6 @@ function renderColleges(cityDisplay, key){
   collegesTitle.textContent = `Top Colleges in ${cityDisplay}`;
 
   if (!list) {
-    collegesSub.textContent = 'Not in our directory yet';
     collegesBody.innerHTML = `
       <div class="colleges-empty">
         <div class="big">🏫</div>
@@ -514,7 +510,6 @@ function renderColleges(cityDisplay, key){
       </div>`;
     return;
   }
-  collegesSub.textContent = `${list.length} colleges found nearby`;
   collegesBody.innerHTML = list.map((c,i) => `
     <div class="college-card">
       <div class="college-rank">#${i+1}</div>
@@ -555,12 +550,11 @@ function useManualCity(){
 
 function requestLocation(){
   setBadge('', 'Detecting…', 'Locating you');
-  collegesSub.textContent = 'Detecting your city…';
   collegesBody.innerHTML = `
     <div class="state-panel">
       <div class="spinner"></div>
       <h3>Requesting your location…</h3>
-      <p>Used only to find your city — nothing is stored or sent anywhere.</p>
+      
     </div>
   `;
 
@@ -820,10 +814,6 @@ chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(
    INIT
    ═══════════════════════════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', () => {
-  addMessage('bot',
-    `👋 Hey there! I'm <strong>Campus Agent</strong> — ask me anything about <strong>Campus Connect</strong> (registration, colleges, login, events). I've also detected your city on the right and pulled up the top colleges near you!`,
-    ['What is Campus Connect?', 'How do I register?', 'Which colleges are covered?']
-  );
   requestLocation();
 });
 </script>
