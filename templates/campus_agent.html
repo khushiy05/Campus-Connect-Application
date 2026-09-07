@@ -3,136 +3,194 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Campus Locator — Top Colleges Near You</title>
+<title>Campus Agent — Campus Connect Assistant</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --bg:#060614; --bg2:#0d0d2b;
-    --glass:rgba(255,255,255,0.05); --glass2:rgba(255,255,255,0.08);
-    --border:rgba(255,255,255,0.08);
-    --primary:#8b5cf6; --primary2:#7c3aed; --cyan:#22d3ee;
+    --bg:#f5f6fa; --surface:#ffffff; --surface2:#fff4ec;
+    --glass:#ffffff; --glass2:#fff4ec;
+    --border:#e7e9f0;
+    --primary:#ff6b00; --primary2:#ff8a3d;
+    --teal:#0ea5a0; --purple:#7c3aed;
     --amber:#f59e0b; --green:#10b981; --red:#ef4444;
-    --text:#f1f5f9; --muted:#94a3b8;
+    --text:#1f2430; --muted:#6b7280;
+    --shadow:0 4px 18px rgba(31,36,48,0.06);
   }
   *{margin:0;padding:0;box-sizing:border-box;}
-  html,body{min-height:100%;}
+  html,body{height:100%;overflow:hidden;}
   body{
     font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);
-    min-height:100vh;position:relative;overflow-x:hidden;
+    display:flex;flex-direction:column;height:100vh;overflow:hidden;
   }
-  .orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
-  .orb{position:absolute;border-radius:50%;filter:blur(80px);animation:orbFloat 12s ease-in-out infinite;}
-  .orb1{width:500px;height:500px;background:radial-gradient(circle,rgba(139,92,246,0.18),transparent 70%);top:-120px;left:-120px;}
-  .orb2{width:400px;height:400px;background:radial-gradient(circle,rgba(34,211,238,0.12),transparent 70%);bottom:-80px;right:-80px;animation-delay:-4s;}
-  @keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1);}33%{transform:translate(30px,-30px) scale(1.05);}66%{transform:translate(-20px,20px) scale(0.95);}}
+  .orbs{display:none;}
 
+  /* ── Header ── */
   header{
-    position:relative;z-index:2;
+    position:relative;z-index:2;flex-shrink:0;
     display:flex;align-items:center;justify-content:space-between;
-    padding:22px 32px;border-bottom:1px solid var(--border);
-    background:rgba(6,6,20,0.6);backdrop-filter:blur(20px);
+    padding:16px 28px;border-bottom:1px solid var(--border);
+    background:var(--surface);box-shadow:var(--shadow);
   }
   .brand{display:flex;align-items:center;gap:12px;}
   .brand-icon{
-    width:40px;height:40px;border-radius:12px;
-    background:linear-gradient(135deg,var(--primary),var(--cyan));
-    display:flex;align-items:center;justify-content:center;font-size:20px;
-    box-shadow:0 0 16px rgba(139,92,246,0.5);
+    width:42px;height:42px;border-radius:12px;
+    background:linear-gradient(135deg,var(--teal),var(--purple) 55%,var(--primary));
+    display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;
+    box-shadow:0 4px 14px rgba(255,107,0,0.25);
   }
-  .brand-name{font-family:'Outfit',sans-serif;font-size:19px;font-weight:800;}
+  .brand-name{font-family:'Outfit',sans-serif;font-size:19px;font-weight:800;
+    background:linear-gradient(90deg,var(--teal),var(--purple) 55%,var(--primary));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
   .brand-sub{font-size:11px;color:var(--muted);}
 
-  /* ── Location badge, top right ── */
   .location-badge{
     display:flex;align-items:center;gap:10px;
-    padding:9px 16px;border-radius:30px;
-    background:var(--glass2);border:1px solid var(--border);
-    font-size:13px;font-weight:600;min-width:150px;
-    transition:all 0.3s;
+    padding:8px 15px;border-radius:30px;
+    background:var(--surface2);border:1px solid #ffe0c2;
+    font-size:12.5px;font-weight:600;min-width:150px;color:var(--text);
   }
-  .location-badge.found{background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.3);}
-  .location-badge.denied{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.25);}
+  .location-badge.found{background:#e9fbf3;border-color:#bdf0d8;}
+  .location-badge.denied{background:#fdecec;border-color:#f6c6c6;}
   .loc-dot{width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0;animation:pulse 1.4s ease-in-out infinite;}
   .location-badge.found .loc-dot{background:var(--green);animation:none;}
   .location-badge.denied .loc-dot{background:var(--red);animation:none;}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
-  .loc-text{display:flex;flex-direction:column;line-height:1.25;}
-  .loc-city{font-size:13px;font-weight:700;}
-  .loc-caption{font-size:10px;color:var(--muted);font-weight:500;}
-  .loc-retry{
-    background:none;border:none;color:var(--cyan);font-size:11px;font-weight:600;
-    cursor:pointer;text-decoration:underline;padding:0;margin-left:4px;
+  .loc-text{display:flex;flex-direction:column;line-height:1.2;}
+  .loc-city{font-size:12.5px;font-weight:700;color:var(--text);}
+  .loc-caption{font-size:9.5px;color:var(--muted);font-weight:500;}
+
+  /* ── Body split ── */
+  .body-split{flex:1;display:flex;min-height:0;position:relative;z-index:1;}
+
+  /* ── Chat column (left) ── */
+  .chat-col{
+    flex:0 0 62%;display:flex;flex-direction:column;min-width:0;
+    border-right:1px solid var(--border);background:var(--bg);
   }
+  .chat-messages{
+    flex:1;overflow-y:auto;padding:22px 26px;
+    display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth;
+  }
+  .chat-messages::-webkit-scrollbar{width:4px;}
+  .chat-messages::-webkit-scrollbar-thumb{background:#d8dbe4;border-radius:4px;}
 
-  main{position:relative;z-index:1;max-width:1000px;margin:0 auto;padding:40px 24px 80px;}
+  .msg{display:flex;gap:10px;max-width:100%;animation:msgIn 0.35s ease both;}
+  @keyframes msgIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  .msg-avatar{
+    width:32px;height:32px;border-radius:50%;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:15px;margin-top:2px;
+    background:linear-gradient(135deg,var(--teal),var(--purple) 55%,var(--primary));
+    box-shadow:0 2px 8px rgba(124,58,237,0.25);
+  }
+  .msg-body{max-width:78%;}
+  .msg-name{font-size:10.5px;color:var(--muted);margin-bottom:3px;font-weight:600;}
+  .msg-bubble{
+    background:var(--surface);border:1px solid var(--border);border-radius:4px 14px 14px 14px;
+    padding:11px 15px;font-size:13.5px;line-height:1.55;box-shadow:var(--shadow);color:var(--text);
+  }
+  .msg.user{justify-content:flex-end;}
+  .msg.user .msg-body{max-width:78%;}
+  .msg.user .msg-bubble{
+    border-radius:14px 4px 14px 14px;color:#fff;
+    background:linear-gradient(135deg,var(--primary),var(--primary2));
+    border-color:transparent;box-shadow:0 4px 14px rgba(255,107,0,0.25);
+  }
+  .msg.user .msg-name{text-align:right;}
 
-  .hero{text-align:center;margin-bottom:36px;}
-  .hero h1{font-family:'Outfit',sans-serif;font-size:30px;font-weight:800;margin-bottom:10px;}
-  .hero p{color:var(--muted);font-size:14px;max-width:520px;margin:0 auto;}
+  .typing-dots{display:flex;gap:4px;align-items:center;height:14px;}
+  .typing-dots span{width:6px;height:6px;border-radius:50%;background:var(--primary);animation:typingBounce 1.2s ease-in-out infinite;}
+  .typing-dots span:nth-child(2){animation-delay:0.15s;}
+  .typing-dots span:nth-child(3){animation-delay:0.3s;}
+  @keyframes typingBounce{0%,60%,100%{transform:translateY(0);opacity:0.5;}30%{transform:translateY(-5px);opacity:1;}}
+
+  .suggested-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+  .suggest-chip{
+    padding:6px 13px;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer;
+    background:var(--surface2);border:1px solid #ffe0c2;color:#c2540a;
+    transition:all 0.2s;
+  }
+  .suggest-chip:hover{background:#ffe6d1;}
+
+  .chat-input-area{
+    flex-shrink:0;padding:14px 20px 18px;
+    border-top:1px solid var(--border);background:var(--surface);
+  }
+  .chat-input-row{display:flex;gap:10px;align-items:center;}
+  .chat-input-row input{
+    flex:1;padding:12px 16px;border-radius:12px;
+    background:var(--bg);border:1px solid var(--border);color:var(--text);
+    font-size:13.5px;font-family:'Inter',sans-serif;outline:none;
+  }
+  .chat-input-row input::placeholder{color:#9aa1af;}
+  .chat-input-row input:focus{border-color:var(--primary);}
+  .send-btn{
+    width:42px;height:42px;border-radius:12px;border:none;cursor:pointer;flex-shrink:0;
+    background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;font-size:16px;
+    display:flex;align-items:center;justify-content:center;transition:transform 0.15s;
+    box-shadow:0 4px 14px rgba(255,107,0,0.3);
+  }
+  .send-btn:hover{transform:translateY(-1px);}
+  .input-hint{font-size:10.5px;color:var(--muted);text-align:center;margin-top:8px;}
+
+  /* ── Colleges column (right) ── */
+  .colleges-col{
+    flex:0 0 38%;display:flex;flex-direction:column;min-width:0;overflow:hidden;
+    background:var(--surface);
+  }
+  .colleges-head{
+    flex-shrink:0;padding:18px 20px 12px;border-bottom:1px solid var(--border);
+  }
+  .colleges-head h2{font-family:'Outfit',sans-serif;font-size:15.5px;font-weight:800;margin-bottom:3px;color:var(--text);}
+  .colleges-head p{font-size:11.5px;color:var(--muted);}
+  .colleges-body{flex:1;overflow-y:auto;padding:16px 18px;background:var(--bg);}
+  .colleges-body::-webkit-scrollbar{width:4px;}
+  .colleges-body::-webkit-scrollbar-thumb{background:#d8dbe4;border-radius:4px;}
 
   .state-panel{
-    max-width:520px;margin:0 auto 30px;padding:20px 24px;
-    background:var(--glass);border:1px solid var(--border);border-radius:16px;
-    text-align:center;backdrop-filter:blur(12px);
+    padding:22px 18px;text-align:center;background:var(--surface);border:1px solid var(--border);
+    border-radius:14px;box-shadow:var(--shadow);
   }
   .state-panel .spinner{
-    width:26px;height:26px;border-radius:50%;
-    border:3px solid rgba(139,92,246,0.2);border-top-color:var(--primary);
-    margin:0 auto 12px;animation:spin 0.8s linear infinite;
+    width:22px;height:22px;border-radius:50%;
+    border:3px solid #ffe0c2;border-top-color:var(--primary);
+    margin:0 auto 10px;animation:spin 0.8s linear infinite;
   }
   @keyframes spin{to{transform:rotate(360deg);}}
-  .state-panel h3{font-size:15px;font-weight:700;margin-bottom:6px;}
-  .state-panel p{font-size:12px;color:var(--muted);line-height:1.5;}
-  .state-panel button{
-    margin-top:14px;padding:10px 22px;border-radius:10px;border:none;cursor:pointer;
-    background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;
-    font-size:13px;font-weight:700;font-family:'Inter',sans-serif;
-  }
-
-  /* manual city picker fallback */
-  .manual-picker{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:center;}
-  .manual-picker select,.manual-picker input{
-    padding:9px 14px;border-radius:8px;background:rgba(255,255,255,0.05);
-    border:1px solid var(--border);color:var(--text);font-size:13px;font-family:'Inter',sans-serif;
+  .state-panel h3{font-size:13px;font-weight:700;margin-bottom:5px;color:var(--text);}
+  .state-panel p{font-size:11px;color:var(--muted);line-height:1.5;}
+  .manual-picker{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+  .manual-picker select{
+    padding:9px 12px;border-radius:8px;background:var(--bg);
+    border:1px solid var(--border);color:var(--text);font-size:12.5px;font-family:'Inter',sans-serif;
   }
   .manual-picker button{
-    padding:9px 18px;border-radius:8px;border:none;cursor:pointer;
-    background:linear-gradient(135deg,var(--primary),var(--cyan));color:#fff;font-weight:700;font-size:13px;
+    padding:9px 14px;border-radius:8px;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;font-weight:700;font-size:12.5px;
   }
+  .manual-picker button.secondary{background:var(--surface2);border:1px solid #ffe0c2;color:#c2540a;}
 
-  .results-head{display:flex;align-items:baseline;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
-  .results-head h2{font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;}
-  .results-head span{color:var(--muted);font-size:13px;}
-
-  .college-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
   .college-card{
-    background:var(--glass);border:1px solid var(--border);border-radius:14px;
-    padding:18px 20px;backdrop-filter:blur(10px);transition:transform 0.2s,border-color 0.2s;
+    background:var(--surface);border:1px solid var(--border);border-radius:12px;
+    padding:13px 15px;margin-bottom:10px;transition:border-color 0.2s, box-shadow 0.2s;box-shadow:var(--shadow);
   }
-  .college-card:hover{transform:translateY(-3px);border-color:rgba(139,92,246,0.4);}
+  .college-card:hover{border-color:#ffcda3;box-shadow:0 6px 20px rgba(255,107,0,0.12);}
   .college-rank{
     display:inline-flex;align-items:center;justify-content:center;
-    width:26px;height:26px;border-radius:8px;font-size:12px;font-weight:800;
-    background:rgba(139,92,246,0.18);color:#c4b5fd;margin-bottom:10px;
+    width:22px;height:22px;border-radius:7px;font-size:10.5px;font-weight:800;
+    background:var(--surface2);color:var(--primary);margin-bottom:7px;
   }
-  .college-name{font-size:15px;font-weight:700;margin-bottom:6px;line-height:1.3;}
-  .college-meta{font-size:12px;color:var(--cyan);margin-bottom:8px;}
-  .college-desc{font-size:12.5px;color:var(--muted);line-height:1.5;}
+  .college-name{font-size:13px;font-weight:700;margin-bottom:4px;line-height:1.3;color:var(--text);}
+  .college-meta{font-size:10.5px;color:var(--teal);font-weight:600;margin-bottom:5px;}
+  .college-desc{font-size:11px;color:var(--muted);line-height:1.45;}
+  .colleges-empty{text-align:center;padding:30px 10px;color:var(--muted);font-size:12px;}
+  .colleges-empty .big{font-size:30px;margin-bottom:8px;}
 
-  .empty-state{
-    text-align:center;padding:50px 20px;color:var(--muted);font-size:13px;
-  }
-  .empty-state .big{font-size:38px;margin-bottom:10px;}
-
-  footer{
-    position:relative;z-index:1;text-align:center;padding:20px;
-    font-size:11px;color:var(--muted);border-top:1px solid var(--border);
-  }
-
-  @media(max-width:640px){
-    header{flex-direction:column;gap:14px;align-items:flex-start;padding:18px 20px;}
-    .location-badge{align-self:flex-end;}
+  @media(max-width:900px){
+    .body-split{flex-direction:column;overflow-y:auto;}
+    .chat-col{flex:1 1 auto;border-right:none;border-bottom:1px solid var(--border);min-height:420px;}
+    .colleges-col{flex:1 1 auto;}
   }
 </style>
 </head>
@@ -140,15 +198,15 @@
 
 <div class="orbs"><div class="orb orb1"></div><div class="orb orb2"></div></div>
 
+<!-- ── Header ── -->
 <header>
   <div class="brand">
     <div class="brand-icon">🎓</div>
     <div>
-      <div class="brand-name">Campus Locator</div>
-      <div class="brand-sub">Find top colleges near you, automatically</div>
+      <div class="brand-name">Campus Agent</div>
+      <div class="brand-sub">Ask me anything about Campus Connect</div>
     </div>
   </div>
-
   <div class="location-badge" id="locationBadge">
     <div class="loc-dot"></div>
     <div class="loc-text">
@@ -158,168 +216,264 @@
   </div>
 </header>
 
-<main>
-  <div class="hero">
-    <h1>Top Colleges Near You</h1>
-    <p>We use your device location to automatically show the top-ranked colleges in your city — no searching needed.</p>
+<!-- ── Body: chat (left) | colleges (right) ── -->
+<div class="body-split">
+
+  <!-- Chat column -->
+  <div class="chat-col">
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-area">
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="Ask about registration, colleges, events, login..." autocomplete="off" />
+        <button class="send-btn" id="sendBtn" title="Send">➤</button>
+      </div>
+      <div class="input-hint">Campus Agent only answers questions related to Campus Connect.</div>
+    </div>
   </div>
 
-  <div class="state-panel" id="statePanel">
-    <div class="spinner"></div>
-    <h3>Requesting your location…</h3>
-    <p>Your browser will ask for permission. This is only used to detect your city — nothing is stored or sent anywhere.</p>
+  <!-- Colleges column -->
+  <div class="colleges-col">
+    <div class="colleges-head">
+      <h2 id="collegesTitle">Top Colleges Near You</h2>
+      <p id="collegesSub">Detecting your city…</p>
+    </div>
+    <div class="colleges-body" id="collegesBody">
+      <div class="state-panel" id="statePanel">
+        <div class="spinner"></div>
+        <h3>Requesting your location…</h3>
+        <p>Used only to find your city — nothing is stored or sent anywhere.</p>
+      </div>
+    </div>
   </div>
 
-  <div class="results-head" id="resultsHead" style="display:none;">
-    <h2 id="resultsCity">—</h2>
-    <span id="resultsCount"></span>
-  </div>
-
-  <div class="college-grid" id="collegeGrid"></div>
-</main>
-
-<footer>Location is used only in your browser to look up your city — nothing is uploaded or stored.</footer>
+</div>
 
 <script>
-// ─────────────────────────────────────────────
-// Top colleges database, keyed by lowercase city name
-// ─────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════
+   PART 1 — LOCATION-BASED TOP COLLEGES (right panel)
+   ═══════════════════════════════════════════════════════════ */
 const COLLEGES_BY_CITY = {
   "pune": [
-    { name: "College of Engineering Pune (COEP)", meta: "Autonomous · Government", desc: "One of the oldest engineering institutes in India, known for strong core engineering programs." },
+    { name: "College of Engineering Pune (COEP)", meta: "Autonomous · Government", desc: "One of the oldest engineering institutes in India, strong core engineering programs." },
     { name: "Pune Institute of Computer Technology (PICT)", meta: "Autonomous", desc: "Top choice for Computer Engineering and IT in Maharashtra." },
     { name: "Vishwakarma Institute of Technology (VIT Pune)", meta: "Autonomous", desc: "Strong placements in core and IT sectors, active research culture." },
     { name: "MIT World Peace University", meta: "Private University", desc: "Wide range of engineering, design and management programs." },
-    { name: "Symbiosis Institute of Technology (SIT)", meta: "Deemed University", desc: "Part of the Symbiosis group, known for industry-aligned curriculum." }
+    { name: "Symbiosis Institute of Technology (SIT)", meta: "Deemed University", desc: "Part of the Symbiosis group, industry-aligned curriculum." },
+    { name: "Cummins College of Engineering for Women", meta: "Autonomous", desc: "Reputed women's engineering college with strong CS/IT branches." },
+    { name: "Army Institute of Technology (AIT)", meta: "Autonomous", desc: "Well-regarded for core engineering and disciplined academics." },
+    { name: "Sinhgad College of Engineering", meta: "Affiliated", desc: "One of Pune's larger private engineering colleges." },
+    { name: "Vishwakarma Institute of Information Technology (VIIT)", meta: "Autonomous", desc: "Known for CS/IT and strong placement record." },
+    { name: "Dr. D.Y. Patil Institute of Technology", meta: "Affiliated", desc: "Popular private engineering college with wide branch offering." }
   ],
   "mumbai": [
-    { name: "Indian Institute of Technology Bombay (IIT Bombay)", meta: "IIT · Government", desc: "India's top-ranked engineering institute, globally recognized research output." },
+    { name: "Indian Institute of Technology Bombay (IIT Bombay)", meta: "IIT · Government", desc: "India's top-ranked engineering institute, globally recognized research." },
     { name: "Veermata Jijabai Technological Institute (VJTI)", meta: "Government Autonomous", desc: "One of Maharashtra's oldest and most respected engineering colleges." },
     { name: "Sardar Patel Institute of Technology (SPIT)", meta: "Autonomous", desc: "Well known for Computer Engineering and IT placements." },
     { name: "K.J. Somaiya College of Engineering", meta: "Autonomous", desc: "Strong industry connect and diverse engineering branches." },
-    { name: "Narsee Monjee Institute of Management Studies (NMIMS)", meta: "Deemed University", desc: "Popular for engineering, management and design programs." }
+    { name: "Narsee Monjee Institute of Management Studies (NMIMS)", meta: "Deemed University", desc: "Popular for engineering, management and design programs." },
+    { name: "Dwarkadas J. Sanghvi College of Engineering (DJSCE)", meta: "Autonomous", desc: "Top-ranked private engineering college in Mumbai." },
+    { name: "Thadomal Shahani Engineering College", meta: "Autonomous", desc: "Reputed college with strong CS/IT programs." },
+    { name: "Institute of Chemical Technology (ICT Mumbai)", meta: "Deemed University", desc: "India's leading institute for chemical engineering and technology." },
+    { name: "Fr. Conceicao Rodrigues College of Engineering (CRCE)", meta: "Affiliated", desc: "Well-established engineering college in Bandra." },
+    { name: "Vivekanand Education Society's Institute of Technology (VESIT)", meta: "Affiliated", desc: "Popular for CS/IT and strong alumni network." }
   ],
   "nagpur": [
     { name: "Visvesvaraya National Institute of Technology (VNIT)", meta: "NIT · Government", desc: "Premier NIT with top-tier engineering programs and research." },
     { name: "G.H. Raisoni College of Engineering (GHRCE)", meta: "Autonomous", desc: "Well-established private engineering college, strong AI/ML and CS programs." },
     { name: "Yeshwantrao Chavan College of Engineering (YCCE)", meta: "Autonomous", desc: "Reputed for core branches and consistent placement record." },
     { name: "Ramdeobaba College of Engineering & Management (RCOEM)", meta: "Autonomous", desc: "One of the top-ranked private colleges in Central India." },
-    { name: "Priyadarshini College of Engineering", meta: "Affiliated", desc: "Long-standing engineering college with a wide branch offering." }
+    { name: "Priyadarshini College of Engineering", meta: "Affiliated", desc: "Long-standing engineering college with a wide branch offering." },
+    { name: "Shri Ramdeobaba Kamla Nehru Engineering College", meta: "Affiliated", desc: "Well-regarded for core engineering branches." },
+    { name: "Nagpur Institute of Technology", meta: "Affiliated", desc: "Established engineering college in the region." },
+    { name: "Government College of Engineering, Nagpur (GCOEN)", meta: "Government", desc: "Government-run engineering college with strong core programs." },
+    { name: "St. Vincent Pallotti College of Engineering & Technology", meta: "Affiliated", desc: "Popular private engineering college in Nagpur." },
+    { name: "Priyadarshini Institute of Engineering & Technology", meta: "Affiliated", desc: "Known for CS, IT and core engineering branches." }
   ],
   "delhi": [
     { name: "Indian Institute of Technology Delhi (IIT Delhi)", meta: "IIT · Government", desc: "One of India's top technical institutes, strong research and placements." },
     { name: "Delhi Technological University (DTU)", meta: "State University", desc: "Highly ranked, formerly Delhi College of Engineering." },
     { name: "Netaji Subhas University of Technology (NSUT)", meta: "State University", desc: "Top choice for CS/IT among Delhi state universities." },
     { name: "Indian Institute of Information Technology Delhi (IIIT-D)", meta: "State University", desc: "Focused on CS, AI, and design with strong tech industry links." },
-    { name: "Jamia Millia Islamia", meta: "Central University", desc: "Reputed for engineering, humanities and mass communication." }
+    { name: "Jamia Millia Islamia", meta: "Central University", desc: "Reputed for engineering, humanities and mass communication." },
+    { name: "Indira Gandhi Delhi Technical University for Women (IGDTUW)", meta: "State University", desc: "Premier women's technical university in Delhi." },
+    { name: "Delhi College of Arts and Commerce (affiliated DU)", meta: "State University", desc: "Reputed for commerce and arts programs under Delhi University." },
+    { name: "Guru Gobind Singh Indraprastha University (GGSIPU)", meta: "State University", desc: "Large state university with multiple affiliated engineering colleges." },
+    { name: "Maharaja Agrasen Institute of Technology (MAIT)", meta: "Affiliated", desc: "Popular private engineering college under GGSIPU." },
+    { name: "Bharati Vidyapeeth College of Engineering", meta: "Affiliated", desc: "Well-known engineering college in Delhi." }
   ],
   "bangalore": [
     { name: "Indian Institute of Science (IISc)", meta: "Government · Research", desc: "India's top research institute for science and engineering." },
     { name: "RV College of Engineering (RVCE)", meta: "Autonomous", desc: "One of the most sought-after private engineering colleges in India." },
     { name: "BMS College of Engineering", meta: "Autonomous", desc: "Consistently ranked among India's top private engineering colleges." },
     { name: "PES University", meta: "Deemed University", desc: "Strong in CS, AI/ML with close industry partnerships." },
-    { name: "MS Ramaiah Institute of Technology", meta: "Autonomous", desc: "Well-established with strong placement records." }
+    { name: "MS Ramaiah Institute of Technology", meta: "Autonomous", desc: "Well-established with strong placement records." },
+    { name: "Dayananda Sagar College of Engineering", meta: "Autonomous", desc: "Popular private engineering college with wide branch offering." },
+    { name: "BMS Institute of Technology and Management", meta: "Autonomous", desc: "Reputed for CS/IT and core branches." },
+    { name: "Bangalore Institute of Technology (BIT)", meta: "Autonomous", desc: "Well-known engineering college in the city." },
+    { name: "Sir M. Visvesvaraya Institute of Technology", meta: "Autonomous", desc: "Established engineering college with strong alumni base." },
+    { name: "New Horizon College of Engineering", meta: "Autonomous", desc: "Popular for CS, AI/ML and management-integrated programs." }
   ],
   "bengaluru": [
     { name: "Indian Institute of Science (IISc)", meta: "Government · Research", desc: "India's top research institute for science and engineering." },
     { name: "RV College of Engineering (RVCE)", meta: "Autonomous", desc: "One of the most sought-after private engineering colleges in India." },
     { name: "BMS College of Engineering", meta: "Autonomous", desc: "Consistently ranked among India's top private engineering colleges." },
     { name: "PES University", meta: "Deemed University", desc: "Strong in CS, AI/ML with close industry partnerships." },
-    { name: "MS Ramaiah Institute of Technology", meta: "Autonomous", desc: "Well-established with strong placement records." }
+    { name: "MS Ramaiah Institute of Technology", meta: "Autonomous", desc: "Well-established with strong placement records." },
+    { name: "Dayananda Sagar College of Engineering", meta: "Autonomous", desc: "Popular private engineering college with wide branch offering." },
+    { name: "BMS Institute of Technology and Management", meta: "Autonomous", desc: "Reputed for CS/IT and core branches." },
+    { name: "Bangalore Institute of Technology (BIT)", meta: "Autonomous", desc: "Well-known engineering college in the city." },
+    { name: "Sir M. Visvesvaraya Institute of Technology", meta: "Autonomous", desc: "Established engineering college with strong alumni base." },
+    { name: "New Horizon College of Engineering", meta: "Autonomous", desc: "Popular for CS, AI/ML and management-integrated programs." }
   ],
   "chennai": [
     { name: "Indian Institute of Technology Madras (IIT Madras)", meta: "IIT · Government", desc: "Consistently ranked #1 engineering institute in India (NIRF)." },
     { name: "Anna University (CEG Campus)", meta: "State University", desc: "One of Tamil Nadu's oldest and most reputed engineering colleges." },
     { name: "SSN College of Engineering", meta: "Autonomous", desc: "Top private engineering college in Tamil Nadu." },
     { name: "PSG College of Technology (Coimbatore region)", meta: "Autonomous", desc: "Strong reputation across South India for engineering." },
-    { name: "SRM Institute of Science and Technology", meta: "Deemed University", desc: "Large private university with wide-ranging programs." }
+    { name: "SRM Institute of Science and Technology", meta: "Deemed University", desc: "Large private university with wide-ranging programs." },
+    { name: "Vellore Institute of Technology (VIT Chennai Campus)", meta: "Deemed University", desc: "Popular private university with strong industry ties." },
+    { name: "Sri Sivasubramaniya Nadar College of Engineering", meta: "Autonomous", desc: "Reputed for CS/IT and core engineering branches." },
+    { name: "Madras Institute of Technology (MIT, Anna University)", meta: "Government", desc: "Known for aeronautical and specialized engineering programs." },
+    { name: "Rajalakshmi Engineering College", meta: "Autonomous", desc: "Popular private engineering college in Chennai." },
+    { name: "Easwari Engineering College", meta: "Affiliated", desc: "Well-known private engineering college in the city." }
   ],
   "hyderabad": [
     { name: "Indian Institute of Technology Hyderabad (IIT Hyderabad)", meta: "IIT · Government", desc: "Fast-rising IIT known for research and CS/AI programs." },
     { name: "International Institute of Information Technology Hyderabad (IIIT-H)", meta: "Deemed University", desc: "Top-ranked for CS, AI and research in India." },
     { name: "Osmania University College of Engineering", meta: "State University", desc: "One of the oldest engineering colleges in South India." },
     { name: "BITS Pilani Hyderabad Campus", meta: "Deemed University", desc: "Highly regarded private institute with strong industry ties." },
-    { name: "Vasavi College of Engineering", meta: "Autonomous", desc: "Well-known private college with strong core branches." }
+    { name: "Vasavi College of Engineering", meta: "Autonomous", desc: "Well-known private college with strong core branches." },
+    { name: "CBIT (Chaitanya Bharathi Institute of Technology)", meta: "Autonomous", desc: "Reputed private engineering college in Hyderabad." },
+    { name: "VNR Vignana Jyothi Institute of Engineering & Technology", meta: "Autonomous", desc: "Popular for CS/IT and strong placement record." },
+    { name: "Gokaraju Rangaraju Institute of Engineering & Technology", meta: "Autonomous", desc: "Well-regarded private engineering college." },
+    { name: "JNTU Hyderabad (University College of Engineering)", meta: "State University", desc: "Large state technical university with several affiliated colleges." },
+    { name: "MVSR Engineering College", meta: "Affiliated", desc: "Established private engineering college in the region." }
   ],
   "kolkata": [
     { name: "Indian Institute of Engineering Science and Technology (IIEST Shibpur)", meta: "Government", desc: "One of the oldest technical institutes in India." },
     { name: "Jadavpur University", meta: "State University", desc: "Top-ranked and highly reputed engineering & science university." },
     { name: "Indian Statistical Institute (ISI) Kolkata", meta: "Government · Research", desc: "World-renowned for statistics, mathematics and data science." },
     { name: "Heritage Institute of Technology", meta: "Autonomous", desc: "Well-regarded private engineering college in the region." },
-    { name: "Techno India University", meta: "State Private University", desc: "Large private university offering diverse programs." }
+    { name: "Techno India University", meta: "State Private University", desc: "Large private university offering diverse programs." },
+    { name: "Kalyani Government Engineering College", meta: "Government", desc: "State government engineering college near Kolkata." },
+    { name: "St. Thomas' College of Engineering & Technology", meta: "Affiliated", desc: "Established private engineering college in Kolkata." },
+    { name: "RCC Institute of Information Technology", meta: "Affiliated", desc: "Popular for CS/IT programs." },
+    { name: "MCKV Institute of Engineering", meta: "Affiliated", desc: "Well-known private engineering college in the region." },
+    { name: "Institute of Engineering & Management (IEM), Kolkata", meta: "Autonomous", desc: "Large private engineering college with wide branch offering." }
   ],
   "ahmedabad": [
     { name: "Indian Institute of Technology Gandhinagar (IIT Gandhinagar)", meta: "IIT · Government", desc: "Modern IIT campus near Ahmedabad, strong interdisciplinary focus." },
     { name: "Nirma University", meta: "Deemed University", desc: "Popular private university for engineering, management and pharmacy." },
     { name: "L.D. College of Engineering", meta: "Government", desc: "One of Gujarat's oldest and most reputed engineering colleges." },
     { name: "Institute of Technology, Nirma University", meta: "Deemed University", desc: "Strong industry-oriented engineering programs." },
-    { name: "Ahmedabad University", meta: "Private University", desc: "Newer private university with growing engineering & design programs." }
+    { name: "Ahmedabad University", meta: "Private University", desc: "Newer private university with growing engineering & design programs." },
+    { name: "CEPT University", meta: "Private University", desc: "Renowned for architecture, planning and design programs." },
+    { name: "Gujarat Technological University (GTU) affiliated colleges", meta: "State University", desc: "Large state technical university network." },
+    { name: "Silver Oak University", meta: "Private University", desc: "Growing private university with diverse engineering programs." },
+    { name: "Sardar Vallabhbhai Patel Institute of Technology (SVIT)", meta: "Affiliated", desc: "Well-known private engineering college near Ahmedabad." },
+    { name: "Adani Institute of Infrastructure Engineering", meta: "Private", desc: "Specialized institute for infrastructure and civil engineering." }
   ],
   "jaipur": [
     { name: "Malaviya National Institute of Technology (MNIT Jaipur)", meta: "NIT · Government", desc: "Top NIT in Rajasthan with strong core engineering programs." },
     { name: "LNM Institute of Information Technology (LNMIIT)", meta: "Deemed University", desc: "Reputed for CS/IT with strong research focus." },
     { name: "Manipal University Jaipur", meta: "Private University", desc: "Wide range of engineering and management programs." },
     { name: "Poornima College of Engineering", meta: "Affiliated", desc: "Well-known private engineering college in Jaipur." },
-    { name: "JECRC University", meta: "Private University", desc: "Popular for CS, AI/ML and management programs." }
+    { name: "JECRC University", meta: "Private University", desc: "Popular for CS, AI/ML and management programs." },
+    { name: "Amity University Rajasthan", meta: "Private University", desc: "Large private university with diverse programs." },
+    { name: "Swami Keshvanand Institute of Technology (SKIT)", meta: "Affiliated", desc: "Reputed private engineering college." },
+    { name: "Arya College of Engineering & IT", meta: "Affiliated", desc: "Popular private engineering college in the region." },
+    { name: "Global Institute of Technology", meta: "Affiliated", desc: "Well-established private engineering college." },
+    { name: "University of Engineering & Management, Jaipur", meta: "Private", desc: "Growing private engineering institute." }
   ],
   "lucknow": [
     { name: "Indian Institute of Information Technology Lucknow (IIIT Lucknow)", meta: "Government", desc: "Focused institute for IT and CS programs." },
     { name: "Babasaheb Bhimrao Ambedkar University (BBAU)", meta: "Central University", desc: "Central university offering engineering and diverse programs." },
     { name: "Institute of Engineering and Technology, Lucknow (IET Lucknow)", meta: "State University", desc: "One of UP's oldest and reputed engineering colleges." },
     { name: "Amity University Lucknow", meta: "Private University", desc: "Large private university with broad program offerings." },
-    { name: "Integral University", meta: "Private University", desc: "Well-known private university in the region." }
+    { name: "Integral University", meta: "Private University", desc: "Well-known private university in the region." },
+    { name: "Dr. APJ Abdul Kalam Technical University (AKTU), main campus", meta: "State University", desc: "Large state technical university overseeing UP engineering colleges." },
+    { name: "Shri Ramswaroop Memorial University", meta: "Private University", desc: "Growing private university with engineering programs." },
+    { name: "Babu Banarasi Das University", meta: "Private University", desc: "Popular private university in Lucknow." },
+    { name: "Goel Institute of Technology & Management", meta: "Affiliated", desc: "Well-known private engineering college." },
+    { name: "Institute of Management Studies, Lucknow", meta: "Private", desc: "Established institute with engineering and management wings." }
   ],
   "indore": [
     { name: "Indian Institute of Technology Indore (IIT Indore)", meta: "IIT · Government", desc: "Fast-growing IIT with strong research output." },
     { name: "Institute of Engineering and Technology, DAVV", meta: "State University", desc: "Long-standing engineering institute in Indore." },
     { name: "Shri Govindram Seksaria Institute of Technology and Science (SGSITS)", meta: "Autonomous", desc: "Reputed government-aided engineering college." },
     { name: "Medi-Caps University", meta: "Private University", desc: "Popular private university for engineering and CS." },
-    { name: "Prestige Institute of Management and Research", meta: "Private", desc: "Known primarily for management, also offers tech programs." }
+    { name: "Prestige Institute of Management and Research", meta: "Private", desc: "Known primarily for management, also offers tech programs." },
+    { name: "Acropolis Institute of Technology and Research", meta: "Affiliated", desc: "Well-known private engineering college in Indore." },
+    { name: "IPS Academy Institute of Engineering & Science", meta: "Affiliated", desc: "Popular private engineering college." },
+    { name: "Sushila Devi Bansal College of Engineering", meta: "Affiliated", desc: "Established private engineering college." },
+    { name: "Oriental University, Indore", meta: "Private University", desc: "Growing private university with engineering programs." },
+    { name: "Indore Institute of Science & Technology", meta: "Affiliated", desc: "Well-regarded private engineering college in the region." }
   ],
   "bhopal": [
     { name: "Maulana Azad National Institute of Technology (MANIT Bhopal)", meta: "NIT · Government", desc: "Top NIT in Madhya Pradesh with strong core branches." },
     { name: "Lakshmi Narain College of Technology (LNCT)", meta: "Private", desc: "One of the larger private engineering colleges in the region." },
     { name: "Oriental Institute of Science and Technology", meta: "Private", desc: "Well-established private engineering college." },
     { name: "Technocrats Institute of Technology", meta: "Private", desc: "Popular private option for engineering in Bhopal." },
-    { name: "Sagar Institute of Science and Technology", meta: "Private", desc: "Known for CS/IT and core engineering branches." }
+    { name: "Sagar Institute of Science and Technology", meta: "Private", desc: "Known for CS/IT and core engineering branches." },
+    { name: "Truba Institute of Engineering & Information Technology", meta: "Private", desc: "Well-known private engineering college." },
+    { name: "Rabindranath Tagore University", meta: "Private University", desc: "Growing private university with engineering programs." },
+    { name: "IES College of Technology", meta: "Affiliated", desc: "Established private engineering college in Bhopal." },
+    { name: "Vellore Institute of Technology Bhopal University", meta: "Private University", desc: "Newer VIT campus offering engineering programs." },
+    { name: "Bansal Institute of Science and Technology", meta: "Affiliated", desc: "Popular private engineering college in the region." }
   ],
   "nashik": [
     { name: "K.K. Wagh Institute of Engineering Education & Research", meta: "Autonomous", desc: "One of the top engineering colleges in Nashik." },
     { name: "Sandip Institute of Technology and Research Centre", meta: "Autonomous", desc: "Well-regarded private engineering institute." },
     { name: "Guru Gobind Singh College of Engineering & Research Centre", meta: "Affiliated", desc: "Popular choice among Nashik engineering aspirants." },
     { name: "MET's Institute of Engineering", meta: "Affiliated", desc: "Established private engineering college." },
-    { name: "Matoshri College of Engineering and Research Centre", meta: "Affiliated", desc: "Known for core and CS branches." }
+    { name: "Matoshri College of Engineering and Research Centre", meta: "Affiliated", desc: "Known for core and CS branches." },
+    { name: "Pravara Rural Engineering College (nearby)", meta: "Affiliated", desc: "Well-known engineering college in the wider Nashik region." },
+    { name: "Brahma Valley College of Engineering", meta: "Affiliated", desc: "Popular private engineering college near Nashik." },
+    { name: "SNJB's Late Sau. K.B. Jain College of Engineering", meta: "Affiliated", desc: "Reputed engineering college in the Nashik district." },
+    { name: "NDMVP Samaj's KBT College of Engineering", meta: "Affiliated", desc: "Well-established private engineering college." },
+    { name: "Jawahar Education Society's Institute of Technology", meta: "Affiliated", desc: "Growing engineering institute in the region." }
   ],
   "surat": [
     { name: "Sardar Vallabhbhai National Institute of Technology (SVNIT)", meta: "NIT · Government", desc: "Top NIT in Gujarat with strong placements." },
     { name: "C.K. Pithawalla College of Engineering & Technology", meta: "Affiliated", desc: "Well-known private engineering college in Surat." },
     { name: "Sarvajanik College of Engineering & Technology", meta: "Autonomous", desc: "Reputed autonomous engineering institute in the city." },
     { name: "Bhagwan Mahavir University", meta: "Private University", desc: "Growing private university with engineering programs." },
-    { name: "Uka Tarsadia University", meta: "Private University", desc: "Offers a wide range of engineering and applied science programs." }
+    { name: "Uka Tarsadia University", meta: "Private University", desc: "Offers a wide range of engineering and applied science programs." },
+    { name: "Dr. S. & S.S. Ghandhy Government Engineering College", meta: "Government", desc: "Government engineering college in Surat." },
+    { name: "Auro University", meta: "Private University", desc: "Growing private university with engineering and design programs." },
+    { name: "Shrimad Rajchandra Institute of Management & Computer Application", meta: "Affiliated", desc: "Known for CS/IT-focused programs." },
+    { name: "R.C. Technical Institute", meta: "Affiliated", desc: "Established private engineering college." },
+    { name: "Vishwakarma Government Engineering College (nearby)", meta: "Government", desc: "State government engineering college in the wider region." }
   ],
   "chandigarh": [
     { name: "Panjab University, Chandigarh", meta: "State University", desc: "Long-established, highly reputed university with strong engineering wing (UIET)." },
     { name: "Punjab Engineering College (PEC)", meta: "Deemed University", desc: "One of India's oldest engineering institutes, highly ranked." },
     { name: "Chandigarh University", meta: "Private University", desc: "Large private university, popular for placements and diverse programs." },
     { name: "Chitkara University", meta: "Private University", desc: "Known for CS/IT, design and management programs." },
-    { name: "Thapar Institute (Patiala, nearby)", meta: "Deemed University", desc: "Highly reputed private institute in the wider Chandigarh region." }
+    { name: "Thapar Institute (Patiala, nearby)", meta: "Deemed University", desc: "Highly reputed private institute in the wider Chandigarh region." },
+    { name: "DAV Institute of Engineering & Technology (nearby Jalandhar)", meta: "Affiliated", desc: "Well-known engineering college in the wider Punjab region." },
+    { name: "GNA University (nearby)", meta: "Private University", desc: "Growing private university with engineering programs." },
+    { name: "Chandigarh Group of Colleges (CGC)", meta: "Affiliated", desc: "Large private group of engineering & management colleges." },
+    { name: "UIET Panjab University", meta: "State University", desc: "University Institute of Engineering & Technology, part of Panjab University." },
+    { name: "Guru Nanak Dev Engineering College (nearby Ludhiana)", meta: "Affiliated", desc: "Reputed engineering college in the wider region." }
   ],
   "kanpur": [
     { name: "Indian Institute of Technology Kanpur (IIT Kanpur)", meta: "IIT · Government", desc: "One of India's top IITs, renowned for research and CS/AI." },
     { name: "Harcourt Butler Technical University (HBTU)", meta: "State University", desc: "One of UP's oldest technical universities." },
     { name: "Institute of Engineering & Technology (IET), Kanpur", meta: "State University", desc: "Reputed government engineering institute." },
     { name: "GLA University (nearby Mathura)", meta: "Private University", desc: "Popular private university in the wider region." },
-    { name: "Kanpur Institute of Technology", meta: "Private", desc: "Well-known private engineering college in the city." }
+    { name: "Kanpur Institute of Technology", meta: "Private", desc: "Well-known private engineering college in the city." },
+    { name: "United Institute of Technology", meta: "Affiliated", desc: "Established private engineering college." },
+    { name: "Rama University", meta: "Private University", desc: "Growing private university with engineering programs." },
+    { name: "Bharat Institute of Technology", meta: "Affiliated", desc: "Popular private engineering college in the region." },
+    { name: "Kanpur Institute of Management & Technology", meta: "Affiliated", desc: "Well-known engineering and management institute." },
+    { name: "Ganeshi Lal Bajaj Institute of Technology & Management", meta: "Affiliated", desc: "Established private engineering college near Kanpur." }
   ]
 };
 
-// Aliases so slightly different city name forms still resolve
 const CITY_ALIASES = {
-  "bombay": "mumbai",
-  "calcutta": "kolkata",
-  "poona": "pune",
-  "new delhi": "delhi",
-  "bangaluru": "bangalore"
+  "bombay": "mumbai", "calcutta": "kolkata", "poona": "pune",
+  "new delhi": "delhi", "bangaluru": "bangalore"
 };
 
 function normalizeCity(name){
@@ -328,17 +482,16 @@ function normalizeCity(name){
   return CITY_ALIASES[n] || n;
 }
 
-// ─────────────────────────────────────────────
-// UI helpers
-// ─────────────────────────────────────────────
 const badge = document.getElementById('locationBadge');
 const locCity = document.getElementById('locCity');
 const locCaption = document.getElementById('locCaption');
-const statePanel = document.getElementById('statePanel');
-const resultsHead = document.getElementById('resultsHead');
-const resultsCity = document.getElementById('resultsCity');
-const resultsCount = document.getElementById('resultsCount');
-const collegeGrid = document.getElementById('collegeGrid');
+const statePanel0 = document.getElementById('statePanel');
+const collegesBody = document.getElementById('collegesBody');
+const collegesTitle = document.getElementById('collegesTitle');
+const collegesSub = document.getElementById('collegesSub');
+
+let detectedCityKey = null;
+let detectedCityLabel = null;
 
 function setBadge(status, cityLabel, caption){
   badge.className = 'location-badge' + (status ? ' ' + status : '');
@@ -347,34 +500,29 @@ function setBadge(status, cityLabel, caption){
 }
 
 function renderColleges(cityDisplay, key){
+  detectedCityKey = key;
+  detectedCityLabel = cityDisplay;
   const list = COLLEGES_BY_CITY[key];
-  resultsHead.style.display = 'flex';
-  resultsCity.textContent = `Top Colleges in ${cityDisplay}`;
-  collegeGrid.innerHTML = '';
+  collegesTitle.textContent = `Top Colleges in ${cityDisplay}`;
 
   if (!list) {
-    resultsCount.textContent = '';
-    collegeGrid.innerHTML = `
-      <div class="empty-state" style="grid-column:1/-1;">
+    collegesSub.textContent = 'Not in our directory yet';
+    collegesBody.innerHTML = `
+      <div class="colleges-empty">
         <div class="big">🏫</div>
-        We don't have ${escapeHtml(cityDisplay)} in our college directory yet.<br>
-        Try one of the covered cities below, or add your own city's colleges.
+        We don't have ${escapeHtml(cityDisplay)} in our directory yet.<br>Ask me in chat and I can point you toward what we do cover.
       </div>`;
     return;
   }
-
-  resultsCount.textContent = `${list.length} colleges found`;
-  list.forEach((c, i) => {
-    const card = document.createElement('div');
-    card.className = 'college-card';
-    card.innerHTML = `
+  collegesSub.textContent = `${list.length} colleges found nearby`;
+  collegesBody.innerHTML = list.map((c,i) => `
+    <div class="college-card">
       <div class="college-rank">#${i+1}</div>
       <div class="college-name">${escapeHtml(c.name)}</div>
       <div class="college-meta">${escapeHtml(c.meta)}</div>
       <div class="college-desc">${escapeHtml(c.desc)}</div>
-    `;
-    collegeGrid.appendChild(card);
-  });
+    </div>
+  `).join('');
 }
 
 function escapeHtml(str){
@@ -384,13 +532,15 @@ function escapeHtml(str){
 function showManualPicker(){
   const covered = Object.keys(COLLEGES_BY_CITY);
   const options = covered.map(c => `<option value="${c}">${c.charAt(0).toUpperCase()+c.slice(1)}</option>`).join('');
-  statePanel.innerHTML = `
-    <h3>Couldn't detect your location</h3>
-    <p>Please allow location access, or pick your city manually below.</p>
-    <div class="manual-picker">
-      <select id="manualCitySelect">${options}</select>
-      <button onclick="useManualCity()">Show Colleges</button>
-      <button onclick="requestLocation()" style="background:var(--glass2);border:1px solid var(--border);">Retry Location</button>
+  collegesBody.innerHTML = `
+    <div class="state-panel">
+      <h3>Couldn't detect your location</h3>
+      <p>Allow location access, or pick your city manually.</p>
+      <div class="manual-picker">
+        <select id="manualCitySelect">${options}</select>
+        <button onclick="useManualCity()">Show Colleges</button>
+        <button class="secondary" onclick="requestLocation()">Retry Location</button>
+      </div>
     </div>
   `;
 }
@@ -400,34 +550,27 @@ function useManualCity(){
   const key = sel.value;
   const label = key.charAt(0).toUpperCase() + key.slice(1);
   setBadge('found', label, 'Selected manually');
-  statePanel.style.display = 'none';
   renderColleges(label, key);
 }
 
-// ─────────────────────────────────────────────
-// Geolocation → reverse geocode (BigDataCloud free, no API key) → colleges
-// ─────────────────────────────────────────────
 function requestLocation(){
   setBadge('', 'Detecting…', 'Locating you');
-  statePanel.style.display = 'block';
-  statePanel.innerHTML = `
-    <div class="spinner"></div>
-    <h3>Requesting your location…</h3>
-    <p>Your browser will ask for permission. This is only used to detect your city — nothing is stored or sent anywhere.</p>
+  collegesSub.textContent = 'Detecting your city…';
+  collegesBody.innerHTML = `
+    <div class="state-panel">
+      <div class="spinner"></div>
+      <h3>Requesting your location…</h3>
+      <p>Used only to find your city — nothing is stored or sent anywhere.</p>
+    </div>
   `;
-  resultsHead.style.display = 'none';
-  collegeGrid.innerHTML = '';
 
   if (!navigator.geolocation) {
     setBadge('denied', 'Unavailable', 'Geolocation not supported');
     showManualPicker();
     return;
   }
-
   navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError, {
-    enableHighAccuracy: false,
-    timeout: 10000,
-    maximumAge: 300000
+    enableHighAccuracy: false, timeout: 10000, maximumAge: 300000
   });
 }
 
@@ -439,11 +582,8 @@ async function onLocationSuccess(position){
     const data = await res.json();
     const cityRaw = data.city || data.locality || data.principalSubdivision || 'Unknown';
     const key = normalizeCity(cityRaw);
-    const displayCity = cityRaw;
-
-    setBadge('found', displayCity, 'Location detected');
-    statePanel.style.display = 'none';
-    renderColleges(displayCity, key);
+    setBadge('found', cityRaw, 'Location detected');
+    renderColleges(cityRaw, key);
   } catch (err) {
     setBadge('denied', 'Lookup failed', 'Could not resolve city');
     showManualPicker();
@@ -458,10 +598,234 @@ function onLocationError(err){
   showManualPicker();
 }
 
-// ─────────────────────────────────────────────
-// Init
-// ─────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', requestLocation);
+/* ═══════════════════════════════════════════════════════════
+   PART 2 — CAMPUS AGENT CHATBOT (left panel)
+   Rule/keyword-based, on-topic only — answers strictly about
+   the Campus Connect website (registration, colleges, login,
+   events, admin, support etc). Off-topic → polite redirect.
+   ═══════════════════════════════════════════════════════════ */
+const chatMessages = document.getElementById('chatMessages');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+
+// Intents: each has trigger keywords + a response builder.
+// Checked in order; first match wins.
+const INTENTS = [
+  {
+    keys: ['hi','hello','hey','hii','helo','namaste'],
+    reply: () => `👋 Hi! I'm <strong>Campus Agent</strong>, here to help with anything related to <strong>Campus Connect</strong> — registration, colleges, login, events, and more. What do you need?`,
+    suggest: ['What is Campus Connect?', 'How do I register?', 'Which colleges are covered?']
+  },
+  {
+    keys: ['what is campus connect','about campus connect','what does this website do','about this website','what is this site','what is this website'],
+    reply: () => `<strong>Campus Connect</strong> is a platform that brings Nagpur's engineering colleges together in one place — student registration, college events, and updates, all managed through a single dashboard.`,
+    suggest: ['Which colleges are covered?', 'How do I register?']
+  },
+  {
+    keys: ['register','registration','sign up','signup','create account','create an account'],
+    reply: () => `To register on Campus Connect: go to the <strong>Register</strong> page, fill in your details along with your city/state, and verify your email with the <strong>OTP</strong> sent to you. You can also sign up instantly using <strong>Google Sign-In</strong>.`,
+    suggest: ['How does OTP verification work?', 'Can I use Google to sign in?']
+  },
+  {
+    keys: ['otp','verification code','verify email','email verification'],
+    reply: () => `After registering, we send a one-time <strong>OTP</strong> to your email via EmailJS. Enter it on the verification screen to activate your account — it usually arrives within a minute, so check your spam folder if it's delayed.`,
+    suggest: ['How do I register?', 'I didn\'t get my OTP']
+  },
+  {
+    keys: ["didn't get my otp",'otp not received','otp not working','no otp'],
+    reply: () => `If your OTP hasn't arrived: check your spam/junk folder, make sure the email was typed correctly, and try the "Resend OTP" option. If it still doesn't arrive after a couple of tries, use the contact form and we'll help sort it out.`,
+    suggest: ['Contact support']
+  },
+  {
+    keys: ['login','log in','sign in','forgot password','reset password','password'],
+    reply: () => `You can log in with your registered email & password, or with <strong>Google Sign-In</strong>. If you forgot your password, use the "Forgot Password" link on the login page to reset it via email.`,
+    suggest: ['How do I register?']
+  },
+  {
+    keys: ['google sign','google login','oauth'],
+    reply: () => `Yes — Campus Connect supports <strong>Google Sign-In</strong> via OAuth, so you can register or log in instantly using your Google account without setting a separate password.`,
+    suggest: ['How do I register?']
+  },
+  {
+    keys: ['which colleges','colleges covered','colleges list','list of colleges','colleges available','supported colleges'],
+    reply: () => `Campus Connect currently covers Nagpur's leading engineering colleges: <strong>GHRCE</strong>, <strong>VNIT</strong>, <strong>RCOEM</strong>, and <strong>YCCE</strong>. Each college has its own events page with updates. You can also check the panel on the right for the top colleges in your own city!`,
+    suggest: ['Tell me about GHRCE', 'How do events work?']
+  },
+  {
+    keys: ['ghrce','raisoni'],
+    reply: () => `<strong>G.H. Raisoni College of Engineering (GHRCE)</strong> is a well-established autonomous college in Nagpur, known for its strong AI/ML and Computer Science programs.`,
+    suggest: ['Which colleges are covered?']
+  },
+  {
+    keys: ['vnit'],
+    reply: () => `<strong>VNIT (Visvesvaraya National Institute of Technology)</strong> is Nagpur's premier government-run NIT, known for top-tier engineering programs and research.`,
+    suggest: ['Which colleges are covered?']
+  },
+  {
+    keys: ['rcoem','ramdeobaba'],
+    reply: () => `<strong>RCOEM (Ramdeobaba College of Engineering & Management)</strong> is one of the top-ranked private engineering colleges in Central India.`,
+    suggest: ['Which colleges are covered?']
+  },
+  {
+    keys: ['ycce','yeshwantrao'],
+    reply: () => `<strong>YCCE (Yeshwantrao Chavan College of Engineering)</strong> is reputed for its core engineering branches and consistent placement record.`,
+    suggest: ['Which colleges are covered?']
+  },
+  {
+    keys: ['event','events','fest','workshop','seminar'],
+    reply: () => `Each college on Campus Connect has its own <strong>Events</strong> page — you'll find accordion-style cards for fests, workshops and seminars, each linked directly so you can jump straight to what interests you.`,
+    suggest: ['Which colleges are covered?']
+  },
+  {
+    keys: ['admin','dashboard','admin panel','admin dashboard'],
+    reply: () => `Campus Connect includes an admin dashboard (built with TailAdmin/Vue.js) for managing student registrations, colleges, and events — accessible only to authorized admin accounts.`,
+    suggest: ['How do I register?']
+  },
+  {
+    keys: ['contact','support','help','email us','reach out','contact form'],
+    reply: () => `You can reach us through the <strong>Contact</strong> section on the site, or use the registration/login pages directly if it's an account issue — most login/OTP problems are resolved from there.`,
+    suggest: ['I didn\'t get my OTP', 'How do I register?']
+  },
+  {
+    keys: ['top colleges','colleges near me','colleges in my city','my city colleges'],
+    reply: () => `Take a look at the panel on the right — it automatically detects your city and lists the top colleges near you! If your city isn't in our directory yet, you can pick one manually there.`,
+    suggest: ['Which colleges are covered?']
+  },
+  {
+    keys: ['thank','thanks','thank you','thx'],
+    reply: () => `You're welcome! 😊 Let me know if you have any other questions about Campus Connect.`,
+    suggest: []
+  },
+  {
+    keys: ['bye','goodbye','see you'],
+    reply: () => `Goodbye! Feel free to come back anytime you have questions about Campus Connect. 👋`,
+    suggest: []
+  }
+];
+
+// Topics considered clearly off-topic → redirect politely instead of guessing
+const OFFTOPIC_HINTS = ['weather','movie','recipe','joke','cricket','football','stock','politics','song','game','sports score'];
+
+// Escapes regex special chars in a keyword before building a pattern from it
+function escapeRegex(str){
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Matches a keyword/phrase as a WHOLE word or phrase, not as a substring —
+// e.g. 'hi' must not match inside 'this', 'which', 'shirt', etc.
+function matchesKeyword(text, keyword){
+  const pattern = new RegExp('(^|[^a-z0-9])' + escapeRegex(keyword) + '($|[^a-z0-9])', 'i');
+  return pattern.test(text);
+}
+
+function findIntent(userText){
+  const t = ' ' + userText.toLowerCase() + ' ';
+  // Prefer longer/more specific keyword matches first (e.g. "didn't get my otp"
+  // over a bare "otp"), so sort each intent's own keys isn't needed — instead
+  // we scan intents in order but require a true whole-word/phrase match.
+  for (const intent of INTENTS) {
+    if (intent.keys.some(k => matchesKeyword(t, k))) return intent;
+  }
+  return null;
+}
+
+function isOfftopic(userText){
+  const t = ' ' + userText.toLowerCase() + ' ';
+  return OFFTOPIC_HINTS.some(h => matchesKeyword(t, h));
+}
+
+function addMessage(role, html, suggestions){
+  const div = document.createElement('div');
+  div.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
+  if (role === 'user') {
+    div.innerHTML = `
+      <div class="msg-body">
+        <div class="msg-name">You</div>
+        <div class="msg-bubble">${html}</div>
+      </div>`;
+  } else {
+    const chips = (suggestions && suggestions.length)
+      ? `<div class="suggested-row">${suggestions.map(s => `<span class="suggest-chip" onclick="askSuggested('${s.replace(/'/g,"\\'")}')">${escapeHtml(s)}</span>`).join('')}</div>`
+      : '';
+    div.innerHTML = `
+      <div class="msg-avatar">🤖</div>
+      <div class="msg-body">
+        <div class="msg-name">Campus Agent</div>
+        <div class="msg-bubble">${html}</div>
+        ${chips}
+      </div>`;
+  }
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function showTyping(){
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.id = 'typingIndicator';
+  div.innerHTML = `
+    <div class="msg-avatar">🤖</div>
+    <div class="msg-body">
+      <div class="msg-name">Campus Agent</div>
+      <div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>
+    </div>`;
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+function hideTyping(){
+  const t = document.getElementById('typingIndicator');
+  if (t) t.remove();
+}
+
+function respondTo(userText){
+  showTyping();
+  setTimeout(() => {
+    hideTyping();
+    const intent = findIntent(userText);
+    if (intent) {
+      addMessage('bot', intent.reply(), intent.suggest);
+      return;
+    }
+    if (isOfftopic(userText)) {
+      addMessage('bot',
+        `I can only help with questions related to <strong>Campus Connect</strong> — registration, colleges, login, events, and support. Try asking me one of those!`,
+        ['What is Campus Connect?', 'How do I register?', 'Which colleges are covered?']
+      );
+      return;
+    }
+    addMessage('bot',
+      `I'm not fully sure about that one — I'm focused on <strong>Campus Connect</strong> topics like registration, login, colleges, and events. Could you rephrase, or try one of these?`,
+      ['What is Campus Connect?', 'How do I register?', 'Which colleges are covered?']
+    );
+  }, 650 + Math.random()*500);
+}
+
+function sendMessage(){
+  const text = chatInput.value.trim();
+  if (!text) return;
+  addMessage('user', escapeHtml(text));
+  chatInput.value = '';
+  respondTo(text);
+}
+
+function askSuggested(text){
+  addMessage('user', escapeHtml(text));
+  respondTo(text);
+}
+
+sendBtn.addEventListener('click', sendMessage);
+chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  addMessage('bot',
+    `👋 Hey there! I'm <strong>Campus Agent</strong> — ask me anything about <strong>Campus Connect</strong> (registration, colleges, login, events). I've also detected your city on the right and pulled up the top colleges near you!`,
+    ['What is Campus Connect?', 'How do I register?', 'Which colleges are covered?']
+  );
+  requestLocation();
+});
 </script>
 </body>
 </html>
