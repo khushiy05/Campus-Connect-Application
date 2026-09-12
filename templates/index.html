@@ -42,18 +42,42 @@
                     </div>
                 </div>
             </div>
-            <div class="col-lg-6">
+<div class="col-lg-6">
     <div class="ad-marquee-wrap">
-        <div class="ad-marquee-track">
-            <img src="{{ url_for('static', filename='img/logos/ghrce-logo-box.png') }}" alt="GHRCE">
-            <img src="{{ url_for('static', filename='img/logos/ycce-logo-box.png') }}" alt="YCCE">
-            <img src="{{ url_for('static', filename='img/logos/rcoem-logo-box.png') }}" alt="RCOEM">
-            <img src="{{ url_for('static', filename='img/logos/ghrce-logo-box.png') }}" alt="GHRCE">
-            <img src="{{ url_for('static', filename='img/logos/ycce-logo-box.png') }}" alt="YCCE">
-            <img src="{{ url_for('static', filename='img/logos/rcoem-logo-box.png') }}" alt="RCOEM">
+        <div class="ad-marquee-track" id="adMarqueeTrack">
+            <!-- populated live from /api/advertisements/active -->
         </div>
     </div>
 </div>
+
+<script>
+async function loadAdMarquee() {
+    const track = document.getElementById('adMarqueeTrack');
+    try {
+        const res = await fetch('/api/advertisements/active');
+        const result = await res.json();
+
+        if (result.success && result.data.length) {
+            const imgsHtml = result.data
+                .map(ad => {
+                    const src = `/static/uploads/advertisements/${encodeURIComponent(ad.LogoPath)}`;
+                    const alt = (ad.Name || '').replace(/"/g, '&quot;');
+                    return `<img src="${src}" alt="${alt}">`;
+                })
+                .join('');
+            // duplicate once so the CSS scroll loop stays seamless,
+            // same trick the old hardcoded list used
+            track.innerHTML = imgsHtml + imgsHtml;
+        } else {
+            track.innerHTML = '';
+        }
+    } catch (err) {
+        console.error('Failed to load advertiser marquee:', err);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadAdMarquee);
+</script>
         </div>
     </div>
     <!-- Topbar End -->

@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, Response, redirect, url_for, session
+from flask import Flask, request, render_template, Response, redirect, url_for, session, jsonify
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import pyodbc
@@ -1312,6 +1312,34 @@ def delete_job_posting(job_id):
             return {"success": False, "error": "Job posting not found."}, 404
 
         return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+from datetime import date
+
+@app.route('/api/advertisements/active', methods=['GET'])
+def get_active_advertisements():
+    """Public endpoint — only non-expired ads with a logo, no personal fields.
+    NOTE: table is 'Advertisement' (singular) to match the rest of the app's
+    routes (get_advertisements, add_advertisement, delete_advertisement)."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT Name, LogoPath
+            FROM Advertisement
+            WHERE LogoPath IS NOT NULL
+              AND ExpiryDate >= ?
+            ORDER BY RegistrationDate DESC
+        """, (date.today(),))
+
+        rows = cursor.fetchall()
+        data = [{"Name": r.Name, "LogoPath": r.LogoPath} for r in rows]
+        cursor.close()
+        conn.close()
+
+        return {"success": True, "data": data}, 200
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
