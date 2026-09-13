@@ -46,9 +46,10 @@ def get_db_connection():
         f"DATABASE={os.environ.get('DB_NAME')};"
         f"UID={os.environ.get('DB_USER')};"
         f"PWD={os.environ.get('DB_PASSWORD')};"
+        "Encrypt=no;"
+        "TrustServerCertificate=yes;"
     )
     return conn
-
 
 def send_confirmation_email(to_email):
     html_body = """
