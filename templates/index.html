@@ -53,24 +53,26 @@
 <script>
 async function loadAdMarquee() {
     const track = document.getElementById('adMarqueeTrack');
+    if (!track) return;
     try {
         const res = await fetch('/api/advertisements/active');
         const result = await res.json();
+        const ads = (result.success && result.data) || [];
 
-        if (result.success && result.data.length) {
-            const imgsHtml = result.data
-                .map(ad => {
-                    const src = `/static/uploads/advertisements/${encodeURIComponent(ad.LogoPath)}`;
-                    const alt = (ad.Name || '').replace(/"/g, '&quot;');
-                    return `<img src="${src}" alt="${alt}">`;
-                })
-                .join('');
-            // duplicate once so the CSS scroll loop stays seamless,
-            // same trick the old hardcoded list used
-            track.innerHTML = imgsHtml + imgsHtml;
-        } else {
+        if (!ads.length) {
             track.innerHTML = '';
+            return;
         }
+
+        // All active advertisers, one pass — no duplication needed since
+        // the whole row slides fully across (right edge to left edge).
+        track.innerHTML = ads
+            .map(ad => {
+                const src = `/static/uploads/advertisements/${encodeURIComponent(ad.LogoPath)}`;
+                const alt = (ad.Name || '').replace(/"/g, '&quot;');
+                return `<img src="${src}" alt="${alt}">`;
+            })
+            .join('');
     } catch (err) {
         console.error('Failed to load advertiser marquee:', err);
     }
