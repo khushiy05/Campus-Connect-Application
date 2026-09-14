@@ -1345,6 +1345,16 @@ def get_active_advertisements():
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
 
+@app.route('/admin')
+@app.route('/admin/<path:path>')
+def admin_dashboard(path='index.html'):
+    return send_from_directory('static/admin', path)
+
+
+@app.route('/campus')
+@app.route('/campus/<path:path>')
+def campus_dashboard(path='index.html'):
+    return send_from_directory('static/campus', path)
 
 if __name__ == '__main__':
     app.run(debug=True)
