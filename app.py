@@ -740,7 +740,7 @@ def get_registrations():
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT ID, Name, Email, MobileNo, City, CollegeName, RegisteredOn, Approved FROM collegedb"
+            "SELECT ID, Name, Email, MobileNo, City, CollegeName, RegisteredOn, Approved, Blocked FROM collegedb"
         )
         rows = cursor.fetchall()
         cursor.close()
@@ -755,7 +755,8 @@ def get_registrations():
                 "city": r[4],
                 "college_name": r[5],
                 "registered_on": str(r[6]) if r[6] else "",
-                "approved": bool(r[7])
+                "approved": bool(r[7]),
+                "blocked": bool(r[8])
             }
             for r in rows
         ]
@@ -770,7 +771,7 @@ def approve_registration(reg_id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("UPDATE collegedb SET Approved = 1 WHERE ID = ?", (reg_id,))
+        cursor.execute("UPDATE collegedb SET Approved = 1, Blocked = 0 WHERE ID = ?", (reg_id,))
         conn.commit()
         updated = cursor.rowcount
         cursor.close()
@@ -784,6 +785,63 @@ def approve_registration(reg_id):
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
 
+
+@app.route('/api/registrations/<int:reg_id>/block', methods=['PUT'])
+def block_registration(reg_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE collegedb SET Blocked = 1 WHERE ID = ?", (reg_id,))
+        conn.commit()
+        updated = cursor.rowcount
+        cursor.close()
+        conn.close()
+
+        if updated == 0:
+            return {"success": False, "error": "Registration not found."}, 404
+
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/registrations/<int:reg_id>/unblock', methods=['PUT'])
+def unblock_registration(reg_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE collegedb SET Blocked = 0 WHERE ID = ?", (reg_id,))
+        conn.commit()
+        updated = cursor.rowcount
+        cursor.close()
+        conn.close()
+
+        if updated == 0:
+            return {"success": False, "error": "Registration not found."}, 404
+
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+@app.route('/api/registrations/<int:reg_id>', methods=['DELETE'])
+def delete_registration(reg_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM collegedb WHERE ID = ?", (reg_id,))
+        conn.commit()
+        deleted = cursor.rowcount
+        cursor.close()
+        conn.close()
+
+        if deleted == 0:
+            return {"success": False, "error": "Registration not found."}, 404
+
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
 
 UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'experts')
 ALLOWED_EXT = {'png', 'jpg', 'jpeg'}
