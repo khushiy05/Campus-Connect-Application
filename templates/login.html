@@ -228,12 +228,21 @@ loginForm.addEventListener('submit', async function (e) {
 
         const result = await response.json();
 
-        if (result.success && result.role === 'admin') {
-            // Open the admin dashboard in a brand new tab.
-            // That tab has no history, so there's nothing to "back" into.
-            window.open(result.redirect, '_blank');
+        if (result.success) {
+            loginSuccess.textContent = 'Login successful! Redirecting...';
+            loginSuccess.style.display = 'block';
 
-            // Clear the login form so email/password don't linger on screen.
+            if (result.role === 'admin' || result.role === 'college') {
+                // Admin and campus dashboards run on their own dev server
+                // (separate port), so open them in a new tab.
+                window.open(result.redirect, '_blank');
+            } else {
+                // Expert (and anything else) stays in this tab, following
+                // the redirect the backend chose (e.g. back to an expert
+                // profile page, or the homepage).
+                window.location.href = result.redirect;
+            }
+
             loginForm.reset();
             return;
         }

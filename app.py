@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, Response, redirect, url_for, session, jsonify
+from flask import Flask, request, render_template, Response, redirect, url_for, session, jsonify, send_from_directory
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import pyodbc
@@ -16,7 +16,7 @@ from werkzeug.utils import secure_filename
 
 load_dotenv()
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True)
 
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-change-this')
 
@@ -37,6 +37,10 @@ EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://127.0.0.1:5000")
+
+# Where each role lands after a successful login.
+ADMIN_DASHBOARD_URL = os.environ.get("ADMIN_DASHBOARD_URL", "http://localhost:5173/")
+CAMPUS_DASHBOARD_URL = os.environ.get("CAMPUS_DASHBOARD_URL", "http://localhost:5174/")
 
 
 def get_db_connection():
@@ -77,7 +81,7 @@ def send_confirmation_email(to_email):
                                     Thank you for subscribing to <strong>CampusConnect AI</strong>!
                                 </p>
                                 <p style="color:#555555; font-size:15px; line-height:1.6;">
-                                    You're now part of a growing community of students who stay ahead —
+                                    You're now part of a growing community of students who stay ahead &mdash;
                                     with real-time updates on campus events, mess menus, hostel openings,
                                     and placement drives, delivered straight to your inbox.
                                 </p>
@@ -120,7 +124,7 @@ def send_confirmation_email(to_email):
                                 </table>
 
                                 <p style="color:#555555; font-size:15px; line-height:1.6; margin-top:30px;">
-                                    We're glad to have you on board. Stay tuned — your first update is on its way!
+                                    We're glad to have you on board. Stay tuned &mdash; your first update is on its way!
                                 </p>
                             </td>
                         </tr>
@@ -182,7 +186,7 @@ def send_expert_login_email(to_email, name, password):
                                 <h2 style="color:#2d2d3a; margin-top:0;">Welcome aboard, {name}!</h2>
                                 <p style="color:#555555; font-size:15px; line-height:1.6;">
                                     You've been added as an expert on <strong>CampusConnect AI</strong>.
-                                    Your account is ready — here are your login details:
+                                    Your account is ready &mdash; here are your login details:
                                 </p>
                                 <table cellpadding="0" cellspacing="0" style="margin: 25px 0; width:100%; background:#f9f9fb; border-radius:8px;">
                                     <tr>
@@ -238,6 +242,67 @@ def send_expert_login_email(to_email, name, password):
         server.sendmail(EMAIL_SENDER, to_email, msg.as_string())
 
 
+def send_campus_approved_email(to_email, name, college_name):
+    """Sent when an admin approves a college registration, so the college
+    knows they can now log in to their campus panel."""
+    login_url = f"{APP_BASE_URL}/login.html"
+
+    html_body = f"""
+    <html>
+    <body style="margin:0; padding:0; background-color:#f4f4f7; font-family: 'Segoe UI', Arial, sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7; padding: 40px 0;">
+            <tr>
+                <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:10px; overflow:hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
+                        <tr>
+                            <td style="background-color:#2d2d3a; padding: 35px 40px; text-align:center;">
+                                <h1 style="margin:0; color:#ffffff; font-size:24px;">
+                                    <span style="color:#ff6b35;">CAMPUS</span>CONNECT AI
+                                </h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 40px;">
+                                <h2 style="color:#2d2d3a; margin-top:0;">Your campus account is approved</h2>
+                                <p style="color:#555555; font-size:15px; line-height:1.6;">
+                                    Hi {name}, the registration for <strong>{college_name}</strong> has been
+                                    approved. You can now log in with the email and password you registered with.
+                                </p>
+                                <div style="text-align:center; margin: 30px 0;">
+                                    <a href="{login_url}" style="background-color:#fd7e14; color:#ffffff; text-decoration:none; padding: 14px 32px; border-radius:8px; font-weight:600; display:inline-block;">
+                                        Log In to Your Campus Panel
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="background-color:#f4f4f7; padding: 25px 40px; text-align:center; border-top:1px solid #eaeaea;">
+                                <p style="color:#999999; font-size:13px; margin:0;">
+                                    Best regards,<br>
+                                    <strong style="color:#2d2d3a;">Team CampusConnect AI</strong><br>
+                                    NRSolution4u
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    """
+
+    msg = MIMEText(html_body, 'html')
+    msg['Subject'] = 'Your CampusConnect AI campus account is approved'
+    msg['From'] = EMAIL_SENDER
+    msg['To'] = to_email
+
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.starttls()
+        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+        server.sendmail(EMAIL_SENDER, to_email, msg.as_string())
+
+
 def send_invite_email(to_email, subject, message):
     """Plain-text invite/broadcast email used by /api/invite/send."""
     msg = MIMEText(message, 'plain')
@@ -271,7 +336,50 @@ def requires_auth(f):
             return authenticate()
         return f(*args, **kwargs)
     return decorated
+
+
+def requires_college(f):
+    """Guards the campus-panel APIs: only a logged-in, approved,
+    non-blocked college account may call them."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if session.get('role') != 'college' or not session.get('college_id'):
+            return {"success": False, "error": "Not logged in."}, 401
+        return f(*args, **kwargs)
+    return decorated
 # -----------------------------
+
+
+def ensure_college_status_columns():
+    """Adds the Approved / Blocked columns to collegedb if they aren't
+    there yet, so the admin panel's approve/block buttons have something
+    to write to. Safe to run on every startup."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            IF NOT EXISTS (
+                SELECT 1 FROM sys.columns
+                WHERE Name = N'Approved' AND Object_ID = Object_ID(N'collegedb')
+            )
+            ALTER TABLE collegedb ADD Approved BIT NOT NULL DEFAULT 0
+        """)
+        conn.commit()
+        cursor.execute("""
+            IF NOT EXISTS (
+                SELECT 1 FROM sys.columns
+                WHERE Name = N'Blocked' AND Object_ID = Object_ID(N'collegedb')
+            )
+            ALTER TABLE collegedb ADD Blocked BIT NOT NULL DEFAULT 0
+        """)
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print("Could not ensure collegedb status columns:", e)
+
+
+ensure_college_status_columns()
 
 
 # ---- Page routes: ab render_template use ho raha hai, templates/ folder se HTML padhega ----
@@ -584,6 +692,14 @@ def register_student():
 
 @app.route('/api/login', methods=['POST'])
 def login_student():
+    """One login endpoint for three kinds of account:
+
+      1. admin  / expert  -> stored in logindb
+      2. college (campus) -> stored in collegedb, created by /api/register
+
+    A college may only get in once an admin has approved it in the admin
+    panel (Approved = 1) and hasn't blocked it (Blocked = 0).
+    """
     data = request.get_json()
 
     email = data.get('email')
@@ -608,7 +724,7 @@ def login_student():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Check the login credentials in logindb
+        # ---- 1. admin / expert accounts (logindb) ----
         cursor.execute(
             """
             SELECT login_id, email, password, role
@@ -620,30 +736,95 @@ def login_student():
 
         row = cursor.fetchone()
 
+        if row:
+            # Check password.
+            # logindb currently has a mix of legacy plain-text passwords and
+            # (going forward) hashed ones. check_password_hash() safely fails
+            # instead of throwing if row.password isn't a valid hash, so we
+            # fall back to a plain-text comparison for old rows. Once every
+            # row in logindb has been migrated to a hash, drop the fallback.
+            password_ok = False
+            try:
+                password_ok = check_password_hash(row.password, password)
+            except Exception:
+                password_ok = False
+
+            if not password_ok and row.password == password:
+                password_ok = True
+
+            if not password_ok:
+                cursor.close()
+                conn.close()
+                return {
+                    "success": False,
+                    "error": "Invalid email or password."
+                }, 401
+
+            role = row.role.lower()
+
+            if role == "admin":
+                session['logged_in'] = True
+                session['user_email'] = row.email
+                session['role'] = row.role
+                session.pop('college_id', None)
+                cursor.close()
+                conn.close()
+
+                # Admins go to the admin dashboard unless they were sent here
+                # from a specific page (rare, but honor it if present).
+                return {
+                    "success": True,
+                    "role": "admin",
+                    "redirect": next_url or ADMIN_DASHBOARD_URL
+                }, 200
+
+            if role == "expert":
+                session['logged_in'] = True
+                session['user_email'] = row.email
+                session['role'] = row.role
+                session.pop('college_id', None)
+                cursor.close()
+                conn.close()
+
+                # Send the expert back to whatever page they clicked "Learn
+                # More" from (e.g. /expert/12). Falls back to the homepage.
+                return {
+                    "success": True,
+                    "role": "expert",
+                    "redirect": next_url or "/"
+                }, 200
+
+            cursor.close()
+            conn.close()
+            return {
+                "success": False,
+                "error": "You are not authorized to access this page."
+            }, 403
+
+        # ---- 2. college / campus accounts (collegedb) ----
+        cursor.execute(
+            """
+            SELECT ID, Name, Email, Password, CollegeName, Approved, Blocked
+            FROM collegedb
+            WHERE Email = ?
+            """,
+            (email,)
+        )
+        college = cursor.fetchone()
         cursor.close()
         conn.close()
 
-        # Email not found
-        if not row:
+        if not college:
             return {
                 "success": False,
                 "error": "Invalid email or password."
             }, 401
 
-        # Check password.
-        # logindb currently has a mix of legacy plain-text passwords and
-        # (going forward) hashed ones. check_password_hash() safely fails
-        # instead of throwing if row.password isn't a valid hash, so we
-        # fall back to a plain-text comparison for old rows. Once every
-        # row in logindb has been migrated to a hash, drop the fallback.
         password_ok = False
         try:
-            password_ok = check_password_hash(row.password, password)
+            password_ok = check_password_hash(college.Password, password)
         except Exception:
             password_ok = False
-
-        if not password_ok and row.password == password:
-            password_ok = True
 
         if not password_ok:
             return {
@@ -651,39 +832,30 @@ def login_student():
                 "error": "Invalid email or password."
             }, 401
 
-        # Check role
-        role = row.role.lower()
-
-        if role == "admin":
-            session['logged_in'] = True
-            session['user_email'] = row.email
-            session['role'] = row.role
-
-            # Admins go to the admin dashboard unless they were sent here
-            # from a specific page (rare, but honor it if present).
+        # Blocked wins over approved — a blocked college stays out even if
+        # it was approved earlier.
+        if college.Blocked:
             return {
-                "success": True,
-                "role": "admin",
-                "redirect": next_url or "http://localhost:5173/"
-            }, 200
+                "success": False,
+                "error": "Your account has been blocked. Please contact the admin."
+            }, 403
 
-        if role == "expert":
-            session['logged_in'] = True
-            session['user_email'] = row.email
-            session['role'] = row.role
-
-            # Send the expert back to whatever page they clicked "Learn
-            # More" from (e.g. /expert/12). Falls back to the homepage.
+        if not college.Approved:
             return {
-                "success": True,
-                "role": "expert",
-                "redirect": next_url or "/"
-            }, 200
+                "success": False,
+                "error": "Your registration is still awaiting admin approval."
+            }, 403
+
+        session['logged_in'] = True
+        session['user_email'] = college.Email
+        session['role'] = 'college'
+        session['college_id'] = college.ID
 
         return {
-            "success": False,
-            "error": "You are not authorized to access this page."
-        }, 403
+            "success": True,
+            "role": "college",
+            "redirect": next_url or CAMPUS_DASHBOARD_URL
+        }, 200
 
     except Exception as e:
         print("LOGIN DB ERROR:", e)
@@ -692,6 +864,86 @@ def login_student():
             "success": False,
             "error": "Database connection error."
         }, 500
+
+
+# ---- Campus panel APIs (the logged-in college's own data) ----
+@app.route('/api/campus/profile', methods=['GET'])
+@requires_college
+def campus_profile():
+    """Everything the campus panel header needs: the college's own details
+    plus the logo that was uploaded for it on the Advertisement page.
+
+    The logo is matched on Advertisement.Name == collegedb.CollegeName, so
+    whoever adds the ad must type the college name exactly as registered.
+    If no ad/logo exists yet, logo_url comes back as null and the panel
+    should fall back to the default CampusConnect logo.
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT ID, Name, Email, MobileNo, City, CollegeName, CollegeCode
+            FROM collegedb
+            WHERE ID = ?
+            """,
+            (session['college_id'],)
+        )
+        college = cursor.fetchone()
+
+        if not college:
+            cursor.close()
+            conn.close()
+            session.clear()
+            return {"success": False, "error": "Account no longer exists."}, 404
+
+        cursor.execute(
+            """
+            SELECT TOP 1 Name, LogoPath
+            FROM Advertisement
+            WHERE Name = ? AND LogoPath IS NOT NULL
+            ORDER BY RegistrationDate DESC
+            """,
+            (college.CollegeName,)
+        )
+        ad = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        return {
+            "success": True,
+            "data": {
+                "id": college.ID,
+                "name": college.Name,
+                "email": college.Email,
+                "mobile": college.MobileNo,
+                "city": college.City,
+                "college_name": college.CollegeName,
+                "college_code": college.CollegeCode,
+                "logo_url": (
+                    f"/static/uploads/advertisements/{ad.LogoPath}"
+                    if ad and ad.LogoPath else None
+                )
+            }
+        }, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/campus/session', methods=['GET'])
+def campus_session():
+    """Lightweight check the campus panel can call on load to find out
+    whether it still has a valid college session."""
+    if session.get('role') == 'college' and session.get('college_id'):
+        return {
+            "success": True,
+            "logged_in": True,
+            "email": session.get('user_email')
+        }, 200
+    return {"success": True, "logged_in": False}, 200
 
 
 @app.route('/api/enquiries', methods=['GET'])
@@ -771,19 +1023,36 @@ def approve_registration(reg_id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+
         cursor.execute("UPDATE collegedb SET Approved = 1, Blocked = 0 WHERE ID = ?", (reg_id,))
         conn.commit()
         updated = cursor.rowcount
-        cursor.close()
-        conn.close()
 
         if updated == 0:
+            cursor.close()
+            conn.close()
             return {"success": False, "error": "Registration not found."}, 404
 
-        return {"success": True}, 200
+        # Grab the details so we can tell the college they're approved.
+        cursor.execute(
+            "SELECT Name, Email, CollegeName FROM collegedb WHERE ID = ?",
+            (reg_id,)
+        )
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
+
+    if row and row.Email:
+        try:
+            send_campus_approved_email(row.Email, row.Name, row.CollegeName)
+        except Exception as e:
+            print("EMAIL ERROR:", e)
+            # Approval already saved; the email is best-effort.
+
+    return {"success": True}, 200
 
 
 @app.route('/api/registrations/<int:reg_id>/block', methods=['PUT'])
@@ -824,6 +1093,8 @@ def unblock_registration(reg_id):
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
+
+
 @app.route('/api/registrations/<int:reg_id>', methods=['DELETE'])
 def delete_registration(reg_id):
     try:
@@ -842,6 +1113,7 @@ def delete_registration(reg_id):
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
+
 
 UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'experts')
 ALLOWED_EXT = {'png', 'jpg', 'jpeg'}
@@ -961,6 +1233,8 @@ def expert_detail(expert_id):
         return "Expert not found", 404
 
     return render_template('expert_detail.html', expert=expert)
+
+
 @app.route('/api/experts/<int:expert_id>', methods=['DELETE'])
 def delete_expert(expert_id):
     try:
@@ -1151,7 +1425,8 @@ def delete_internship(internship_id):
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
-    
+
+
 @app.route('/api/internships/<int:internship_id>/status', methods=['PATCH'])
 def update_internship_status(internship_id):
     data = request.get_json(silent=True) or {}
@@ -1180,10 +1455,12 @@ def update_internship_status(internship_id):
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
 
+
 @app.route('/api/logout', methods=['POST'])
 def logout():
     session.clear()
     return {"success": True}, 200
+
 
 # ---- News routes ----
 NEWS_UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'news')
@@ -1297,7 +1574,8 @@ def delete_news(news_id):
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
-    
+
+
 # ---- RojgarSetu routes ----
 @app.route('/api/rojgarsetu', methods=['GET'])
 def get_job_postings():
@@ -1403,6 +1681,7 @@ def get_active_advertisements():
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
 
+
 @app.route('/admin')
 @app.route('/admin/<path:path>')
 def admin_dashboard(path='index.html'):
@@ -1413,6 +1692,7 @@ def admin_dashboard(path='index.html'):
 @app.route('/campus/<path:path>')
 def campus_dashboard(path='index.html'):
     return send_from_directory('static/campus', path)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
