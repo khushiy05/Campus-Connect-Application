@@ -158,6 +158,6 @@ const router = createRouter({
 export default router
 
 router.beforeEach((to, from, next) => {
-  document.title = 'Campus'
+  document.title = 'CAMPUS'
   next()
 })
