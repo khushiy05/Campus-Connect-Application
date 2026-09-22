@@ -20,6 +20,11 @@ CORS(app, supports_credentials=True)
 
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-change-this')
 
+app.config.update(
+    SESSION_COOKIE_SAMESITE='None',
+    SESSION_COOKIE_SECURE=False,   # True in production over HTTPS
+)
+
 oauth = OAuth(app)
 google = oauth.register(
     name='google',
