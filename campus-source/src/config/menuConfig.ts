@@ -39,6 +39,11 @@ const menuConfig = [
             path: "/rojgarsetu",
             component: () => import("../views/Others/RojgarSetu.vue"),
           },
+          {
+            name: "Review",
+            path: "/review",
+            component: () => import("../views/Others/ReviewForm.vue"),
+          },
         ],
       },
     ],
