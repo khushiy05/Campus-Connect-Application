@@ -552,43 +552,82 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
     });
 </script>
 {% endif %}
-    <!-- Testimonial Start -->
-    <div class="container-fluid py-5">
-        <div class="container py-5">
-            <div class="text-center mb-5">
-                <h5 class="text-primary text-uppercase mb-3" style="letter-spacing: 5px;">Testimonial</h5>
-                <h1>What Say Our Clients</h1>
-            </div>
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="owl-carousel testimonial-carousel">
-                        <div class="text-center">
-                            <i class="fa fa-3x fa-quote-left text-primary mb-4"></i>
-                            <h4 class="font-weight-normal mb-4">Dolor eirmod diam stet kasd sed. Aliqu rebum est eos. Rebum elitr dolore et eos labore, stet justo sed est sed. Diam sed sed dolor stet amet eirmod eos labore diam</h4>
-                            <img class="img-fluid mx-auto mb-3" src="{{ url_for('static', filename='img/testimonial-1.jpg') }}" alt="">
-                            <h5 class="m-0">Client Name</h5>
-                            <span>Profession</span>
-                        </div>
-                        <div class="text-center">
-                            <i class="fa fa-3x fa-quote-left text-primary mb-4"></i>
-                            <h4 class="font-weight-normal mb-4">Dolor eirmod diam stet kasd sed. Aliqu rebum est eos. Rebum elitr dolore et eos labore, stet justo sed est sed. Diam sed sed dolor stet amet eirmod eos labore diam</h4>
-                            <img class="img-fluid mx-auto mb-3" src="{{ url_for('static', filename='img/testimonial-2.jpg') }}" alt="">
-                            <h5 class="m-0">Client Name</h5>
-                            <span>Profession</span>
-                        </div>
-                        <div class="text-center">
-                            <i class="fa fa-3x fa-quote-left text-primary mb-4"></i>
-                            <h4 class="font-weight-normal mb-4">Dolor eirmod diam stet kasd sed. Aliqu rebum est eos. Rebum elitr dolore et eos labore, stet justo sed est sed. Diam sed sed dolor stet amet eirmod eos labore diam</h4>
-                            <img class="img-fluid mx-auto mb-3" src="{{ url_for('static', filename='img/testimonial-3.jpg') }}" alt="">
-                            <h5 class="m-0">Client Name</h5>
-                            <span>Profession</span>
-                        </div>
+<!-- Testimonial Start -->
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h5 class="text-primary text-uppercase mb-3" style="letter-spacing: 5px;">Testimonial</h5>
+            <h1>What Say Our Clients</h1>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="owl-carousel testimonial-carousel" id="testimonialCarousel">
+                    <div class="text-center">
+                        <p class="text-muted">Loading reviews...</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <!-- Testimonial End -->
+</div>
+<!-- Testimonial End -->
+
+<script>
+async function loadTestimonials() {
+    const track = document.getElementById('testimonialCarousel');
+    if (!track) return;
+
+    try {
+        const res = await fetch('/api/reviews');
+        const result = await res.json();
+        const reviews = (result.success && result.data) || [];
+
+        if (!reviews.length) {
+            track.innerHTML = '<div class="text-center"><p class="text-muted">No reviews yet.</p></div>';
+            return;
+        }
+
+        track.innerHTML = reviews
+            .map(r => {
+                const stars = '★'.repeat(r.Rating) + '☆'.repeat(5 - r.Rating);
+                const initial = (r.Name || '?').trim().charAt(0).toUpperCase();
+                return `
+                    <div class="text-center">
+                        <h4 class="font-weight-normal mb-4">${r.Message}</h4>
+                        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle bg-primary text-white"
+                             style="width: 60px; height: 60px; font-size: 24px;">${initial}</div>
+                        <h5 class="m-0">${r.Name}</h5>
+                        <span class="text-warning">${stars}</span>
+                    </div>`;
+            })
+            .join('');
+
+        // (Re)initialize the owl carousel now that real content exists
+        if (window.jQuery && $.fn.owlCarousel) {
+            const $track = $(track);
+            if ($track.hasClass('owl-loaded')) {
+                $track.trigger('destroy.owl.carousel');
+                $track.html($track.html()); // owl leaves wrapper divs; reset markup
+            }
+            $track.owlCarousel({
+                items: 1,
+                loop: reviews.length > 1,
+                margin: 0,
+                dots: true,
+                autoplay: true,
+                autoplayTimeout: 5000,
+                smartSpeed: 800
+            });
+        }
+    } catch (err) {
+        console.error('Failed to load testimonials:', err);
+        track.innerHTML = '<div class="text-center"><p class="text-muted">Could not load reviews.</p></div>';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadTestimonials);
+</script>
+
 <!-- Campus Agent Slide-in Drawer -->
 <div id="campusAgentOverlay" class="campus-agent-overlay"></div>
 <div id="campusAgentDrawer" class="campus-agent-drawer">
