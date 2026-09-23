@@ -20,6 +20,11 @@ CORS(app, supports_credentials=True)
 
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-change-this')
 
+app.config.update(
+    SESSION_COOKIE_SAMESITE='None',
+    SESSION_COOKIE_SECURE=False,   # True in production over HTTPS
+)
+
 oauth = OAuth(app)
 google = oauth.register(
     name='google',
@@ -1704,8 +1709,127 @@ def debug_db_test():
         return {"tcp_connect": "success", "host": host}, 200
     except Exception as e:
         return {"tcp_connect": "failed", "host": host, "error": str(e)}, 500
+# ============================================================
+# PASTE THIS BLOCK INTO app.py
+# Suggested spot: right after the RojgarSetu routes end
+# (after delete_job_posting, before "from datetime import date")
+# ============================================================
 
 
+# ---- Review routes ----
+def ensure_reviews_table():
+    """Creates the Reviews table automatically on startup if it doesn't
+    already exist yet — no manual SSMS/SQL setup required."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Reviews' AND xtype='U')
+            CREATE TABLE Reviews (
+                ReviewId INT IDENTITY(1,1) PRIMARY KEY,
+                Name NVARCHAR(255) NOT NULL,
+                Message NVARCHAR(MAX) NOT NULL,
+                Rating INT NOT NULL,
+                PostedOn DATETIME NOT NULL DEFAULT GETDATE()
+            )
+        """)
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print("Could not ensure Reviews table exists:", e)
+
+
+# Runs once when this module is imported (i.e. when Flask starts up).
+ensure_reviews_table()
+
+
+@app.route('/api/reviews', methods=['GET'])
+def get_reviews():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Reviews ORDER BY ReviewId DESC")
+        columns = [col[0] for col in cursor.description]
+        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        cursor.close()
+        conn.close()
+        for r in rows:
+            for k, v in r.items():
+                if not isinstance(v, (str, int, float, type(None))):
+                    r[k] = str(v)
+        return {"success": True, "data": rows}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/reviews', methods=['POST'])
+def add_review():
+    # Keys match the Vue ReviewForm's `form` object exactly: name, message, rating
+    data = request.get_json()
+
+    name = data.get('name')
+    message = data.get('message')
+    rating = data.get('rating')
+
+    if not name or not message or not rating:
+        return {"success": False, "error": "Name, Message and Rating are required"}, 400
+
+    try:
+        rating = int(rating)
+    except (TypeError, ValueError):
+        return {"success": False, "error": "Rating must be a number."}, 400
+
+    if rating < 1 or rating > 5:
+        return {"success": False, "error": "Rating must be between 1 and 5."}, 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO Reviews (Name, Message, Rating) VALUES (?, ?, ?)",
+            (name, message, rating)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"success": True}, 201
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/reviews/<int:review_id>', methods=['DELETE'])
+def delete_review(review_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM Reviews WHERE ReviewId = ?", (review_id,))
+        conn.commit()
+        deleted = cursor.rowcount
+        cursor.close()
+        conn.close()
+
+        if deleted == 0:
+            return {"success": False, "error": "Review not found."}, 404
+
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+def debug_db_test():
+    import socket
+    host = os.environ.get('DB_SERVER')
+    port = 1433
+    try:
+        s = socket.create_connection((host, port), timeout=5)
+        s.close()
+        return {"tcp_connect": "success", "host": host}, 200
+    except Exception as e:
+        return {"tcp_connect": "failed", "host": host, "error": str(e)}, 500
+    
 if __name__ == '__main__':
     app.run(debug=True)
 
