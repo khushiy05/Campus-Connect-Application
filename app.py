@@ -16,13 +16,16 @@ from werkzeug.utils import secure_filename
 
 load_dotenv()
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, origins=[
+    "http://127.0.0.1:5173", "http://127.0.0.1:5174",
+    "http://localhost:5173",  "http://localhost:5174",
+])
 
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-change-this')
 
 app.config.update(
-    SESSION_COOKIE_SAMESITE='None',
-    SESSION_COOKIE_SECURE=False,   # True in production over HTTPS
+    SESSION_COOKIE_SAMESITE='Lax',   # 'None' requires Secure=True, which Chrome enforces
+    SESSION_COOKIE_SECURE=False,     # True in production over HTTPS
 )
 
 oauth = OAuth(app)
