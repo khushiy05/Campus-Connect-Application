@@ -1693,6 +1693,19 @@ def admin_dashboard(path='index.html'):
 def campus_dashboard(path='index.html'):
     return send_from_directory('static/campus', path)
 
+@app.route('/debug/db-test')
+def debug_db_test():
+    import socket
+    host = os.environ.get('DB_SERVER')
+    port = 1433
+    try:
+        s = socket.create_connection((host, port), timeout=5)
+        s.close()
+        return {"tcp_connect": "success", "host": host}, 200
+    except Exception as e:
+        return {"tcp_connect": "failed", "host": host, "error": str(e)}, 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
+
