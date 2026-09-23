@@ -1819,17 +1819,15 @@ def delete_review(review_id):
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
 
+
+@app.route('/debug/db-test')
 def debug_db_test():
-    import socket
-    host = os.environ.get('DB_SERVER')
-    port = 1433
     try:
-        s = socket.create_connection((host, port), timeout=5)
-        s.close()
-        return {"tcp_connect": "success", "host": host}, 200
+        conn = get_db_connection()
+        conn.close()
+        return {"db_connect": "success"}, 200
     except Exception as e:
-        return {"tcp_connect": "failed", "host": host, "error": str(e)}, 500
+        return {"db_connect": "failed", "error": str(e)}, 500
     
 if __name__ == '__main__':
     app.run(debug=True)
-
