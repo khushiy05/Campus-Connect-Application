@@ -58,7 +58,7 @@ def get_db_connection():
         f"DATABASE={os.environ.get('DB_NAME')};"
         f"UID={os.environ.get('DB_USER')};"
         f"PWD={os.environ.get('DB_PASSWORD')};"
-        "Encrypt=no;"
+        "Encrypt=yes;"
         "TrustServerCertificate=yes;"
     )
     return conn
@@ -1707,6 +1707,7 @@ def campus_dashboard(path='index.html'):
 # (after delete_job_posting, before "from datetime import date")
 # ============================================================
 
+
 # ---- Review routes ----
 def ensure_reviews_table():
     """Creates the Reviews table automatically on startup if it doesn't
@@ -1809,6 +1810,16 @@ def delete_review(review_id):
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/debug/db-test')
+def debug_db_test():
+    try:
+        conn = get_db_connection()
+        conn.close()
+        return {"db_connect": "success"}, 200
+    except Exception as e:
+        return {"db_connect": "failed", "error": str(e)}, 500
     
 if __name__ == '__main__':
     app.run(debug=True)
