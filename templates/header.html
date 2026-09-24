@@ -25,6 +25,57 @@
     </div>
     <!-- Topbar End -->
 
+<style>
+.reg-dropdown .dropdown-menu {
+    background: #f3f3f3;
+    border: 0;
+    border-radius: 0;
+    padding: 8px 0;
+    min-width: 260px;
+}
+.reg-dropdown .dropdown-item {
+    color: #002468;
+    padding: 12px 20px;
+    font-size: 18px;
+}
+.reg-dropdown .dropdown-item:hover,
+.reg-dropdown .dropdown-item:focus,
+.reg-dropdown .dropdown-item:active {
+    background: transparent !important;
+    color: #002468 !important;
+    text-decoration: none;
+    outline: none;
+}
+
+#registrationBtn,
+#registrationBtn:hover,
+#registrationBtn:focus,
+#registrationBtn:active,
+.reg-dropdown.show > #registrationBtn {
+    background-color: #ff6600 !important;
+    border-color: #ff6600 !important;
+    color: #fff !important;
+    transform: none !important;
+    box-shadow: none !important;
+    transition: none !important;
+    position: static !important;
+    margin: 0 !important;
+}
+
+.reg-dropdown {
+    align-self: center;
+}
+
+@media (min-width: 992px) {
+    .reg-dropdown:hover .dropdown-menu {
+        display: none;
+    }
+    .reg-dropdown .dropdown-menu.show {
+        display: block;
+    }
+}
+</style>
+
     <script>
         // Loads the "Our advertiser" marquee live from /api/advertisements/active,
         // which is populated via Admin > Advertisement. Replaces the previously
@@ -87,18 +138,24 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
                     </button>
 
                     <div class="collapse navbar-collapse justify-content-center" id="navbarCollapse">
-                    <div class="navbar-nav py-0 mx-auto justify-content-center">
-                        <a href="{{ url_for('home') }}" class="nav-item nav-link {% if request.endpoint == 'home' %}active{% endif %}">Home</a>
-                        <a href="{{ url_for('internship') }}" class="nav-item nav-link {% if request.endpoint == 'internship' %}active{% endif %}">Internship</a>
-                        <a href="{{ url_for('rojgarsetu') }}" class="nav-item nav-link {% if request.endpoint == 'rojgarsetu' %}active{% endif %}">RojgarSetu</a>
-                        <a href="{{ url_for('advertisement') }}" class="nav-item nav-link {% if request.endpoint == 'advertisement' %}active{% endif %}">Advertisement</a>
-                        <a href="{{ url_for('contact') }}" class="nav-item nav-link {% if request.endpoint == 'contact' %}active{% endif %}">Contact</a>
-                    </div>
-                        <a id="registrationBtn"
-                        class="btn btn-primary py-2 px-4 ml-auto d-none d-lg-block"
-                        href="{{ url_for('registration') }}" target="_blank">
-                        Campus Registration
-                        </a>
+                        <div class="navbar-nav py-0 mx-auto justify-content-center">
+                            <a href="{{ url_for('home') }}" class="nav-item nav-link {% if request.endpoint == 'home' %}active{% endif %}">Home</a>
+                            <a href="{{ url_for('internship') }}" class="nav-item nav-link {% if request.endpoint == 'internship' %}active{% endif %}">Internship</a>
+                            <a href="{{ url_for('rojgarsetu') }}" class="nav-item nav-link {% if request.endpoint == 'rojgarsetu' %}active{% endif %}">RojgarSetu</a>
+                            <a href="{{ url_for('advertisement') }}" class="nav-item nav-link {% if request.endpoint == 'advertisement' %}active{% endif %}">Advertisement</a>
+                            <a href="{{ url_for('contact') }}" class="nav-item nav-link {% if request.endpoint == 'contact' %}active{% endif %}">Contact</a>
+                        </div>
+
+                        <div class="dropdown reg-dropdown ml-auto d-none d-lg-block">
+                            <button id="registrationBtn" class="btn btn-primary py-2 px-4 dropdown-toggle" type="button"
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Registration
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right">
+                                <a class="dropdown-item" href="{{ url_for('registration') }}" target="_blank">Campus Registration</a>
+                                <a class="dropdown-item" href="/student-registration" target="_blank">Student Registration</a>
+                            </div>
+                        </div>
                     </div>
                 </nav>
             </div>
