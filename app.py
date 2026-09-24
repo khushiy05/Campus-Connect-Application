@@ -1820,6 +1820,68 @@ def debug_db_test():
         return {"db_connect": "success"}, 200
     except Exception as e:
         return {"db_connect": "failed", "error": str(e)}, 500
+
+@app.route('/api/campus/profile', methods=['PUT'])
+@requires_college
+def update_campus_profile():
+    """Campus can edit ONLY mobile and city."""
+    data = request.get_json(silent=True) or {}
+    mobile = (data.get('mobile') or '').strip()
+    city = (data.get('city') or '').strip()
+
+    if not mobile or not city:
+        return {"success": False, "error": "Mobile and city are required."}, 400
+    if not mobile.isdigit() or not (10 <= len(mobile) <= 15):
+        return {"success": False, "error": "Enter a valid mobile number."}, 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE collegedb SET MobileNo = ?, City = ? WHERE ID = ?",
+            (mobile, city, session['college_id'])
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/campus/password', methods=['PUT'])
+@requires_college
+def change_campus_password():
+    data = request.get_json(silent=True) or {}
+    current_password = data.get('current_password') or ''
+    new_password = data.get('new_password') or ''
+
+    if len(new_password) < 6:
+        return {"success": False, "error": "New password must be at least 6 characters."}, 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT Password FROM collegedb WHERE ID = ?", (session['college_id'],))
+        row = cursor.fetchone()
+
+        if not row or not check_password_hash(row.Password, current_password):
+            cursor.close()
+            conn.close()
+            return {"success": False, "error": "Current password is incorrect."}, 400
+
+        cursor.execute(
+            "UPDATE collegedb SET Password = ? WHERE ID = ?",
+            (generate_password_hash(new_password), session['college_id'])
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
     
 if __name__ == '__main__':
     app.run(debug=True)
