@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Student Registration - CAMPUS CONNECT</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <link href="{{ url_for('static', filename='img/logo-icon.png') }}" rel="icon" type="image/png">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+
+    <style>
+        .registration-section { padding: 40px 0; font-family: 'Poppins', sans-serif; }
+        .reg-card { max-width: 560px; margin: 0 auto; border-radius: 14px !important; box-shadow: 0 4px 24px rgba(0,0,0,.08) !important; border: none !important; }
+        .reg-card .card-header { background: #fff !important; border-bottom: 1px solid #eee; padding: 30px 30px 20px !important; }
+        .reg-card .card-header h2 { font-weight: 700; color: #2b2b52; font-size: 30px; margin: 0; }
+        .reg-card .card-body { padding: 30px !important; }
+        .reg-card .form-group { margin-bottom: 14px; }
+        .reg-card .form-group label { color: #4b4b63; font-weight: 500; font-size: 13px; margin-bottom: 4px; }
+        .reg-card .form-control { border-radius: 8px; border: 1px solid #dcdce6; padding: 8px 12px; height: 40px; font-size: 14px; }
+        .reg-card .form-control:focus { border-color: #6c63ff; box-shadow: 0 0 0 3px rgba(108,99,255,.12); }
+        .reg-card .form-control:disabled, .reg-card .form-control[readonly] { background-color: #f4f4f8; color: #8a8ca3; cursor: not-allowed; }
+        .reg-card .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; }
+        .reg-card .form-grid .full-width { grid-column: 1 / -1; }
+        @media (max-width: 480px) { .reg-card .form-grid { grid-template-columns: 1fr; } }
+        .reg-card .reg-submit-btn { width: 100%; background: #fd7e14 !important; border: none !important; border-radius: 8px !important; padding: 9px !important; font-size: 14px; font-weight: 600; color: #fff !important; text-align: center; text-decoration: none; }
+        .reg-card .reg-submit-btn:hover { background: #e8710c !important; }
+        .reg-card .reg-submit-btn:disabled { opacity: .6; cursor: not-allowed; }
+        .reg-card .login-link-text { color: #6c757d; }
+        .reg-card .login-link-text a { color: #fd7e14; font-weight: 600; text-decoration: none; }
+        .reg-card .password-wrapper { position: relative; }
+        .reg-card .password-wrapper .form-control { padding-right: 40px; }
+        .reg-card .toggle-password { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #a0a0b2; cursor: pointer; padding: 0; font-size: 14px; }
+        .reg-card .toggle-password:hover { color: #6c63ff; }
+    </style>
+</head>
+
+<body class="registration-page">
+    {% include 'header.html' %}
+
+    <div class="container-fluid registration-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-6">
+                    <div class="card reg-card">
+                        <div class="card-header text-center">
+                            <h2>Student Registration</h2>
+                        </div>
+                        <div class="card-body">
+
+                            <div id="formStep">
+                                <form id="studentForm">
+                                    <div class="form-grid">
+
+                                        <div class="form-group">
+                                            <label for="stName">Name</label>
+                                            <input type="text" class="form-control" id="stName" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="stEmail">Email</label>
+                                            <input type="email" class="form-control" id="stEmail" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="stMobile">Mobile Number</label>
+                                            <input type="tel" class="form-control" id="stMobile" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="stCollege">College Name</label>
+                                            <select class="form-control" id="stCollege" required>
+                                                <option value="" selected disabled>Loading colleges...</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="form-group full-width">
+                                            <label for="stPassword">Password</label>
+                                            <div class="password-wrapper">
+                                                <input type="password" class="form-control" id="stPassword" required minlength="6">
+                                                <button type="button" class="toggle-password" id="togglePassword" tabindex="-1">
+                                                    <i class="fa fa-eye" id="toggleIcon"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="stDate">Date of Registration</label>
+                                            <input type="date" class="form-control" id="stDate" readonly>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="stStatus">Status</label>
+                                            <select class="form-control" id="stStatus" required>
+                                                <option value="Open" selected>Open</option>
+                                                <option value="Close">Close</option>
+                                            </select>
+                                        </div>
+
+                                    </div>
+
+                                    <div id="formError" class="text-danger small mb-2" style="display:none;"></div>
+
+                                    <button type="submit" class="reg-submit-btn btn-block py-2" id="submitBtn">Submit</button>
+                                </form>
+
+                                <div class="text-center mt-3">
+                                    <p class="mb-0 login-link-text">
+                                        Already have an account? <a href="{{ url_for('login') }}">Login</a>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div id="successStep" style="display:none;" class="text-center py-4">
+                                <i class="fa fa-check-circle text-success fa-3x mb-3"></i>
+                                <h5>Registration submitted</h5>
+                                <p class="mb-0">Your account is awaiting admin approval. You can log in once it is approved.</p>
+                                <a href="{{ url_for('home') }}" class="reg-submit-btn mt-4" style="display:inline-block; width:auto; padding:10px 24px;">Back to Home</a>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'footer.html' %}
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+    $(document).ready(function () {
+
+        // Today's date (locked; the server sets the real date on save)
+        var today = new Date();
+        var iso = today.getFullYear() + '-' +
+                  String(today.getMonth() + 1).padStart(2, '0') + '-' +
+                  String(today.getDate()).padStart(2, '0');
+        $('#stDate').val(iso);
+
+        // College dropdown, straight from campus registrations + "Other"
+        $.getJSON('/api/colleges').done(function (res) {
+            var $sel = $('#stCollege');
+            $sel.empty().append('<option value="" selected disabled>Select your college</option>');
+            (res.data || []).forEach(function (name) {
+                $sel.append($('<option>').val(name).text(name));
+            });
+            $sel.append($('<option>').val('Other').text('Other'));
+        }).fail(function () {
+            $('#stCollege').empty().append('<option value="" selected disabled>Failed to load colleges</option>');
+        });
+
+        // Show / hide password
+        $('#togglePassword').on('click', function () {
+            var $input = $('#stPassword');
+            var show = $input.attr('type') === 'password';
+            $input.attr('type', show ? 'text' : 'password');
+            $('#toggleIcon').toggleClass('fa-eye', !show).toggleClass('fa-eye-slash', show);
+        });
+
+        $('#studentForm').on('submit', function (e) {
+            e.preventDefault();
+            $('#formError').hide();
+
+            var payload = {
+                name: $('#stName').val().trim(),
+                email: $('#stEmail').val().trim(),
+                mobile: $('#stMobile').val().trim(),
+                college_name: $('#stCollege').val(),
+                password: $('#stPassword').val(),
+                status: $('#stStatus').val()
+            };
+
+            if (!payload.name || !payload.email || !payload.mobile || !payload.college_name || !payload.password) {
+                $('#formError').text('Please fill in all fields.').show();
+                return;
+            }
+
+            var $btn = $('#submitBtn');
+            $btn.prop('disabled', true).text('Submitting...');
+
+            $.ajax({
+                url: '/api/student-register',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload)
+            }).done(function () {
+                $('#formStep').hide();
+                $('#successStep').show();
+            }).fail(function (xhr) {
+                var msg = (xhr.responseJSON && xhr.responseJSON.error) || 'Registration failed. Please try again.';
+                $('#formError').text(msg).show();
+            }).always(function () {
+                $btn.prop('disabled', false).text('Submit');
+            });
+        });
+    });
+    </script>
+</body>
+
+</html>
