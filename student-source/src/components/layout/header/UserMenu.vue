@@ -10,7 +10,7 @@
         👤
       </span>
 
-      <span class="block mr-1 font-medium text-theme-sm">ADMIN </span>
+      <span class="block mr-1 font-medium text-theme-sm">STUDENT</span>
 
       <ChevronDownIcon :class="{ 'rotate-180': dropdownOpen }" />
     </button>

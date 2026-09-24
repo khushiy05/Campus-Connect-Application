@@ -1883,5 +1883,10 @@ def change_campus_password():
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
     
+@app.route('/student/')
+@app.route('/student/<path:path>')
+def student(path=''):
+       return render_template('student.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
