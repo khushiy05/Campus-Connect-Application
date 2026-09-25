@@ -89,19 +89,9 @@
 
                                         <div class="form-group">
                                             <label for="stDate">Date of Registration</label>
-                                            <input type="date" class="form-control" id="stDate" readonly>
+                                            <input type="date" class="form-control" id="stDate">
                                         </div>
-
-                                        <div class="form-group">
-                                            <label for="stStatus">Status</label>
-                                            <select class="form-control" id="stStatus" required>
-                                                <option value="Open" selected>Open</option>
-                                                <option value="Close">Close</option>
-                                            </select>
-                                        </div>
-
                                     </div>
-
                                     <div id="formError" class="text-danger small mb-2" style="display:none;"></div>
 
                                     <button type="submit" class="reg-submit-btn btn-block py-2" id="submitBtn">Submit</button>
@@ -134,73 +124,66 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
 
     <script>
-    $(document).ready(function () {
+$(document).ready(function () {
 
-        // Today's date (locked; the server sets the real date on save)
-        var today = new Date();
-        var iso = today.getFullYear() + '-' +
-                  String(today.getMonth() + 1).padStart(2, '0') + '-' +
-                  String(today.getDate()).padStart(2, '0');
-        $('#stDate').val(iso);
-
-        // College dropdown, straight from campus registrations + "Other"
-        $.getJSON('/api/colleges').done(function (res) {
-            var $sel = $('#stCollege');
-            $sel.empty().append('<option value="" selected disabled>Select your college</option>');
-            (res.data || []).forEach(function (name) {
-                $sel.append($('<option>').val(name).text(name));
-            });
-            $sel.append($('<option>').val('Other').text('Other'));
-        }).fail(function () {
-            $('#stCollege').empty().append('<option value="" selected disabled>Failed to load colleges</option>');
+    // College dropdown, straight from campus registrations + "Other"
+    $.getJSON('/api/colleges').done(function (res) {
+        var $sel = $('#stCollege');
+        $sel.empty().append('<option value="" selected disabled>Select your college</option>');
+        (res.data || []).forEach(function (name) {
+            $sel.append($('<option>').val(name).text(name));
         });
+        $sel.append($('<option>').val('Other').text('Other'));
+    }).fail(function () {
+        $('#stCollege').empty().append('<option value="" selected disabled>Failed to load colleges</option>');
+    });
 
-        // Show / hide password
-        $('#togglePassword').on('click', function () {
-            var $input = $('#stPassword');
-            var show = $input.attr('type') === 'password';
-            $input.attr('type', show ? 'text' : 'password');
-            $('#toggleIcon').toggleClass('fa-eye', !show).toggleClass('fa-eye-slash', show);
-        });
+    // Show / hide password
+    $('#togglePassword').on('click', function () {
+        var $input = $('#stPassword');
+        var show = $input.attr('type') === 'password';
+        $input.attr('type', show ? 'text' : 'password');
+        $('#toggleIcon').toggleClass('fa-eye', !show).toggleClass('fa-eye-slash', show);
+    });
 
-        $('#studentForm').on('submit', function (e) {
-            e.preventDefault();
-            $('#formError').hide();
+    $('#studentForm').on('submit', function (e) {
+        e.preventDefault();
+        $('#formError').hide();
 
-            var payload = {
-                name: $('#stName').val().trim(),
-                email: $('#stEmail').val().trim(),
-                mobile: $('#stMobile').val().trim(),
-                college_name: $('#stCollege').val(),
-                password: $('#stPassword').val(),
-                status: $('#stStatus').val()
-            };
+        var payload = {
+            name: $('#stName').val().trim(),
+            email: $('#stEmail').val().trim(),
+            mobile: $('#stMobile').val().trim(),
+            college_name: $('#stCollege').val(),
+            password: $('#stPassword').val(),
+            date_of_registration: $('#stDate').val()
+        };
 
-            if (!payload.name || !payload.email || !payload.mobile || !payload.college_name || !payload.password) {
-                $('#formError').text('Please fill in all fields.').show();
-                return;
-            }
+        if (!payload.name || !payload.email || !payload.mobile || !payload.college_name || !payload.password) {
+            $('#formError').text('Please fill in all fields.').show();
+            return;
+        }
 
-            var $btn = $('#submitBtn');
-            $btn.prop('disabled', true).text('Submitting...');
+        var $btn = $('#submitBtn');
+        $btn.prop('disabled', true).text('Submitting...');
 
-            $.ajax({
-                url: '/api/student-register',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(payload)
-            }).done(function () {
-                $('#formStep').hide();
-                $('#successStep').show();
-            }).fail(function (xhr) {
-                var msg = (xhr.responseJSON && xhr.responseJSON.error) || 'Registration failed. Please try again.';
-                $('#formError').text(msg).show();
-            }).always(function () {
-                $btn.prop('disabled', false).text('Submit');
-            });
+        $.ajax({
+            url: '/api/student-register',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload)
+        }).done(function () {
+            $('#formStep').hide();
+            $('#successStep').show();
+        }).fail(function (xhr) {
+            var msg = (xhr.responseJSON && xhr.responseJSON.error) || 'Registration failed. Please try again.';
+            $('#formError').text(msg).show();
+        }).always(function () {
+            $btn.prop('disabled', false).text('Submit');
         });
     });
-    </script>
+});
+</script>
 </body>
 
 </html>
