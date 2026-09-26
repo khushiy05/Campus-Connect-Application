@@ -172,9 +172,8 @@ $(document).ready(function () {
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(payload)
-        }).done(function () {
-            $('#formStep').hide();
-            $('#successStep').show();
+        }).done(function (res) {
+            window.location.href = (res && res.redirect) || '/student/';
         }).fail(function (xhr) {
             var msg = (xhr.responseJSON && xhr.responseJSON.error) || 'Registration failed. Please try again.';
             $('#formError').text(msg).show();

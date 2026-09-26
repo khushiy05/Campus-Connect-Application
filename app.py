@@ -17,8 +17,8 @@ from werkzeug.utils import secure_filename
 load_dotenv()
 app = Flask(__name__)
 CORS(app, supports_credentials=True, origins=[
-    "http://127.0.0.1:5173", "http://127.0.0.1:5174",
-    "http://localhost:5173",  "http://localhost:5174",
+    "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:5175",
+    "http://localhost:5173",  "http://localhost:5174",  "http://localhost:5175",
 ])
 
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-change-this')
@@ -823,6 +823,9 @@ def login_student():
         conn.close()
 
         if not college:
+            student_resp = student_login(email, password, next_url)
+            if student_resp:
+                return student_resp
             return {
                 "success": False,
                 "error": "Invalid email or password."
@@ -1932,6 +1935,37 @@ def ensure_student_table():
 ensure_student_table()
 
 
+def ensure_student_profile_columns():
+    """Adds City / CollegeCode to studentdb if they aren't there yet -
+    same auto-migration pattern as ensure_college_status_columns()."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            IF NOT EXISTS (
+                SELECT 1 FROM sys.columns
+                WHERE Name = N'City' AND Object_ID = Object_ID(N'studentdb')
+            )
+            ALTER TABLE studentdb ADD City NVARCHAR(100) NULL
+        """)
+        conn.commit()
+        cursor.execute("""
+            IF NOT EXISTS (
+                SELECT 1 FROM sys.columns
+                WHERE Name = N'CollegeCode' AND Object_ID = Object_ID(N'studentdb')
+            )
+            ALTER TABLE studentdb ADD CollegeCode NVARCHAR(50) NULL
+        """)
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print("Could not ensure studentdb profile columns:", e)
+
+
+ensure_student_profile_columns()
+
+
 def send_student_approved_email(to_email, name):
     login_url = f"{APP_BASE_URL}/login.html"
     body = (
@@ -2051,9 +2085,19 @@ def register_student_account():
              generate_password_hash(password), date.today(), status)
         )
         conn.commit()
+
+        cursor.execute("SELECT ID FROM studentdb WHERE Email = ?", (email,))
+        new_id = cursor.fetchone()[0]
         cursor.close()
         conn.close()
-        return {"success": True}, 201
+
+        # Log the student straight in - no separate login step after registering
+        session['logged_in'] = True
+        session['user_email'] = email
+        session['role'] = 'student'
+        session['student_id'] = new_id
+
+        return {"success": True, "redirect": STUDENT_DASHBOARD_URL}, 201
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
@@ -2146,7 +2190,76 @@ def unblock_student(student_id):
 def delete_student(student_id):
     return _set_student_flag(student_id, "DELETE FROM studentdb WHERE ID = ?")
 
+def requires_student(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if session.get('role') != 'student' or not session.get('student_id'):
+            return {"success": False, "error": "Not logged in."}, 401
+        return f(*args, **kwargs)
+    return decorated
 
+
+@app.route('/api/student/session', methods=['GET'])
+def student_session():
+    """The student panel calls this on load to decide what to show:
+    pending-approval screen, complete-profile screen, or the real panel."""
+    if session.get('role') != 'student' or not session.get('student_id'):
+        return {"success": True, "logged_in": False}, 200
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT Approved, Blocked, City FROM studentdb WHERE ID = ?",
+            (session['student_id'],)
+        )
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+    if not row:
+        session.clear()
+        return {"success": True, "logged_in": False}, 200
+
+    return {
+        "success": True,
+        "logged_in": True,
+        "approved": bool(row.Approved),
+        "blocked": bool(row.Blocked),
+        "profile_completed": bool(row.City),   # no city yet = profile incomplete
+        "email": session.get('user_email')
+    }, 200
+
+
+@app.route('/api/student/profile', methods=['PUT'])
+@requires_student
+def update_student_profile():
+    """Called from the 'complete your profile' screen."""
+    data = request.get_json(silent=True) or {}
+    city = (data.get('city') or '').strip()
+    college_code = (data.get('college_code') or '').strip()
+
+    if not city:
+        return {"success": False, "error": "City is required."}, 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE studentdb SET City = ?, CollegeCode = ? WHERE ID = ?",
+            (city, college_code, session['student_id'])
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+    
 # ------------------------- STEP 3 ---------------------------
 # (a) CORS: add the student panel origins to the list at the top of app.py:
 #       "http://127.0.0.1:5175", "http://localhost:5175",
