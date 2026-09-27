@@ -2085,19 +2085,9 @@ def register_student_account():
              generate_password_hash(password), date.today(), status)
         )
         conn.commit()
-
-        cursor.execute("SELECT ID FROM studentdb WHERE Email = ?", (email,))
-        new_id = cursor.fetchone()[0]
         cursor.close()
         conn.close()
-
-        # Log the student straight in - no separate login step after registering
-        session['logged_in'] = True
-        session['user_email'] = email
-        session['role'] = 'student'
-        session['student_id'] = new_id
-
-        return {"success": True, "redirect": STUDENT_DASHBOARD_URL}, 201
+        return {"success": True}, 201
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
