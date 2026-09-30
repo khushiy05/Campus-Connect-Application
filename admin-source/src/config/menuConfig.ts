@@ -3,7 +3,8 @@ import {
   ListIcon,
   TableIcon,
   PageIcon,
-} from "../icons"; 
+  UserCircleIcon,
+} from "../icons";
 
 // Add a new page here ONLY — sidebar + router both update automatically.
 // For a top-level item: icon, name, path, component
@@ -63,6 +64,17 @@ const menuConfig = [
             name: "Add News",
             path: "/add-news",
             component: () => import("../views/Others/AddNews.vue"),
+          },
+        ],
+      },
+      {
+        name: "Student Panel",
+        icon: UserCircleIcon,
+        subItems: [
+          {
+            name: "Register Student",
+            path: "/register-student",
+            component: () => import("../views/Others/RegisterStudent.vue"),
           },
         ],
       },
