@@ -1,5 +1,6 @@
 from flask import Flask, request, render_template, Response, redirect, url_for, session, jsonify, send_from_directory
 from functools import wraps
+from datetime import date
 from werkzeug.security import generate_password_hash, check_password_hash
 import pyodbc
 import smtplib
@@ -49,6 +50,9 @@ APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://127.0.0.1:5000")
 # Where each role lands after a successful login.
 ADMIN_DASHBOARD_URL = os.environ.get("ADMIN_DASHBOARD_URL", "http://localhost:5173/")
 CAMPUS_DASHBOARD_URL = os.environ.get("CAMPUS_DASHBOARD_URL", "http://localhost:5174/")
+# NOTE: use 127.0.0.1 (same host as the Flask API on :5000) so the session
+# cookie is sent from the student panel. localhost vs 127.0.0.1 = different site.
+STUDENT_DASHBOARD_URL = os.environ.get("STUDENT_DASHBOARD_URL", "http://127.0.0.1:5175/")
 
 
 def get_db_connection():
@@ -355,6 +359,16 @@ def requires_college(f):
             return {"success": False, "error": "Not logged in."}, 401
         return f(*args, **kwargs)
     return decorated
+
+
+def requires_student(f):
+    """Guards the student-panel APIs: only a logged-in student."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if session.get('role') != 'student' or not session.get('student_id'):
+            return {"success": False, "error": "Not logged in."}, 401
+        return f(*args, **kwargs)
+    return decorated
 # -----------------------------
 
 
@@ -655,6 +669,8 @@ def get_cities():
 
 @app.route('/api/register', methods=['POST'])
 def register_student():
+    """Campus (college) registration. Student registration is a separate
+    route further below: /api/student-register."""
     data = request.get_json()
 
     name = data.get('name')
@@ -681,6 +697,12 @@ def register_student():
             conn.close()
             return {"success": False, "error": "This email is already registered."}, 409
 
+        cursor.execute("SELECT 1 FROM studentdb WHERE Email = ?", (email,))
+        if cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return {"success": False, "error": "This email is already used by a student account. Please use a different email."}, 409
+
         # Hash the password before storing — never store plain text
         hashed_password = generate_password_hash(password)
 
@@ -700,13 +722,14 @@ def register_student():
 
 @app.route('/api/login', methods=['POST'])
 def login_student():
-    """One login endpoint for three kinds of account:
+    """One login endpoint for four kinds of account:
 
-      1. admin  / expert  -> stored in logindb
+      1. admin / expert   -> stored in logindb
       2. college (campus) -> stored in collegedb, created by /api/register
+      3. student          -> stored in studentdb, created by /api/student-register
 
-    A college may only get in once an admin has approved it in the admin
-    panel (Approved = 1) and hasn't blocked it (Blocked = 0).
+    A college / student may only get in once an admin has approved it in the
+    admin panel (Approved = 1) and hasn't blocked it (Blocked = 0).
     """
     data = request.get_json()
 
@@ -775,6 +798,7 @@ def login_student():
                 session['user_email'] = row.email
                 session['role'] = row.role
                 session.pop('college_id', None)
+                session.pop('student_id', None)
                 cursor.close()
                 conn.close()
 
@@ -791,6 +815,7 @@ def login_student():
                 session['user_email'] = row.email
                 session['role'] = row.role
                 session.pop('college_id', None)
+                session.pop('student_id', None)
                 cursor.close()
                 conn.close()
 
@@ -822,6 +847,7 @@ def login_student():
         cursor.close()
         conn.close()
 
+        # ---- 3. student accounts (studentdb) ----
         if not college:
             student_resp = student_login(email, password, next_url)
             if student_resp:
@@ -861,6 +887,7 @@ def login_student():
         session['user_email'] = college.Email
         session['role'] = 'college'
         session['college_id'] = college.ID
+        session.pop('student_id', None)
 
         return {
             "success": True,
@@ -955,6 +982,69 @@ def campus_session():
             "email": session.get('user_email')
         }, 200
     return {"success": True, "logged_in": False}, 200
+
+
+@app.route('/api/campus/profile', methods=['PUT'])
+@requires_college
+def update_campus_profile():
+    """Campus can edit ONLY mobile and city."""
+    data = request.get_json(silent=True) or {}
+    mobile = (data.get('mobile') or '').strip()
+    city = (data.get('city') or '').strip()
+
+    if not mobile or not city:
+        return {"success": False, "error": "Mobile and city are required."}, 400
+    if not mobile.isdigit() or not (10 <= len(mobile) <= 15):
+        return {"success": False, "error": "Enter a valid mobile number."}, 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE collegedb SET MobileNo = ?, City = ? WHERE ID = ?",
+            (mobile, city, session['college_id'])
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/campus/password', methods=['PUT'])
+@requires_college
+def change_campus_password():
+    data = request.get_json(silent=True) or {}
+    current_password = data.get('current_password') or ''
+    new_password = data.get('new_password') or ''
+
+    if len(new_password) < 6:
+        return {"success": False, "error": "New password must be at least 6 characters."}, 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT Password FROM collegedb WHERE ID = ?", (session['college_id'],))
+        row = cursor.fetchone()
+
+        if not row or not check_password_hash(row.Password, current_password):
+            cursor.close()
+            conn.close()
+            return {"success": False, "error": "Current password is incorrect."}, 400
+
+        cursor.execute(
+            "UPDATE collegedb SET Password = ? WHERE ID = ?",
+            (generate_password_hash(new_password), session['college_id'])
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"success": True}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
 
 
 @app.route('/api/enquiries', methods=['GET'])
@@ -1664,7 +1754,6 @@ def delete_job_posting(job_id):
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
 
-from datetime import date
 
 @app.route('/api/advertisements/active', methods=['GET'])
 def get_active_advertisements():
@@ -1703,12 +1792,6 @@ def admin_dashboard(path='index.html'):
 @app.route('/campus/<path:path>')
 def campus_dashboard(path='index.html'):
     return send_from_directory('static/campus', path)
-
-# ============================================================
-# PASTE THIS BLOCK INTO app.py
-# Suggested spot: right after the RojgarSetu routes end
-# (after delete_job_posting, before "from datetime import date")
-# ============================================================
 
 
 # ---- Review routes ----
@@ -1824,86 +1907,20 @@ def debug_db_test():
     except Exception as e:
         return {"db_connect": "failed", "error": str(e)}, 500
 
-@app.route('/api/campus/profile', methods=['PUT'])
-@requires_college
-def update_campus_profile():
-    """Campus can edit ONLY mobile and city."""
-    data = request.get_json(silent=True) or {}
-    mobile = (data.get('mobile') or '').strip()
-    city = (data.get('city') or '').strip()
-
-    if not mobile or not city:
-        return {"success": False, "error": "Mobile and city are required."}, 400
-    if not mobile.isdigit() or not (10 <= len(mobile) <= 15):
-        return {"success": False, "error": "Enter a valid mobile number."}, 400
-
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE collegedb SET MobileNo = ?, City = ? WHERE ID = ?",
-            (mobile, city, session['college_id'])
-        )
-        conn.commit()
-        cursor.close()
-        conn.close()
-        return {"success": True}, 200
-    except Exception as e:
-        print("DB ERROR:", e)
-        return {"success": False, "error": str(e)}, 500
-
-
-@app.route('/api/campus/password', methods=['PUT'])
-@requires_college
-def change_campus_password():
-    data = request.get_json(silent=True) or {}
-    current_password = data.get('current_password') or ''
-    new_password = data.get('new_password') or ''
-
-    if len(new_password) < 6:
-        return {"success": False, "error": "New password must be at least 6 characters."}, 400
-
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT Password FROM collegedb WHERE ID = ?", (session['college_id'],))
-        row = cursor.fetchone()
-
-        if not row or not check_password_hash(row.Password, current_password):
-            cursor.close()
-            conn.close()
-            return {"success": False, "error": "Current password is incorrect."}, 400
-
-        cursor.execute(
-            "UPDATE collegedb SET Password = ? WHERE ID = ?",
-            (generate_password_hash(new_password), session['college_id'])
-        )
-        conn.commit()
-        cursor.close()
-        conn.close()
-        return {"success": True}, 200
-    except Exception as e:
-        print("DB ERROR:", e)
-        return {"success": False, "error": str(e)}, 500
-    
-@app.route('/student/')
-@app.route('/student/<path:path>')
-def student(path=''):
-       return render_template('student.html')
-
 
 # ============================================================
-# STUDENT REGISTRATION - paste into app.py
+# STUDENT FLOW (all student code lives in this one section)
 #
-# 1) Paste STEP 1 right after ensure_college_status_columns()
-# 2) Paste STEP 2 anywhere above `if __name__ == '__main__':`
-# 3) Do STEP 3 (small edits) in CORS + login
+#   1. Student registers   -> /student-registration  (Flask form, :5000)
+#   2. Row goes to studentdb with Approved = 0
+#   3. Admin approves      -> admin panel "Register Student" page (:5173)
+#   4. Student logs in     -> /api/login  -> redirect to student panel (:5175)
+#   5. Student panel calls /api/student/session:
+#        has_college = False (college = 'Other') -> only Profile menu
+#        has_college = True                      -> all menus
+#   6. On Profile page the student picks a registered college
+#        -> PUT /api/student/profile -> menus unlock
 # ============================================================
-
-
-# ------------------------- STEP 1 ---------------------------
-STUDENT_DASHBOARD_URL = os.environ.get("STUDENT_DASHBOARD_URL", "http://localhost:5175/")
-
 
 def ensure_student_table():
     """Creates studentdb on startup if it doesn't exist."""
@@ -1957,6 +1974,14 @@ def ensure_student_profile_columns():
             ALTER TABLE studentdb ADD CollegeCode NVARCHAR(50) NULL
         """)
         conn.commit()
+        cursor.execute("""
+            IF NOT EXISTS (
+                SELECT 1 FROM sys.columns
+                WHERE Name = N'OtherCollege' AND Object_ID = Object_ID(N'studentdb')
+            )
+            ALTER TABLE studentdb ADD OtherCollege NVARCHAR(255) NULL
+        """)
+        conn.commit()
         cursor.close()
         conn.close()
     except Exception as e:
@@ -1968,13 +1993,51 @@ ensure_student_profile_columns()
 
 def send_student_approved_email(to_email, name):
     login_url = f"{APP_BASE_URL}/login.html"
-    body = (
-        f"Hi {name},\n\n"
-        "Your CampusConnect AI student registration has been approved. "
-        f"You can now log in here: {login_url}\n\n"
-        "Team CampusConnect AI"
-    )
-    msg = MIMEText(body, 'plain')
+    html_body = f"""
+    <html>
+    <body style="margin:0; padding:0; background-color:#f4f4f7; font-family: 'Segoe UI', Arial, sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7; padding: 40px 0;">
+            <tr>
+                <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:10px; overflow:hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
+                        <tr>
+                            <td style="background-color:#2d2d3a; padding: 35px 40px; text-align:center;">
+                                <h1 style="margin:0; color:#ffffff; font-size:24px;">
+                                    <span style="color:#ff6b35;">CAMPUS</span>CONNECT AI
+                                </h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 40px;">
+                                <h2 style="color:#2d2d3a; margin-top:0;">Your student account is approved</h2>
+                                <p style="color:#555555; font-size:15px; line-height:1.6;">
+                                    Hi {name}, your <strong>student registration</strong> on CampusConnect AI has been
+                                    approved. You can now log in with the email and password you registered with.
+                                </p>
+                                <div style="text-align:center; margin: 30px 0;">
+                                    <a href="{login_url}" style="background-color:#fd7e14; color:#ffffff; text-decoration:none; padding: 14px 32px; border-radius:8px; font-weight:600; display:inline-block;">
+                                        Log In to Your Student Panel
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="background-color:#f4f4f7; padding: 25px 40px; text-align:center; border-top:1px solid #eaeaea;">
+                                <p style="color:#999999; font-size:13px; margin:0;">
+                                    Best regards,<br>
+                                    <strong style="color:#2d2d3a;">Team CampusConnect AI</strong><br>
+                                    NRSolution4u
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    """
+    msg = MIMEText(html_body, 'html')
     msg['Subject'] = 'Your CampusConnect AI student account is approved'
     msg['From'] = EMAIL_SENDER
     msg['To'] = to_email
@@ -2016,7 +2079,6 @@ def student_login(email, password, next_url):
     return {"success": True, "role": "student", "redirect": next_url or STUDENT_DASHBOARD_URL}, 200
 
 
-# ------------------------- STEP 2 ---------------------------
 @app.route('/student-registration')
 def student_registration():
     return render_template('student_registration.html')
@@ -2047,11 +2109,16 @@ def register_student_account():
     email = (data.get('email') or '').strip()
     mobile = (data.get('mobile') or '').strip()
     college_name = (data.get('college_name') or '').strip()
+    other_college = (data.get('other_college') or '').strip()
     password = data.get('password') or ''
     status = data.get('status') or 'Open'
 
     if not name or not email or not mobile or not college_name or not password:
         return {"success": False, "error": "Missing required fields"}, 400
+    if college_name == 'Other' and not other_college:
+        return {"success": False, "error": "Please enter your college name."}, 400
+    if college_name != 'Other':
+        other_college = ''
     if not mobile.isdigit() or not (10 <= len(mobile) <= 15):
         return {"success": False, "error": "Enter a valid mobile number."}, 400
     if len(password) < 6:
@@ -2069,6 +2136,14 @@ def register_student_account():
             conn.close()
             return {"success": False, "error": "This email is already registered."}, 409
 
+        # An email that belongs to a campus account can't also be a student
+        # (login checks collegedb first, so it would open the campus panel).
+        cursor.execute("SELECT 1 FROM collegedb WHERE Email = ?", (email,))
+        if cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return {"success": False, "error": "This email is already used by a campus account. Please use a different email."}, 409
+
         # College must be a registered campus, or the literal "Other"
         if college_name != 'Other':
             cursor.execute("SELECT 1 FROM collegedb WHERE CollegeName = ?", (college_name,))
@@ -2079,9 +2154,9 @@ def register_student_account():
 
         cursor.execute(
             """INSERT INTO studentdb
-               (Name, Email, MobileNo, CollegeName, Password, RegisteredOn, Status)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (name, email, mobile, college_name,
+               (Name, Email, MobileNo, CollegeName, OtherCollege, Password, RegisteredOn, Status)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (name, email, mobile, college_name, other_college or None,
              generate_password_hash(password), date.today(), status)
         )
         conn.commit()
@@ -2100,7 +2175,7 @@ def get_students():
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT ID, Name, Email, MobileNo, CollegeName, RegisteredOn, Status, Approved, Blocked "
+            "SELECT ID, Name, Email, MobileNo, CollegeName, RegisteredOn, Status, Approved, Blocked, OtherCollege "
             "FROM studentdb ORDER BY ID DESC"
         )
         rows = cursor.fetchall()
@@ -2110,7 +2185,8 @@ def get_students():
         data = [
             {
                 "id": r[0], "name": r[1], "email": r[2], "mobile": r[3],
-                "college_name": r[4], "registered_on": str(r[5]) if r[5] else "",
+                "college_name": (f"Other - {r[9]}" if r[4] == 'Other' and r[9] else r[4]),
+                "registered_on": str(r[5]) if r[5] else "",
                 "status": r[6], "approved": bool(r[7]), "blocked": bool(r[8])
             }
             for r in rows
@@ -2180,19 +2256,14 @@ def unblock_student(student_id):
 def delete_student(student_id):
     return _set_student_flag(student_id, "DELETE FROM studentdb WHERE ID = ?")
 
-def requires_student(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if session.get('role') != 'student' or not session.get('student_id'):
-            return {"success": False, "error": "Not logged in."}, 401
-        return f(*args, **kwargs)
-    return decorated
 
-
+# ---- Student panel APIs (the logged-in student's own data) ----
 @app.route('/api/student/session', methods=['GET'])
 def student_session():
-    """The student panel calls this on load to decide what to show:
-    pending-approval screen, complete-profile screen, or the real panel."""
+    """Student panel calls this on load.
+    has_college = False  -> only the Profile menu (college is 'Other')
+    has_college = True   -> all menus
+    """
     if session.get('role') != 'student' or not session.get('student_id'):
         return {"success": True, "logged_in": False}, 200
 
@@ -2200,7 +2271,7 @@ def student_session():
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT Approved, Blocked, City FROM studentdb WHERE ID = ?",
+            "SELECT Name, Email, CollegeName, Approved, Blocked FROM studentdb WHERE ID = ?",
             (session['student_id'],)
         )
         row = cursor.fetchone()
@@ -2214,33 +2285,97 @@ def student_session():
         session.clear()
         return {"success": True, "logged_in": False}, 200
 
+    has_college = bool(row.CollegeName) and row.CollegeName != 'Other'
+
     return {
         "success": True,
         "logged_in": True,
         "approved": bool(row.Approved),
         "blocked": bool(row.Blocked),
-        "profile_completed": bool(row.City),   # no city yet = profile incomplete
-        "email": session.get('user_email')
+        "name": row.Name,
+        "email": row.Email,
+        "college_name": row.CollegeName,
+        "has_college": has_college,
+        "profile_completed": has_college
     }, 200
+
+
+@app.route('/api/student/profile', methods=['GET'])
+@requires_student
+def get_student_profile():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT ID, Name, Email, MobileNo, CollegeName, RegisteredOn, City, CollegeCode, OtherCollege "
+            "FROM studentdb WHERE ID = ?",
+            (session['student_id'],)
+        )
+        r = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if not r:
+            session.clear()
+            return {"success": False, "error": "Account no longer exists."}, 404
+
+        return {
+            "success": True,
+            "data": {
+                "id": r.ID,
+                "name": r.Name,
+                "email": r.Email,
+                "mobile": r.MobileNo,
+                "college_name": r.CollegeName,
+                "registered_on": str(r.RegisteredOn) if r.RegisteredOn else "",
+                "city": r.City,
+                "college_code": r.CollegeCode,
+                "other_college": r.OtherCollege,
+                "has_college": bool(r.CollegeName) and r.CollegeName != 'Other'
+            }
+        }, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
 
 
 @app.route('/api/student/profile', methods=['PUT'])
 @requires_student
 def update_student_profile():
-    """Called from the 'complete your profile' screen."""
+    """Profile page: student adds their college (only while it is 'Other').
+    The college must be one that is registered as a Campus."""
     data = request.get_json(silent=True) or {}
+    college_name = (data.get('college_name') or '').strip()
     city = (data.get('city') or '').strip()
     college_code = (data.get('college_code') or '').strip()
 
-    if not city:
-        return {"success": False, "error": "City is required."}, 400
+    if not college_name or college_name == 'Other':
+        return {"success": False, "error": "Please choose your college."}, 400
 
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+
+        cursor.execute("SELECT CollegeName FROM studentdb WHERE ID = ?", (session['student_id'],))
+        current = cursor.fetchone()
+        if not current:
+            cursor.close()
+            conn.close()
+            return {"success": False, "error": "Student not found."}, 404
+        if current.CollegeName != 'Other':
+            cursor.close()
+            conn.close()
+            return {"success": False, "error": "College is already set."}, 403
+
+        cursor.execute("SELECT 1 FROM collegedb WHERE CollegeName = ?", (college_name,))
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return {"success": False, "error": "Please choose a college from the list."}, 400
+
         cursor.execute(
-            "UPDATE studentdb SET City = ?, CollegeCode = ? WHERE ID = ?",
-            (city, college_code, session['student_id'])
+            "UPDATE studentdb SET CollegeName = ?, City = ?, CollegeCode = ?, OtherCollege = NULL WHERE ID = ?",
+            (college_name, city or None, college_code or None, session['student_id'])
         )
         conn.commit()
         cursor.close()
@@ -2249,34 +2384,12 @@ def update_student_profile():
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
-    
-# ------------------------- STEP 3 ---------------------------
-# (a) CORS: add the student panel origins to the list at the top of app.py:
-#       "http://127.0.0.1:5175", "http://localhost:5175",
-#
-# (b) In login_student(), find this block:
-#
-#         if not college:
-#             return {
-#                 "success": False,
-#                 "error": "Invalid email or password."
-#             }, 401
-#
-#     and replace it with:
-#
-#         if not college:
-#             student_resp = student_login(email, password, next_url)
-#             if student_resp:
-#                 return student_resp
-#             return {
-#                 "success": False,
-#                 "error": "Invalid email or password."
-#             }, 401
-#
-# (c) In login.html, change:
-#         if (result.role === 'admin' || result.role === 'college') {
-#     to:
-#         if (result.role === 'admin' || result.role === 'college' || result.role === 'student') {
+
+
+@app.route('/student/')
+@app.route('/student/<path:path>')
+def student(path=''):
+    return render_template('student.html')
 
 
 if __name__ == '__main__':

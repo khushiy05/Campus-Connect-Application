@@ -1,5 +1,8 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import menuConfig from '../config/menuConfig'
+import { useStudentSession } from '../composables/useStudentSession'
+
+const LOGIN_URL = 'http://127.0.0.1:5000/login.html'
 
 function flattenMenuRoutes(groups: any[]): RouteRecordRaw[] {
   const routes: RouteRecordRaw[] = []
@@ -155,9 +158,29 @@ const router = createRouter({
   ],
 })
 
-export default router
+// Pages that never need a student session.
+const PUBLIC_PATHS = ['/signin', '/signup', '/error-404']
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   document.title = 'STUDENT'
+
+  if (PUBLIC_PATHS.includes(to.path)) return next()
+
+  const { loadStudentSession, loggedIn, hasCollege } = useStudentSession()
+  await loadStudentSession()
+
+  // Not logged in (or blocked / not approved) -> back to the Flask login page.
+  if (!loggedIn.value) {
+    window.location.href = LOGIN_URL
+    return next(false)
+  }
+
+  // Logged in but no college yet -> only the Profile page is allowed.
+  if (!hasCollege.value && to.path !== '/profile') {
+    return next('/profile')
+  }
+
   next()
 })
+
+export default router

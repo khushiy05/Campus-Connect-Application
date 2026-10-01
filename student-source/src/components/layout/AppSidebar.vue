@@ -211,7 +211,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { computed } from "vue";
 import { useRoute } from "vue-router";
 
 import {
@@ -228,14 +228,34 @@ import {
   ListIcon,
 } from "../../icons";
 import { useSidebar } from "@/composables/useSidebar";
+import { useStudentSession } from "@/composables/useStudentSession";
+
+import menuConfig from "@/config/menuConfig";
 
 const route = useRoute();
 
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
+const { hasCollege } = useStudentSession();
 
-import menuConfig from "@/config/menuConfig";
+// Until the student has added a college, only these menu items are shown.
+// Add more names/paths here if you want other items visible too.
+const ALWAYS_VISIBLE_NAMES = ["profile"];
+const ALWAYS_VISIBLE_PATHS = ["/profile"];
 
-const menuGroups = menuConfig;
+const isAlwaysVisible = (item) =>
+  ALWAYS_VISIBLE_NAMES.includes(String(item.name || "").toLowerCase()) ||
+  ALWAYS_VISIBLE_PATHS.includes(item.path);
+
+const menuGroups = computed(() => {
+  if (hasCollege.value) return menuConfig;
+
+  return menuConfig
+    .map((group) => ({
+      ...group,
+      items: group.items.filter(isAlwaysVisible),
+    }))
+    .filter((group) => group.items.length > 0);
+});
 
 const isActive = (path) => route.path === path;
 
@@ -245,7 +265,7 @@ const toggleSubmenu = (groupIndex, itemIndex) => {
 };
 
 const isAnySubmenuRouteActive = computed(() => {
-  return menuGroups.some((group) =>
+  return menuGroups.value.some((group) =>
     group.items.some(
       (item) =>
         item.subItems && item.subItems.some((subItem) => isActive(subItem.path))
@@ -258,7 +278,7 @@ const isSubmenuOpen = (groupIndex, itemIndex) => {
   return (
     openSubmenu.value === key ||
     (isAnySubmenuRouteActive.value &&
-      menuGroups[groupIndex].items[itemIndex].subItems?.some((subItem) =>
+      menuGroups.value[groupIndex].items[itemIndex].subItems?.some((subItem) =>
         isActive(subItem.path)
       ))
   );
