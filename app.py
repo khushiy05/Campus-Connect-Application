@@ -2278,5 +2278,6 @@ def update_student_profile():
 #     to:
 #         if (result.role === 'admin' || result.role === 'college' || result.role === 'student') {
 
+
 if __name__ == '__main__':
     app.run(debug=True)

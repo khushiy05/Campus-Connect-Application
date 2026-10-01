@@ -245,21 +245,21 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
 
             <!-- About Us Box -->
             <div class="col-lg-6 mb-4 mb-lg-0">
-                <div class="border rounded p-5 h-100">
+                <div class="border rounded p-4 h-100">
                     <div class="row align-items-center">
                         <div class="col-md-7">
                             <div class="text-left mb-3">
-                                <h5 class="text-primary text-uppercase mb-3" style="letter-spacing: 5px;">About Us</h5>
-                                <h1>Welcome To Campus Connect</h1>
+                                <h5 class="text-primary text-uppercase mb-2" style="letter-spacing: 5px; font-size: 13px;">About Us</h5>
+                                <h2>Welcome To Campus Connect</h2>
                             </div>
-                            <p class="mb-2">CampusConnect AI is your all-in-one companion for navigating college life smarter and faster:</p>
+                            <p class="mb-2" style="font-size: 14px;">CampusConnect AI is your all-in-one companion for navigating college life smarter and faster:</p>
                             <ul class="list-unstyled mb-3">
-                            <li class="py-1"><i class="fa fa-check text-primary mr-2"></i>Find the best mess & food options near you</li>
-                            <li class="py-1"><i class="fa fa-check text-primary mr-2"></i>Locate hostels using Google Maps</li>
-                            <li class="py-1"><i class="fa fa-check text-primary mr-2"></i>Find libraries & study spots nearby</li>
-                            <li class="py-1"><i class="fa fa-check text-primary mr-2"></i>Everything on a single platform</li>
+                            <li class="py-1" style="font-size: 14px;"><i class="fa fa-check text-primary mr-2"></i>Find the best mess & food options near you</li>
+                            <li class="py-1" style="font-size: 14px;"><i class="fa fa-check text-primary mr-2"></i>Locate hostels using Google Maps</li>
+                            <li class="py-1" style="font-size: 14px;"><i class="fa fa-check text-primary mr-2"></i>Find libraries & study spots nearby</li>
+                            <li class="py-1" style="font-size: 14px;"><i class="fa fa-check text-primary mr-2"></i>Everything on a single platform</li>
 </ul>
-                            <a href="https://wa.me/919876543210?text=Hi%2C%20I%27m%20interested%20in%20CampusConnect%20AI!" target="_blank" class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-2">WhatsApp Me</a>
+                            <a href="https://wa.me/919876543210?text=Hi%2C%20I%27m%20interested%20in%20CampusConnect%20AI!" target="_blank" class="btn btn-primary py-2 px-3 font-weight-semi-bold mt-2" style="font-size: 14px;">WhatsApp Me</a>
                         </div>
                     </div>
                 </div>
@@ -267,12 +267,10 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
 
             <!-- Events 2026 Box -->
 <div class="col-lg-6 mb-4 mb-lg-0">
-    <div class="border rounded p-5 h-100 d-flex flex-column">
-        <h4 class="mb-2"><i class="fa fa-calendar-alt text-primary mr-2"></i>Events 2026</h4>
-        <p class="mb-3" style="font-size: 14px;">Tap a college to see their upcoming events.</p>
-        <!-- Scrolling announcements ticker — content is loaded live from
-             /api/news (populated via Admin > Add News), not hardcoded. -->
-        <div class="ticker-wrap mt-4">
+    <div class="border rounded p-4 h-100 d-flex flex-column">
+        <h4 class="mb-2" style="font-size: 18px;"><i class="fa fa-calendar-alt text-primary mr-2"></i>Events 2026</h4>
+        <p class="mb-3" style="font-size: 13px;">Tap a college to see their upcoming events.</p>
+        <div class="ticker-wrap mt-3">
             <div class="ticker-content" id="newsTickerContent">
                 <p class="mb-3 text-muted">Loading updates...</p>
             </div>
@@ -304,7 +302,8 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
     /* Ticker styles */
     .ticker-wrap {
         flex: 1;
-        min-height: 150px;
+        height: 450px;
+        max-height: 450px;
         overflow: hidden;
         position: relative;
         border-top: 1px solid #eee;
@@ -350,14 +349,13 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
                             : '';
 
                         let titleLine;
-                        if (item.FilePath) {
-                            // Title links to the uploaded file (PDF/image/doc)
-                            const fileUrl = `/static/uploads/news/${encodeURIComponent(item.FilePath)}`;
-                            titleLine = `<a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="text-dark" style="text-decoration: underline;">${titleHtml}</a>`;
-                        } else {
-                            // No file attached — plain text, not clickable
-                            titleLine = titleHtml;
-                        }
+if (item.FilePath) {
+    // Title links to Campus Registration instead of opening the file directly
+    titleLine = `<a href="/registration.html" class="text-dark" style="text-decoration: underline;">${titleHtml}</a>`;
+} else {
+    // No file attached — plain text, not clickable
+    titleLine = titleHtml;
+}
 
                         return `<p class="mb-3">📢 ${titleLine}${descriptionHtml}</p>`;
                     })
@@ -376,7 +374,7 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
 <!-- About End -->
 
 <!-- Courses Start -->
-    <div class="container-fluid py-5">
+    <div class="container-fluid  py-5">
         <div class="container py-5">
             <div class="text-center mb-5">
                 <h5 class="text-primary text-uppercase mb-3" style="letter-spacing: 5px;">Services</h5>
@@ -392,7 +390,7 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
                     <small class="m-0"><i class="fa fa-map-marker-alt text-primary mr-2"></i>Google Maps</small>
                     <small class="m-0"><i class="far fa-clock text-primary mr-2"></i>Live Updates</small>
                 </div>
-                <a class="h5" href="">Mess & Tiffin Finder</a>
+                <a class="h5" href="/registration.html">Mess & Tiffin Finder</a>
                 <div class="border-top mt-4 pt-4">
                     <p class="m-0">Find the best mess and tiffin options near your hostel instantly.</p>
                 </div>
@@ -409,7 +407,7 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
                     <small class="m-0"><i class="fa fa-map-marker-alt text-primary mr-2"></i>Google Maps</small>
                     <small class="m-0"><i class="far fa-clock text-primary mr-2"></i>Real-Time</small>
                 </div>
-                <a class="h5" href="">Hostel Near Me</a>
+                <a class="h5" href="/registration.html">Hostel Near Me</a>
                 <div class="border-top mt-4 pt-4">
                     <p class="m-0">Locate verified hostels close to your campus in seconds.</p>
                 </div>
@@ -426,7 +424,7 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
                     <small class="m-0"><i class="fa fa-map-marker-alt text-primary mr-2"></i>Google Maps</small>
                     <small class="m-0"><i class="far fa-clock text-primary mr-2"></i>Open Hours</small>
                 </div>
-                <a class="h5" href="">Library Locator</a>
+                <a class="h5" href="/registration.html">Library Locator</a>
                 <div class="border-top mt-4 pt-4">
                     <p class="m-0">Find the nearest library along with its timings and availability.</p>
                 </div>
@@ -443,7 +441,7 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
                     <small class="m-0"><i class="fa fa-car text-primary mr-2"></i>Available Vehicles</small>
                     <small class="m-0"><i class="far fa-clock text-primary mr-2"></i>24/7 Service</small>
                 </div>
-                <a class="h5" href="">Vehicle Rental</a>
+                <a class="h5" href="/registration.html">Vehicle Rental</a>
                 <div class="border-top mt-4 pt-4">
                     <p class="m-0">Rent vehicles for your transportation needs around campus.</p>
                 </div>
@@ -460,7 +458,7 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
                     <small class="m-0"><i class="fa fa-users text-primary mr-2"></i>Verified Students</small>
                     <small class="m-0"><i class="far fa-clock text-primary mr-2"></i>Secure</small>
                 </div>
-                <a class="h5" href="">Verified Chat</a>
+                <a class="h5" href="/registration.html">Verified Chat</a>
                 <div class="border-top mt-4 pt-4">
                     <p class="m-0">Chat safely with approved students — only genuine connections.</p>
                 </div>
@@ -477,7 +475,7 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
                     <small class="m-0"><i class="fa fa-user-graduate text-primary mr-2"></i>Skilled Guidance</small>
                     <small class="m-0"><i class="far fa-clock text-primary mr-2"></i>1-on-1</small>
                 </div>
-                <a class="h5" href="">Mentors</a>
+                <a class="h5" href="/registration.html">Mentors</a>
                 <div class="border-top mt-4 pt-4">
                     <p class="m-0">Connect with skilled mentors to guide your learning journey.</p>
                 </div>
