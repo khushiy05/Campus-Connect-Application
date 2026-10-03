@@ -2115,8 +2115,6 @@ def register_student_account():
 
     if not name or not email or not mobile or not college_name or not password:
         return {"success": False, "error": "Missing required fields"}, 400
-    if college_name == 'Other' and not other_college:
-        return {"success": False, "error": "Please enter your college name."}, 400
     if college_name != 'Other':
         other_college = ''
     if not mobile.isdigit() or not (10 <= len(mobile) <= 15):
@@ -2347,10 +2345,11 @@ def update_student_profile():
     data = request.get_json(silent=True) or {}
     college_name = (data.get('college_name') or '').strip()
     city = (data.get('city') or '').strip()
-    college_code = (data.get('college_code') or '').strip()
 
-    if not college_name or college_name == 'Other':
-        return {"success": False, "error": "Please choose your college."}, 400
+    if not college_name or college_name.lower() == 'other':
+        return {"success": False, "error": "Please choose your college or type its name."}, 400
+    if len(college_name) > 255:
+        return {"success": False, "error": "College name is too long."}, 400
 
     try:
         conn = get_db_connection()
@@ -2367,15 +2366,11 @@ def update_student_profile():
             conn.close()
             return {"success": False, "error": "College is already set."}, 403
 
-        cursor.execute("SELECT 1 FROM collegedb WHERE CollegeName = ?", (college_name,))
-        if not cursor.fetchone():
-            cursor.close()
-            conn.close()
-            return {"success": False, "error": "Please choose a college from the list."}, 400
-
+        # The college can be one from the list OR a name the student typed
+        # (college not registered as a campus yet), so no collegedb check here.
         cursor.execute(
-            "UPDATE studentdb SET CollegeName = ?, City = ?, CollegeCode = ?, OtherCollege = NULL WHERE ID = ?",
-            (college_name, city or None, college_code or None, session['student_id'])
+            "UPDATE studentdb SET CollegeName = ?, City = ?, OtherCollege = NULL WHERE ID = ?",
+            (college_name, city or None, session['student_id'])
         )
         conn.commit()
         cursor.close()

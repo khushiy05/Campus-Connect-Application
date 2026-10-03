@@ -35,6 +35,7 @@
               </label>
               <select
                 v-model="form.college_name"
+                @change="form.other_college = ''"
                 class="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
               >
                 <option value="" disabled>
@@ -57,10 +58,12 @@
 
             <div>
               <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                College Code (optional)
+                Not in the list? Type your college
               </label>
               <input
-                v-model="form.college_code"
+                v-model="form.other_college"
+                @input="form.college_name = ''"
+                placeholder="Enter your college name"
                 type="text"
                 class="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
               />
@@ -108,7 +111,7 @@ const loading = ref(true)
 const error = ref(null)
 
 const colleges = ref([])
-const form = reactive({ college_name: '', city: '', college_code: '' })
+const form = reactive({ college_name: '', other_college: '', city: '' })
 const saving = ref(false)
 const saveError = ref('')
 
@@ -120,7 +123,6 @@ const fields = computed(() => {
     { label: 'Mobile Number', value: p.mobile },
     { label: 'College', value: p.has_college ? p.college_name : (p.other_college ? `${p.other_college} (not registered yet)` : '') },
     { label: 'City', value: p.city },
-    { label: 'College Code', value: p.college_code },
     { label: 'Registered On', value: p.registered_on },
   ]
 })
@@ -154,8 +156,11 @@ async function loadColleges() {
 async function saveCollege() {
   saveError.value = ''
 
-  if (!form.college_name) {
-    saveError.value = 'Please choose your college.'
+  // Typed name (college not in the list) wins over the dropdown.
+  const chosen = form.other_college.trim() || form.college_name
+
+  if (!chosen) {
+    saveError.value = 'Please choose your college or type its name.'
     return
   }
 
@@ -165,7 +170,7 @@ async function saveCollege() {
       method: 'PUT',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ college_name: chosen, city: form.city }),
     })
     const data = await res.json()
 
