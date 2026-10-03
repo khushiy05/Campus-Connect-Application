@@ -1,5 +1,5 @@
 <template>
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
 
     <!-- ENQUIRY BOX -->
     <div
@@ -67,6 +67,41 @@
     </div>
 
 
+    <!-- STUDENT REGISTRATION BOX -->
+    <div
+      class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6"
+    >
+      <div
+        class="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800"
+      >
+        <!-- Graduation cap icon -->
+        <svg
+          class="text-gray-800 dark:text-white/90"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M22 10L12 5L2 10L12 15L22 10Z" />
+          <path d="M6 12.2V16.5C8.5 18.5 15.5 18.5 18 16.5V12.2" />
+          <path d="M22 10V15" />
+        </svg>
+      </div>
+
+      <div class="mt-5">
+        <span class="text-sm text-gray-500 dark:text-gray-400">Student Registration</span>
+        <h4 class="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
+          {{ studentCount }}
+        </h4>
+      </div>
+    </div>
+
+
     <!-- NEWS BOX -->
     <div
       class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6"
@@ -107,53 +142,36 @@
 <script setup>
 import { ref, onMounted } from "vue";
 
+const API_BASE = "http://127.0.0.1:5000";
+
 const enquiryCount = ref(0);
 const registrationCount = ref(0);
+const studentCount = ref(0);
 const newsCount = ref(0);
 
-onMounted(async () => {
+// Fetches a list endpoint and returns its length (0 on any failure)
+const getCount = async (path) => {
   try {
-
-    // GET ENQUIRIES
-    const enquiryRes = await fetch(
-      "http://127.0.0.1:5000/api/enquiries"
-    );
-
-    const enquiryData = await enquiryRes.json();
-
-    if (enquiryData.success) {
-      enquiryCount.value = enquiryData.data.length;
-    }
-
-
-    // GET CAMPUS REGISTRATIONS
-    const registrationRes = await fetch(
-      "http://127.0.0.1:5000/api/registrations"
-    );
-
-    const registrationData = await registrationRes.json();
-
-    if (registrationData.success) {
-      registrationCount.value = registrationData.data.length;
-    }
-
-
-    // GET NEWS
-    const newsRes = await fetch(
-      "http://127.0.0.1:5000/api/news"
-    );
-
-    const newsData = await newsRes.json();
-
-    if (newsData.success) {
-      newsCount.value = newsData.data.length;
-    }
-
+    const res = await fetch(`${API_BASE}${path}`);
+    const json = await res.json();
+    return json.success && Array.isArray(json.data) ? json.data.length : 0;
   } catch (error) {
-    console.error(
-      "Failed to load dashboard counts:",
-      error
-    );
+    console.error(`Failed to load ${path}:`, error);
+    return 0;
   }
+};
+
+onMounted(async () => {
+  const [enquiries, registrations, students, news] = await Promise.all([
+    getCount("/api/enquiries"),
+    getCount("/api/registrations"),
+    getCount("/api/students"), // <-- change to your student list endpoint
+    getCount("/api/news"),
+  ]);
+
+  enquiryCount.value = enquiries;
+  registrationCount.value = registrations;
+  studentCount.value = students;
+  newsCount.value = news;
 });
 </script>
