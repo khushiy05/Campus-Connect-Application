@@ -284,73 +284,86 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
                 
             
 
-            <!-- Events 2026 Box -->
+             <!-- Events 2026 Box -->
 <div class="col-lg-6 mb-4 mb-lg-0">
     <div class="border rounded p-4 h-100 d-flex flex-column">
         <h4 class="mb-2" style="font-size: 18px;"><i class="fa fa-calendar-alt text-primary mr-2"></i>Events 2026</h4>
         <p class="mb-3" style="font-size: 13px;">Tap a college to see their upcoming events.</p>
-        <div class="ticker-wrap mt-3">
+        <div class="ticker-wrap mt-3" id="tickerWrap">
             <div class="ticker-content" id="newsTickerContent">
                 <p class="mb-3 text-muted">Loading updates...</p>
             </div>
         </div>
-</div>
+    </div>
 </div>
 </div>
 <style>
-    .mini-college-link {
-        border-bottom: 1px solid #eee;
-        color: #333;
-        font-size: 15px;
-        font-weight: 600;
-        transition: color 0.2s ease, padding-left 0.2s ease;
-    }
-    .mini-college-link:last-child {
-        border-bottom: none;
-    }
-    .mini-college-link:hover {
-        color: #007bff;
-        padding-left: 4px;
-        text-decoration: none;
-    }
-    .mini-college-link i {
-        font-size: 12px;
-        color: #007bff;
-    }
-
-    /* Ticker styles */
+    /* Ticker fills the remaining height of the card (matches the About Us box) */
     .ticker-wrap {
-        flex: 1;
-        height: 450px;
-        max-height: 450px;
+        flex: 1 1 0;            /* basis 0: height comes from the card, not from the news list */
+        min-height: 320px;
         overflow: hidden;
         position: relative;
         border-top: 1px solid #eee;
         padding-top: 10px;
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 6%, #000 94%, transparent 100%);
+                mask-image: linear-gradient(to bottom, transparent 0, #000 6%, #000 94%, transparent 100%);
     }
     .ticker-content {
-        animation: scroll-up 25s linear infinite;
+        will-change: transform;
     }
-    .ticker-content p {
+    .ticker-content.is-scrolling {
+        animation: ticker-scroll var(--ticker-duration, 30s) linear infinite;
+    }
+    .ticker-wrap:hover .ticker-content.is-scrolling {
+        animation-play-state: paused;
+    }
+    .ticker-item {
+        padding: 10px 0;
+        border-bottom: 1px solid #f1f1f1;
         font-size: 14px;
         color: #555;
     }
-    .ticker-wrap:hover .ticker-content {
-        animation-play-state: paused;
+    .ticker-item .ticker-desc {
+        display: block;
+        font-size: 12px;
+        color: #888;
+        margin-top: 2px;
     }
-    @keyframes scroll-up {
-        0% { transform: translateY(100%); }
-        100% { transform: translateY(-100%); }
+    /* Content is doubled, so -50% = exactly one full set => seamless loop */
+    @keyframes ticker-scroll {
+        0%   { transform: translateY(0); }
+        100% { transform: translateY(-50%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .ticker-content.is-scrolling { animation: none; }
+        .ticker-wrap { overflow-y: auto; }
     }
 </style>
 <script>
-    // Loads the "Events 2026" ticker content live from /api/news, which is
-    // populated via Admin > Add News. Replaces the previously hardcoded
-    // announcement list.
     function escapeHtml(str) {
         const div = document.createElement('div');
         div.textContent = str || '';
         return div.innerHTML;
+    }
+
+    const TICKER_SPEED_PX_PER_SEC = 35;   // higher = faster
+
+    function buildTicker(container, itemsHtml) {
+        const wrap = document.getElementById('tickerWrap');
+
+        container.classList.remove('is-scrolling');
+        container.style.removeProperty('--ticker-duration');
+        container.innerHTML = itemsHtml;
+
+        // Only scroll if the news doesn't already fit in the box
+        const originalHeight = container.scrollHeight;
+        if (originalHeight <= wrap.clientHeight) return;
+
+        // Duplicate once for a seamless loop
+        container.insertAdjacentHTML('beforeend', itemsHtml);
+        container.style.setProperty('--ticker-duration', (originalHeight / TICKER_SPEED_PX_PER_SEC) + 's');
+        container.classList.add('is-scrolling');
     }
 
     async function loadNewsTicker() {
@@ -360,25 +373,20 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
             const result = await res.json();
 
             if (result.success && result.data.length) {
-                container.innerHTML = result.data
-                    .map(item => {
-                        const titleHtml = escapeHtml(item.Title);
-                        const descriptionHtml = item.Description
-                            ? `<br><span style="font-size: 12px; color: #888;">${escapeHtml(item.Description)}</span>`
-                            : '';
+                const itemsHtml = result.data.map(item => {
+                    const titleHtml = escapeHtml(item.Title);
+                    const descHtml = item.Description
+                        ? `<span class="ticker-desc">${escapeHtml(item.Description)}</span>`
+                        : '';
 
-                        let titleLine;
-if (item.FilePath) {
-    // Title links to Campus Registration instead of opening the file directly
-    titleLine = `<a href="/registration.html" class="text-dark" style="text-decoration: underline;">${titleHtml}</a>`;
-} else {
-    // No file attached — plain text, not clickable
-    titleLine = titleHtml;
-}
+                    const titleLine = item.FilePath
+                        ? `<a href="/registration.html" class="text-dark" style="text-decoration: underline;">${titleHtml}</a>`
+                        : titleHtml;
 
-                        return `<p class="mb-3">📢 ${titleLine}${descriptionHtml}</p>`;
-                    })
-                    .join('');
+                    return `<div class="ticker-item">📢 ${titleLine}${descHtml}</div>`;
+                }).join('');
+
+                buildTicker(container, itemsHtml);
             } else {
                 container.innerHTML = '<p class="mb-3 text-muted">No updates yet.</p>';
             }
@@ -388,7 +396,8 @@ if (item.FilePath) {
         }
     }
 
-    document.addEventListener('DOMContentLoaded', loadNewsTicker);
+    // Wait for full load so fonts/layout are final before measuring height
+    window.addEventListener('load', loadNewsTicker);
 </script>
 <!-- About End -->
 
