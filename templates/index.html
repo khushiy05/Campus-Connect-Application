@@ -565,6 +565,7 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
 
 
 <!-- Team Start -->
+    {% set is_logged_in = session.get('user_id') or session.get('student_id') or session.get('email') %}
     <div class="container-fluid py-5">
         <div class="container pt-5 pb-3">
             <div class="text-center mb-5">
@@ -581,10 +582,16 @@ document.addEventListener('DOMContentLoaded', loadAdMarquee);
                             {% endif %}
                         </div>
                         <div class="bg-secondary p-4">
-    <h5>{{ e.Name }}</h5>
-    <p class="text-primary mb-0">{{ e.Domain }}</p>
-    <a class="btn btn-primary btn-sm mt-3" href="/login.html">Learn More</a>
-</div>
+                            {% if is_logged_in %}
+                                <h5>{{ e.Name }}</h5>
+                            {% endif %}
+                            <p class="text-primary mb-0">{{ e.Domain }}</p>
+                            {% if is_logged_in %}
+                                <a class="btn btn-primary btn-sm mt-3" href="{{ url_for('home', expert=e.ID) }}">Learn More</a>
+                            {% else %}
+                                <a class="btn btn-primary btn-sm mt-3" href="/login.html">Login to view details</a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 {% else %}
