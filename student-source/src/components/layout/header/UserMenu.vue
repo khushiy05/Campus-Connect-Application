@@ -53,10 +53,20 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const API_BASE = 'http://127.0.0.1:5000'
+const CACHE_KEY = 'student_cache'
+
+const readCache = () => {
+  try {
+    return JSON.parse(sessionStorage.getItem(CACHE_KEY)) || {}
+  } catch {
+    return {}
+  }
+}
 
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
-const user = ref({})
+const user = ref(readCache()) // starts with cached name, so no flash on refresh
+const loaded = ref(false)
 
 // Loads the logged-in student from the Flask session cookie
 const loadUser = async () => {
@@ -67,17 +77,21 @@ const loadUser = async () => {
     const data = await res.json()
 
     if (data.success && data.logged_in) {
-      user.value = { name: data.name, email: data.email }
+      user.value = { name: data.name, email: data.email, photo: data.photo }
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(user.value))
     } else {
       user.value = {}
+      sessionStorage.removeItem(CACHE_KEY)
     }
   } catch (error) {
     console.error('Failed to load student session:', error)
-    user.value = {}
+  } finally {
+    loaded.value = true
   }
 }
 
-const displayName = computed(() => user.value.name || 'Student')
+// "Student" only appears if the fetch finished and no name exists
+const displayName = computed(() => user.value.name || (loaded.value ? 'Student' : ''))
 const email = computed(() => user.value.email || '')
 const avatar = computed(() => user.value.photo || '')
 const initial = computed(() => displayName.value.charAt(0).toUpperCase())
