@@ -2386,6 +2386,168 @@ def update_student_profile():
 def student(path=''):
     return render_template('student.html')
 
+# ---- Chatbook (student group chat) ----
+CHATBOOK_ONLINE_SECONDS = 20
+
+
+def ensure_chatbook_tables():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='chatbook_messages' AND xtype='U')
+            CREATE TABLE chatbook_messages (
+                id INT IDENTITY(1,1) PRIMARY KEY,
+                sender_id INT NOT NULL,
+                sender_name NVARCHAR(255) NOT NULL,
+                text NVARCHAR(1000) NOT NULL,
+                reply_to_id INT NULL,
+                created_at DATETIME NOT NULL DEFAULT GETUTCDATE()
+            )
+        """)
+        conn.commit()
+        cursor.execute("""
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='chatbook_presence' AND xtype='U')
+            CREATE TABLE chatbook_presence (
+                student_id INT PRIMARY KEY,
+                name NVARCHAR(255) NOT NULL,
+                last_seen DATETIME NOT NULL
+            )
+        """)
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print("Could not ensure chatbook tables:", e)
+
+
+ensure_chatbook_tables()
+
+
+@app.route('/api/chatbook/sync', methods=['GET'])
+@requires_student
+def chatbook_sync():
+    """One call does everything: marks this student online, returns who is
+    online, and returns any messages newer than ?after_id=."""
+    student_id = session['student_id']
+    try:
+        after_id = int(request.args.get('after_id', 0))
+    except ValueError:
+        after_id = 0
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT Name FROM studentdb WHERE ID = ?", (student_id,))
+        me_row = cursor.fetchone()
+        if not me_row:
+            cursor.close()
+            conn.close()
+            session.clear()
+            return {"success": False, "error": "Account no longer exists."}, 401
+        my_name = me_row.Name
+
+        # 1. mark me online
+        cursor.execute(
+            "UPDATE chatbook_presence SET last_seen = GETUTCDATE(), name = ? WHERE student_id = ?",
+            (my_name, student_id)
+        )
+        if cursor.rowcount == 0:
+            cursor.execute(
+                "INSERT INTO chatbook_presence (student_id, name, last_seen) VALUES (?, ?, GETUTCDATE())",
+                (student_id, my_name)
+            )
+
+        # 2. who is online right now
+        cursor.execute(
+            "SELECT student_id, name FROM chatbook_presence "
+            "WHERE last_seen >= DATEADD(SECOND, ?, GETUTCDATE()) ORDER BY name",
+            (-CHATBOOK_ONLINE_SECONDS,)
+        )
+        online = [{"id": r.student_id, "name": r.name} for r in cursor.fetchall()]
+
+        # 3. messages (first load = last 100, after that only new ones)
+        select = """
+            SELECT {top} m.id, m.sender_id, m.sender_name, m.text, m.created_at,
+                   r.id AS r_id, r.sender_id AS r_sender_id,
+                   r.sender_name AS r_sender_name, r.text AS r_text
+            FROM chatbook_messages m
+            LEFT JOIN chatbook_messages r ON r.id = m.reply_to_id
+            WHERE m.id > ?
+            ORDER BY m.id {direction}
+        """
+        if after_id == 0:
+            cursor.execute(select.format(top="TOP 100", direction="DESC"), (after_id,))
+            rows = list(reversed(cursor.fetchall()))
+        else:
+            cursor.execute(select.format(top="", direction="ASC"), (after_id,))
+            rows = cursor.fetchall()
+
+        messages = [
+            {
+                "id": r.id,
+                "senderId": r.sender_id,
+                "sender": r.sender_name,
+                "text": r.text,
+                "time": r.created_at.isoformat() + "Z",
+                "replyTo": (
+                    {"id": r.r_id, "senderId": r.r_sender_id,
+                     "sender": r.r_sender_name, "text": r.r_text}
+                    if r.r_id else None
+                ),
+            }
+            for r in rows
+        ]
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return {
+            "success": True,
+            "me": {"id": student_id, "name": my_name},
+            "online": online,
+            "messages": messages,
+        }, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/chatbook/messages', methods=['POST'])
+@requires_student
+def chatbook_send():
+    data = request.get_json(silent=True) or {}
+    text = (data.get('text') or '').strip()[:1000]
+    reply_to_id = data.get('reply_to_id')
+
+    if not text:
+        return {"success": False, "error": "Empty message."}, 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT Name FROM studentdb WHERE ID = ?", (session['student_id'],))
+        me_row = cursor.fetchone()
+        if not me_row:
+            cursor.close()
+            conn.close()
+            return {"success": False, "error": "Account no longer exists."}, 401
+
+        cursor.execute(
+            "INSERT INTO chatbook_messages (sender_id, sender_name, text, reply_to_id) VALUES (?, ?, ?, ?)",
+            (session['student_id'], me_row.Name, text, reply_to_id)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"success": True}, 201
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+    
 
 if __name__ == '__main__':
     app.run(debug=True)

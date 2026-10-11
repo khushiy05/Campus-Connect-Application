@@ -48,9 +48,9 @@ const menuConfig = [
       },
       {
         icon: PageIcon,
-        name: "FACEOFF",
-        path: "/faceoff",
-        component: () => import("../views/Others/FaceOff.vue"),
+        name: "Chatbook",
+        path: "/chatbook",
+        component: () => import("../views/Others/Chatbook.vue"),
       },
     ],
   },
