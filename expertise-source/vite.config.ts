@@ -7,7 +7,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.NODE_ENV === 'production' ? '/static/campus/' : '/',
+  base: process.env.NODE_ENV === 'production' ? '/static/expertise/' : '/',
   plugins: [vue(), vueJsx(), vueDevTools()],
   resolve: {
     alias: {
@@ -16,7 +16,7 @@ export default defineConfig({
   },
   server: {
     host: '127.0.0.1',
-    port: 5174,
+    port: 5176,
     strictPort: true,
     proxy: {
       '/api': {
@@ -26,7 +26,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../static/campus',
+    outDir: '../static/expertise',
     emptyOutDir: true,
     rollupOptions: {
       output: {

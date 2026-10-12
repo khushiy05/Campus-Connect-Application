@@ -214,48 +214,16 @@
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 
-import {
-  GridIcon,
-  CalenderIcon,
-  UserCircleIcon,
-  ChatIcon,
-  MailIcon,
-  DocsIcon,
-  ChevronDownIcon,
-  HorizontalDots,
-  PageIcon,
-  TableIcon,
-  ListIcon,
-} from "../../icons";
+import { ChevronDownIcon, HorizontalDots } from "../../icons";
 import { useSidebar } from "@/composables/useSidebar";
-import { useStudentSession } from "@/composables/useStudentSession";
 
 import menuConfig from "@/config/menuConfig";
 
 const route = useRoute();
 
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
-const { hasCollege } = useStudentSession();
 
-// Until the student has added a college, only these menu items are shown.
-// Add more names/paths here if you want other items visible too.
-const ALWAYS_VISIBLE_NAMES = ["profile"];
-const ALWAYS_VISIBLE_PATHS = ["/profile"];
-
-const isAlwaysVisible = (item) =>
-  ALWAYS_VISIBLE_NAMES.includes(String(item.name || "").toLowerCase()) ||
-  ALWAYS_VISIBLE_PATHS.includes(item.path);
-
-const menuGroups = computed(() => {
-  if (hasCollege.value) return menuConfig;
-
-  return menuConfig
-    .map((group) => ({
-      ...group,
-      items: group.items.filter(isAlwaysVisible),
-    }))
-    .filter((group) => group.items.length > 0);
-});
+const menuGroups = computed(() => menuConfig);
 
 const isActive = (path) => route.path === path;
 
