@@ -77,15 +77,15 @@
 
               <!-- Apply + Salary -->
               <div class="flex flex-col items-center md:items-end md:text-right">
-                <a
-                  v-if="job.ApplicationLink"
-                  :href="job.ApplicationLink"
-                  target="_blank"
-                  rel="noopener"
-                  class="rounded-md bg-[#FF6B00] px-3.5 py-1.5 text-sm font-medium text-white hover:bg-[#e55f00]"
+                <button
+                  type="button"
+                  :disabled="isApplied(job.JobId) || applyingId === job.JobId"
+                  @click="applyToJob(job)"
+                  class="rounded-md px-3.5 py-1.5 text-sm font-medium text-white disabled:cursor-not-allowed"
+                  :class="isApplied(job.JobId) ? 'bg-gray-400' : 'bg-[#FF6B00] hover:bg-[#e55f00]'"
                 >
-                  Apply Now
-                </a>
+                  {{ isApplied(job.JobId) ? "Applied" : applyingId === job.JobId ? "Applying..." : "Apply Now" }}
+                </button>
                 <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                   Salary: {{ formatSalary(job.SalaryLPA) }}
                 </p>
@@ -107,6 +107,8 @@ import { ref, computed, onMounted } from "vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 
+const API = "http://127.0.0.1:5000";
+
 const currentPageTitle = ref("RojgarSetu");
 
 const jobs = ref([]);
@@ -115,7 +117,11 @@ const error = ref(null);
 
 const searchQuery = ref("");
 
-// Matches title, company, category, city (and experience / salary text too)
+const appliedIds = ref([]);
+const applyingId = ref(null);
+
+const isApplied = (jobId) => appliedIds.value.includes(jobId);
+
 const filteredJobs = computed(() => {
   const q = searchQuery.value.trim().toLowerCase();
   if (!q) return jobs.value;
@@ -126,16 +132,58 @@ const filteredJobs = computed(() => {
   );
 });
 
-// Avoid "LPA LPA" when the value already contains LPA
 const formatSalary = (val) => {
   const s = (val ?? "").toString().trim();
   if (!s) return "—";
   return /lpa/i.test(s) ? s : `${s} LPA`;
 };
 
+const applyToJob = async (job) => {
+  if (job.ApplicationLink) {
+    window.open(job.ApplicationLink, "_blank", "noopener");
+  }
+
+  applyingId.value = job.JobId;
+  try {
+    const res = await fetch(`${API}/api/apply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        jobid: job.JobId,
+        jobtitle: job.JobTitle,
+        company: job.CompanyName,
+        salaryid: null,
+      }),
+    });
+    const result = await res.json();
+
+    // 201 = saved, 409 = pehle se applied
+    if (result.success || res.status === 409) {
+      if (!isApplied(job.JobId)) appliedIds.value.push(job.JobId);
+    } else {
+      alert(result.message || result.error || "Could not save application.");
+    }
+  } catch (e) {
+    alert("Unable to connect to the server.");
+  } finally {
+    applyingId.value = null;
+  }
+};
+
+const loadApplied = async () => {
+  try {
+    const res = await fetch(`${API}/api/applied`, { credentials: "include" });
+    const data = await res.json();
+    if (data.success) appliedIds.value = data.data;
+  } catch {
+    /* ignore */
+  }
+};
+
 onMounted(async () => {
   try {
-    const res = await fetch("http://127.0.0.1:5000/api/rojgarsetu", { credentials: "include" });
+    const res = await fetch(`${API}/api/rojgarsetu`, { credentials: "include" });
     const data = await res.json();
 
     if (data.success) {
@@ -148,5 +196,6 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
+  loadApplied();
 });
 </script>

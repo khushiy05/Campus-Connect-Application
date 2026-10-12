@@ -2547,7 +2547,8 @@ def chatbook_send():
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
-    
+
+
 @app.route('/api/student/dashboard-counts', methods=['GET'])
 @requires_student
 def student_dashboard_counts():
@@ -2574,6 +2575,85 @@ def student_dashboard_counts():
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
+
+
+# ---- RojgarSetu: student applications (applydb) ----
+@app.route('/api/apply', methods=['POST'])
+@requires_student
+def apply_job():
+    data = request.get_json(silent=True) or {}
+
+    jobid = data.get('jobid')
+    jobtitle = (data.get('jobtitle') or '').strip()
+    company = (data.get('company') or '').strip()
+    salaryid = data.get('salaryid')
+
+    if not jobid or not jobtitle or not company:
+        return {"success": False, "message": "Missing required fields"}, 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # name / email session wale student ke studentdb se aate hain
+        cursor.execute(
+            "SELECT Name, Email FROM studentdb WHERE ID = ?",
+            (session['student_id'],)
+        )
+        st = cursor.fetchone()
+        if not st:
+            cursor.close()
+            conn.close()
+            session.clear()
+            return {"success": False, "message": "Account no longer exists."}, 401
+
+        # same job pe dobara apply na ho
+        cursor.execute(
+            "SELECT 1 FROM applydb WHERE jobid = ? AND email = ?",
+            (jobid, st.Email)
+        )
+        if cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return {"success": False, "message": "Already applied to this job"}, 409
+
+        cursor.execute(
+            """INSERT INTO applydb (jobid, jobtitle, company, name, email, profile, salaryid)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (jobid, jobtitle, company, st.Name, st.Email, None, salaryid)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"success": True, "message": "Applied successfully"}, 201
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "message": str(e)}, 500
+
+
+@app.route('/api/applied', methods=['GET'])
+@requires_student
+def applied_jobs():
+    """Job ids jo logged-in student pehle apply kar chuka hai."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT Email FROM studentdb WHERE ID = ?", (session['student_id'],))
+        st = cursor.fetchone()
+        if not st:
+            cursor.close()
+            conn.close()
+            return {"success": True, "data": []}, 200
+
+        cursor.execute("SELECT jobid FROM applydb WHERE email = ?", (st.Email,))
+        ids = [r[0] for r in cursor.fetchall()]
+        cursor.close()
+        conn.close()
+        return {"success": True, "data": ids}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "message": str(e)}, 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
