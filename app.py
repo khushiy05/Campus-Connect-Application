@@ -2548,6 +2548,32 @@ def chatbook_send():
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
     
+@app.route('/api/student/dashboard-counts', methods=['GET'])
+@requires_student
+def student_dashboard_counts():
+    """Total counts for the student dashboard cards (same style as admin)."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        def count(sql):
+            cursor.execute(sql)
+            return cursor.fetchone()[0]
+
+        data = {
+            "services": count("SELECT COUNT(*) FROM Internship"),
+            "rojgarsetu": count("SELECT COUNT(*) FROM RojgarSetu"),
+            "expertise": count("SELECT COUNT(*) FROM Expertdb"),
+            "review": count("SELECT COUNT(*) FROM Reviews"),
+            "chatbook": count("SELECT COUNT(*) FROM chatbook_messages"),
+        }
+
+        cursor.close()
+        conn.close()
+        return {"success": True, **data}, 200
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
 
 if __name__ == '__main__':
     app.run(debug=True)
