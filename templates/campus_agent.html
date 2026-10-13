@@ -255,15 +255,11 @@ function escapeHtml(str){
 
 /* ═══════════════════════════════════════════════════════════
    PART 1 — REGISTERED COLLEGES ONLY (right panel)
-   Fetches from your own backend. Point COLLEGES_API_URL at the
-   real endpoint that returns colleges registered on Campus
-   Connect (e.g. GET /api/colleges → [{name, meta, desc, link}]).
-   Nothing is hardcoded — the panel only ever shows what the
-   fetch actually returns. If the call fails, it shows an error
-   state (not fake data) with a retry button.
+   Fetches from Flask: GET /api/colleges
+   Response shape: { success: true, data: ["College A", "College B", ...] }
+   Nothing is hardcoded — the panel only shows what the fetch returns.
    ═══════════════════════════════════════════════════════════ */
 
-// TODO: replace with your real Campus Connect API endpoint
 const COLLEGES_API_URL = '/api/colleges';
 
 const statusBadge = document.getElementById('statusBadge');
@@ -290,11 +286,16 @@ async function fetchRegisteredColleges(){
   try {
     const res = await fetch(COLLEGES_API_URL);
     if (!res.ok) throw new Error('Bad response');
-    const data = await res.json();
-    if (!Array.isArray(data)) throw new Error('Bad format');
-    setStatus(data.length ? 'found' : '', data.length ? 'Live' : 'Live', `${data.length} registered college${data.length !== 1 ? 's' : ''}`);
+    const json = await res.json();
+    if (!json.success || !Array.isArray(json.data)) throw new Error('Bad format');
+
+    // API returns plain college names; normalise to {name} objects
+    const data = json.data.map(c => typeof c === 'string' ? { name: c } : c);
+
+    setStatus('found', 'Live', `${data.length} registered college${data.length !== 1 ? 's' : ''}`);
     renderRegisteredColleges(data);
   } catch (err) {
+    console.error('Colleges fetch failed:', err);
     setStatus('denied', 'Offline', 'Could not load colleges');
     collegesTitle.textContent = 'Registered Colleges';
     collegesBody.innerHTML = `
@@ -332,10 +333,6 @@ refreshBtn.addEventListener('click', fetchRegisteredColleges);
 
 /* ═══════════════════════════════════════════════════════════
    PART 2 — CAMPUS AGENT CHATBOT (left panel)
-   Opens with a welcome + short description, then a 5-option
-   menu (website / college registration / student registration
-   / RojgarSetu / internship). Typing just a number (1-5), or
-   the option's name, returns that option's info.
    ═══════════════════════════════════════════════════════════ */
 const chatMessages = document.getElementById('chatMessages');
 const chatInput = document.getElementById('chatInput');
