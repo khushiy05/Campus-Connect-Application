@@ -2,11 +2,9 @@
   <AdminLayout>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
 
-      <div class="col-span-12">
-        <p class="text-gray-600 dark:text-gray-400">
-          Welcome to your Admin Panel,
-          <span class="font-semibold text-brand-500">{{ userName }}</span>!
-        </p>
+      <div class="col-span-12 text-sm text-gray-500 dark:text-gray-400">
+        Welcome to your Admin Panel,
+        <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ userName }}</span>!
       </div>
 
       <div class="col-span-12">

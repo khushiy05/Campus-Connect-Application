@@ -3,7 +3,7 @@
     <div class="grid grid-cols-12 gap-4 md:gap-6">
 
       <div class="col-span-12 text-sm text-gray-500 dark:text-gray-400">
-        Welcome to your Campus Panel<span v-if="userName">,
+        Welcome to your Student Panel<span v-if="userName">,
           <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ userName }}</span>!
         </span><span v-else>.</span>
       </div>
