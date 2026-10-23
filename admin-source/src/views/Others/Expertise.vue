@@ -70,8 +70,16 @@
             <input v-model="form.linkedin" class="w-full rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 px-3 py-2 text-sm" />
           </div>
           <div>
+            <label class="block text-sm mb-1 text-gray-700 dark:text-gray-300">Role</label>
+            <input v-model="form.role" required placeholder="e.g. Software Engineer, Mentor" class="w-full rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 px-3 py-2 text-sm" />
+          </div>
+          <div>
             <label class="block text-sm mb-1 text-gray-700 dark:text-gray-300">Photo</label>
             <input type="file" @change="onPhotoChange" accept=".jpg,.jpeg,.png" class="w-full rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 px-3 py-2 text-sm" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-sm mb-1 text-gray-700 dark:text-gray-300">About</label>
+            <textarea v-model="form.about" rows="4" required placeholder="Write a short description about the expert" class="w-full rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 px-3 py-2 text-sm"></textarea>
           </div>
 
           <div class="sm:col-span-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-1">
@@ -119,6 +127,7 @@
               <tr class="border-b border-gray-100 dark:border-gray-800">
                 <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Photo</th>
                 <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Name</th>
+                <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Role</th>
                 <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Domain</th>
                 <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">City</th>
                 <th class="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Plan</th>
@@ -133,6 +142,7 @@
                   <img v-if="e.Photo" :src="`http://127.0.0.1:5000/static/uploads/experts/${e.Photo}`" class="w-8 h-8 rounded-full object-cover" />
                 </td>
                 <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ e.Name }}</td>
+                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ e.Role }}</td>
                 <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ e.Domain }}</td>
                 <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ e.City }}</td>
                 <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ e.PlanType }}</td>
@@ -168,12 +178,15 @@ import ComponentCard from "@/components/common/ComponentCard.vue";
 const currentPageTitle = ref("Expertise");
 const API_BASE = "http://127.0.0.1:5000";
 
-const form = ref({
+const emptyForm = () => ({
   name: "", email: "", mobile: "", city: "",
   domain_select: "", domain_other: "", linkedin: "",
+  role: "", about: "",
   plan_type: "Yearly", amount: 1200,
   transaction_id: "", payment_date: "", expiry_date: ""
 });
+
+const form = ref(emptyForm());
 const photoFile = ref(null);
 const experts = ref([]);
 const showTable = ref(false);
@@ -262,12 +275,7 @@ async function submitForm() {
 
   if (data.success) {
     alert("Expert added");
-    form.value = {
-      name: "", email: "", mobile: "", city: "",
-      domain_select: "", domain_other: "", linkedin: "",
-      plan_type: "Yearly", amount: 1200,
-      transaction_id: "", payment_date: "", expiry_date: ""
-    };
+    form.value = emptyForm();
     citySearch.value = "";
     showCityDropdown.value = false;
     photoFile.value = null;
