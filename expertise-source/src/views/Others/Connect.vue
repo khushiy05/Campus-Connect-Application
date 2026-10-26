@@ -8,7 +8,7 @@
       <div
         class="flex items-center border-b border-gray-200 px-5 py-3 dark:border-gray-800"
       >
-        <h3 class="text-sm font-semibold text-gray-800 dark:text-white/90">Connect</h3>
+        <h3 class="text-sm font-semibold text-gray-800 dark:text-white/90"></h3>
       </div>
 
       <div class="flex h-[calc(100%-3rem)] items-center justify-center p-6">

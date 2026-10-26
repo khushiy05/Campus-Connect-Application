@@ -11,10 +11,12 @@ const menuConfig = [
         component: () => import("../views/Ecommerce.vue"),
       },
       {
-  icon: GridIcon,   // use whatever icon Dashboard uses
-  name: 'Connect',
-  path: '/connect',
-},
+        icon: GridIcon,
+        name: "Connect",
+        path: "/connect",
+        component: () => import("../views/Others/Connect.vue"),
+
+      },
     ],
   },
 ];
