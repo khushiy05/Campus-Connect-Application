@@ -2654,6 +2654,64 @@ def applied_jobs():
         print("DB ERROR:", e)
         return {"success": False, "message": str(e)}, 500
 
+# ---- Connect page (expert panel): message an expert ----
+# The expert LIST reuses the existing GET /api/experts route, so only the send route is new. ----
+# Paste this into app.py, above `if __name__ == '__main__':`
+
+def requires_login(f):
+    """Any logged-in user (admin / expert / college / student)."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get('user_email'):
+            return {"success": False, "error": "Not logged in."}, 401
+        return f(*args, **kwargs)
+    return decorated
+
+
+@app.route('/api/connect/send', methods=['POST'])
+def connect_send():
+    """Emails the message to the chosen expert. The expert's address is
+    looked up on the server, so it is never exposed to the browser."""
+    data = request.get_json(silent=True) or {}
+    expert_id = data.get('expert_id')
+    from_email = (data.get('from_email') or session.get('user_email') or '').replace('\r', '').replace('\n', '').strip()
+    subject = (data.get('subject') or '').replace('\r', '').replace('\n', ' ').strip()
+    message = (data.get('message') or '').strip()
+
+    if not expert_id or not from_email or not subject or not message:
+        return {"success": False, "error": "Email, subject and message are required."}, 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT Name, Email FROM Expertdb WHERE ID = ?", (expert_id,))
+        expert = cursor.fetchone()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
+
+    if not expert or not expert.Email:
+        return {"success": False, "error": "Expert not found."}, 404
+
+    body = f"You have a new message on CampusConnect AI from {from_email}.\n\n{message}"
+    msg = MIMEText(body, 'plain')
+    msg['Subject'] = subject
+    msg['From'] = EMAIL_SENDER
+    msg['To'] = expert.Email
+    msg['Reply-To'] = from_email
+
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+            server.sendmail(EMAIL_SENDER, expert.Email, msg.as_string())
+    except Exception as e:
+        print("EMAIL ERROR:", e)
+        return {"success": False, "error": "Could not send the email."}, 500
+
+    return {"success": True}, 200
 
 if __name__ == '__main__':
     app.run(debug=True)
