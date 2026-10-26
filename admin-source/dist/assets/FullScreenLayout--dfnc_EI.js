@@ -1,0 +1,1 @@
+import{_ as s,o,c as a,a as t,r as n}from"./index-STyMtSgr.js";const m="/tailadmin-vuejs/images/logo/auth-logo.svg",c={},r={class:"min-h-screen"};function l(e,_){return o(),a("div",r,[t("main",null,[n(e.$slots,"default")])])}const d=s(c,[["render",l]]);export{d as F,m as _};
