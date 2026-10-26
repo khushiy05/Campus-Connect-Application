@@ -18,8 +18,8 @@ from werkzeug.utils import secure_filename
 load_dotenv()
 app = Flask(__name__)
 CORS(app, supports_credentials=True, origins=[
-    "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:5175",
-    "http://localhost:5173",  "http://localhost:5174",  "http://localhost:5175",
+    "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:5175", "http://127.0.0.1:5176",
+    "http://localhost:5173",  "http://localhost:5174",  "http://localhost:5175",  "http://localhost:5176",
 ])
 
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-change-this')
