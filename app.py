@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, Response, redirect, url_for, session, jsonify, send_from_directory
+from flask import Flask, request, render_template, Response, redirect, url_for, session, jsonify, send_from_directory, abort
 from functools import wraps
 from datetime import date
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -15,7 +15,9 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
 
-load_dotenv()
+# override=True -> values in .env always win over Windows environment variables,
+# so the app can't silently keep talking to an old database.
+load_dotenv(override=True)
 app = Flask(__name__)
 CORS(app, supports_credentials=True, origins=[
     "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:5175", "http://127.0.0.1:5176",
@@ -67,16 +69,26 @@ def get_db_connection():
     )
     return conn
 
-def send_confirmation_email(to_email):
-    html_body = """
+
+# ============================================================
+# EMAIL HELPERS (one shared template, so every mail looks the same)
+# ============================================================
+def _email_html(heading, body_html, button_text=None, button_url=None, after_html=""):
+    button = ""
+    if button_text and button_url:
+        button = f"""
+                                <div style="text-align:center; margin: 30px 0;">
+                                    <a href="{button_url}" style="background-color:#fd7e14; color:#ffffff; text-decoration:none; padding: 14px 32px; border-radius:8px; font-weight:600; display:inline-block;">
+                                        {button_text}
+                                    </a>
+                                </div>"""
+    return f"""
     <html>
     <body style="margin:0; padding:0; background-color:#f4f4f7; font-family: 'Segoe UI', Arial, sans-serif;">
         <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7; padding: 40px 0;">
             <tr>
                 <td align="center">
                     <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:10px; overflow:hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
-
-                        <!-- Header -->
                         <tr>
                             <td style="background-color:#2d2d3a; padding: 35px 40px; text-align:center;">
                                 <h1 style="margin:0; color:#ffffff; font-size:24px;">
@@ -84,64 +96,14 @@ def send_confirmation_email(to_email):
                                 </h1>
                             </td>
                         </tr>
-
-                        <!-- Body -->
                         <tr>
                             <td style="padding: 40px;">
-                                <h2 style="color:#2d2d3a; margin-top:0;">Hi there</h2>
-                                <p style="color:#555555; font-size:15px; line-height:1.6;">
-                                    Thank you for subscribing to <strong>CampusConnect AI</strong>!
-                                </p>
-                                <p style="color:#555555; font-size:15px; line-height:1.6;">
-                                    You're now part of a growing community of students who stay ahead &mdash;
-                                    with real-time updates on campus events, mess menus, hostel openings,
-                                    and placement drives, delivered straight to your inbox.
-                                </p>
-
-                                <p style="color:#2d2d3a; font-size:16px; font-weight:600; margin-top:30px;">
-                                    What you'll get access to:
-                                </p>
-
-                                <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;">
-                                    <tr>
-                                        <td style="padding:8px 0; color:#555555; font-size:14px;">
-                                            <span style="color:#ff6b35; font-weight:bold;">&#10003;</span> Mess &amp; Tiffin Finder
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:8px 0; color:#555555; font-size:14px;">
-                                            <span style="color:#ff6b35; font-weight:bold;">&#10003;</span> Hostel Locator
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:8px 0; color:#555555; font-size:14px;">
-                                            <span style="color:#ff6b35; font-weight:bold;">&#10003;</span> Library Locator
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:8px 0; color:#555555; font-size:14px;">
-                                            <span style="color:#ff6b35; font-weight:bold;">&#10003;</span> Verified Student Chat
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:8px 0; color:#555555; font-size:14px;">
-                                            <span style="color:#ff6b35; font-weight:bold;">&#10003;</span> Mentor Connect
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:8px 0; color:#555555; font-size:14px;">
-                                            <span style="color:#ff6b35; font-weight:bold;">&#10003;</span> Live Campus Events &amp; Placement Updates
-                                        </td>
-                                    </tr>
-                                </table>
-
-                                <p style="color:#555555; font-size:15px; line-height:1.6; margin-top:30px;">
-                                    We're glad to have you on board. Stay tuned &mdash; your first update is on its way!
-                                </p>
+                                <h2 style="color:#2d2d3a; margin-top:0;">{heading}</h2>
+                                {body_html}
+                                {button}
+                                {after_html}
                             </td>
                         </tr>
-
-                        <!-- Footer -->
                         <tr>
                             <td style="background-color:#f4f4f7; padding: 25px 40px; text-align:center; border-top:1px solid #eaeaea;">
                                 <p style="color:#999999; font-size:13px; margin:0;">
@@ -151,7 +113,6 @@ def send_confirmation_email(to_email):
                                 </p>
                             </td>
                         </tr>
-
                     </table>
                 </td>
             </tr>
@@ -160,15 +121,49 @@ def send_confirmation_email(to_email):
     </html>
     """
 
-    msg = MIMEText(html_body, 'html')
-    msg['Subject'] = 'Welcome to CampusConnect AI'
+
+def _send_mail(to_email, subject, body, subtype='html', reply_to=None):
+    msg = MIMEText(body, subtype)
+    msg['Subject'] = subject
     msg['From'] = EMAIL_SENDER
     msg['To'] = to_email
-
+    if reply_to:
+        msg['Reply-To'] = reply_to
     with smtplib.SMTP('smtp.gmail.com', 587) as server:
         server.starttls()
         server.login(EMAIL_SENDER, EMAIL_PASSWORD)
         server.sendmail(EMAIL_SENDER, to_email, msg.as_string())
+
+
+_P = 'color:#555555; font-size:15px; line-height:1.6;'
+
+
+def send_confirmation_email(to_email):
+    features = [
+        "Mess &amp; Tiffin Finder", "Hostel Locator", "Library Locator",
+        "Verified Student Chat", "Mentor Connect",
+        "Live Campus Events &amp; Placement Updates",
+    ]
+    rows = "".join(
+        f'<tr><td style="padding:8px 0; color:#555555; font-size:14px;">'
+        f'<span style="color:#ff6b35; font-weight:bold;">&#10003;</span> {f}</td></tr>'
+        for f in features
+    )
+    body = f"""
+                                <p style="{_P}">Thank you for subscribing to <strong>CampusConnect AI</strong>!</p>
+                                <p style="{_P}">
+                                    You're now part of a growing community of students who stay ahead &mdash;
+                                    with real-time updates on campus events, mess menus, hostel openings,
+                                    and placement drives, delivered straight to your inbox.
+                                </p>
+                                <p style="color:#2d2d3a; font-size:16px; font-weight:600; margin-top:30px;">
+                                    What you'll get access to:
+                                </p>
+                                <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;">{rows}</table>
+                                <p style="{_P} margin-top:30px;">
+                                    We're glad to have you on board. Stay tuned &mdash; your first update is on its way!
+                                </p>"""
+    _send_mail(to_email, 'Welcome to CampusConnect AI', _email_html("Hi there", body))
 
 
 def generate_random_password(length=10):
@@ -178,25 +173,8 @@ def generate_random_password(length=10):
 
 def send_expert_login_email(to_email, name, password):
     login_url = f"{APP_BASE_URL}/login.html"
-
-    html_body = f"""
-    <html>
-    <body style="margin:0; padding:0; background-color:#f4f4f7; font-family: 'Segoe UI', Arial, sans-serif;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7; padding: 40px 0;">
-            <tr>
-                <td align="center">
-                    <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:10px; overflow:hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
-                        <tr>
-                            <td style="background-color:#2d2d3a; padding: 35px 40px; text-align:center;">
-                                <h1 style="margin:0; color:#ffffff; font-size:24px;">
-                                    <span style="color:#ff6b35;">CAMPUS</span>CONNECT AI
-                                </h1>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 40px;">
-                                <h2 style="color:#2d2d3a; margin-top:0;">Welcome aboard, {name}!</h2>
-                                <p style="color:#555555; font-size:15px; line-height:1.6;">
+    body = f"""
+                                <p style="{_P}">
                                     You've been added as an expert on <strong>CampusConnect AI</strong>.
                                     Your account is ready &mdash; here are your login details:
                                 </p>
@@ -212,123 +190,49 @@ def send_expert_login_email(to_email, name, password):
                                         </td>
                                     </tr>
                                 </table>
-                                <p style="color:#555555; font-size:15px; line-height:1.6;">
+                                <p style="{_P}">
                                     For your security, we recommend changing this password after your first login.
-                                </p>
-                                <div style="text-align:center; margin: 30px 0;">
-                                    <a href="{login_url}" style="background-color:#fd7e14; color:#ffffff; text-decoration:none; padding: 14px 32px; border-radius:8px; font-weight:600; display:inline-block;">
-                                        Log In to Your Account
-                                    </a>
-                                </div>
+                                </p>"""
+    after = f"""
                                 <p style="color:#999999; font-size:13px; line-height:1.6;">
                                     If the button above doesn't work, copy and paste this link into your browser:<br>
                                     <a href="{login_url}" style="color:#fd7e14;">{login_url}</a>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="background-color:#f4f4f7; padding: 25px 40px; text-align:center; border-top:1px solid #eaeaea;">
-                                <p style="color:#999999; font-size:13px; margin:0;">
-                                    Best regards,<br>
-                                    <strong style="color:#2d2d3a;">Team CampusConnect AI</strong><br>
-                                    NRSolution4u
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-    </body>
-    </html>
-    """
-
-    msg = MIMEText(html_body, 'html')
-    msg['Subject'] = 'Your CampusConnect AI Expert Login Details'
-    msg['From'] = EMAIL_SENDER
-    msg['To'] = to_email
-
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
-        server.starttls()
-        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_SENDER, to_email, msg.as_string())
+                                </p>"""
+    html = _email_html(f"Welcome aboard, {name}!", body, "Log In to Your Account", login_url, after)
+    _send_mail(to_email, 'Your CampusConnect AI Expert Login Details', html)
 
 
 def send_campus_approved_email(to_email, name, college_name):
-    """Sent when an admin approves a college registration, so the college
-    knows they can now log in to their campus panel."""
+    """Sent when an admin approves a college registration."""
     login_url = f"{APP_BASE_URL}/login.html"
-
-    html_body = f"""
-    <html>
-    <body style="margin:0; padding:0; background-color:#f4f4f7; font-family: 'Segoe UI', Arial, sans-serif;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7; padding: 40px 0;">
-            <tr>
-                <td align="center">
-                    <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:10px; overflow:hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
-                        <tr>
-                            <td style="background-color:#2d2d3a; padding: 35px 40px; text-align:center;">
-                                <h1 style="margin:0; color:#ffffff; font-size:24px;">
-                                    <span style="color:#ff6b35;">CAMPUS</span>CONNECT AI
-                                </h1>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 40px;">
-                                <h2 style="color:#2d2d3a; margin-top:0;">Your campus account is approved</h2>
-                                <p style="color:#555555; font-size:15px; line-height:1.6;">
+    body = f"""
+                                <p style="{_P}">
                                     Hi {name}, the registration for <strong>{college_name}</strong> has been
                                     approved. You can now log in with the email and password you registered with.
-                                </p>
-                                <div style="text-align:center; margin: 30px 0;">
-                                    <a href="{login_url}" style="background-color:#fd7e14; color:#ffffff; text-decoration:none; padding: 14px 32px; border-radius:8px; font-weight:600; display:inline-block;">
-                                        Log In to Your Campus Panel
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="background-color:#f4f4f7; padding: 25px 40px; text-align:center; border-top:1px solid #eaeaea;">
-                                <p style="color:#999999; font-size:13px; margin:0;">
-                                    Best regards,<br>
-                                    <strong style="color:#2d2d3a;">Team CampusConnect AI</strong><br>
-                                    NRSolution4u
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-    </body>
-    </html>
-    """
+                                </p>"""
+    html = _email_html("Your campus account is approved", body, "Log In to Your Campus Panel", login_url)
+    _send_mail(to_email, 'Your CampusConnect AI campus account is approved', html)
 
-    msg = MIMEText(html_body, 'html')
-    msg['Subject'] = 'Your CampusConnect AI campus account is approved'
-    msg['From'] = EMAIL_SENDER
-    msg['To'] = to_email
 
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
-        server.starttls()
-        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_SENDER, to_email, msg.as_string())
+def send_student_approved_email(to_email, name):
+    login_url = f"{APP_BASE_URL}/login.html"
+    body = f"""
+                                <p style="{_P}">
+                                    Hi {name}, your <strong>student registration</strong> on CampusConnect AI has been
+                                    approved. You can now log in with the email and password you registered with.
+                                </p>"""
+    html = _email_html("Your student account is approved", body, "Log In to Your Student Panel", login_url)
+    _send_mail(to_email, 'Your CampusConnect AI student account is approved', html)
 
 
 def send_invite_email(to_email, subject, message):
-    """Plain-text invite/broadcast email used by /api/invite/send."""
-    msg = MIMEText(message, 'plain')
-    msg['Subject'] = subject or "CampusConnect AI"
-    msg['From'] = EMAIL_SENDER
-    msg['To'] = to_email
-
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
-        server.starttls()
-        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_SENDER, to_email, msg.as_string())
+    """Plain-text invite/broadcast email."""
+    _send_mail(to_email, subject or "CampusConnect AI", message, subtype='plain')
 
 
-# ---- Basic Auth helpers ----
+# ============================================================
+# AUTH HELPERS
+# ============================================================
 def check_auth(username, password):
     return username == ADMIN_USERNAME and password == ADMIN_PASSWORD
 
@@ -351,8 +255,7 @@ def requires_auth(f):
 
 
 def requires_college(f):
-    """Guards the campus-panel APIs: only a logged-in, approved,
-    non-blocked college account may call them."""
+    """Guards the campus-panel APIs: only a logged-in college account."""
     @wraps(f)
     def decorated(*args, **kwargs):
         if session.get('role') != 'college' or not session.get('college_id'):
@@ -369,45 +272,174 @@ def requires_student(f):
             return {"success": False, "error": "Not logged in."}, 401
         return f(*args, **kwargs)
     return decorated
-# -----------------------------
 
 
-def ensure_college_status_columns():
-    """Adds the Approved / Blocked columns to collegedb if they aren't
-    there yet, so the admin panel's approve/block buttons have something
-    to write to. Safe to run on every startup."""
+def requires_login(f):
+    """Any logged-in user (admin / expert / college / student)."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get('user_email'):
+            return {"success": False, "error": "Not logged in."}, 401
+        return f(*args, **kwargs)
+    return decorated
+
+
+def debug_only(f):
+    """Routes that only exist while Flask runs with debug=True (local dev)."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not app.debug:
+            abort(404)
+        return f(*args, **kwargs)
+    return decorated
+
+
+# ============================================================
+# STARTUP: create / migrate tables (safe to run on every start)
+# ============================================================
+def _run_startup_sql(label, statements):
+    """Runs a list of SQL statements, one commit each. Never crashes startup."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("""
-            IF NOT EXISTS (
-                SELECT 1 FROM sys.columns
-                WHERE Name = N'Approved' AND Object_ID = Object_ID(N'collegedb')
-            )
-            ALTER TABLE collegedb ADD Approved BIT NOT NULL DEFAULT 0
-        """)
-        conn.commit()
-        cursor.execute("""
-            IF NOT EXISTS (
-                SELECT 1 FROM sys.columns
-                WHERE Name = N'Blocked' AND Object_ID = Object_ID(N'collegedb')
-            )
-            ALTER TABLE collegedb ADD Blocked BIT NOT NULL DEFAULT 0
-        """)
-        conn.commit()
+        for sql in statements:
+            cursor.execute(sql)
+            conn.commit()
         cursor.close()
         conn.close()
     except Exception as e:
-        print("Could not ensure collegedb status columns:", e)
+        print(f"Could not ensure {label}:", e)
+
+
+def ensure_college_status_columns():
+    _run_startup_sql("collegedb status columns", [
+        """IF NOT EXISTS (SELECT 1 FROM sys.columns
+                          WHERE Name = N'Approved' AND Object_ID = Object_ID(N'collegedb'))
+           ALTER TABLE collegedb ADD Approved BIT NOT NULL DEFAULT 0""",
+        """IF NOT EXISTS (SELECT 1 FROM sys.columns
+                          WHERE Name = N'Blocked' AND Object_ID = Object_ID(N'collegedb'))
+           ALTER TABLE collegedb ADD Blocked BIT NOT NULL DEFAULT 0""",
+    ])
+
+
+def ensure_news_table():
+    _run_startup_sql("News table", ["""
+        IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='News' AND xtype='U')
+        CREATE TABLE News (
+            NewsId INT IDENTITY(1,1) PRIMARY KEY,
+            Title NVARCHAR(255) NOT NULL,
+            Description NVARCHAR(MAX) NOT NULL,
+            FilePath NVARCHAR(255) NULL,
+            PostedOn DATETIME NOT NULL DEFAULT GETDATE()
+        )"""])
+
+
+def ensure_reviews_table():
+    _run_startup_sql("Reviews table", ["""
+        IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Reviews' AND xtype='U')
+        CREATE TABLE Reviews (
+            ReviewId INT IDENTITY(1,1) PRIMARY KEY,
+            Name NVARCHAR(255) NOT NULL,
+            Message NVARCHAR(MAX) NOT NULL,
+            Rating INT NOT NULL,
+            PostedOn DATETIME NOT NULL DEFAULT GETDATE()
+        )"""])
+
+
+def ensure_student_table():
+    _run_startup_sql("studentdb table", ["""
+        IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='studentdb' AND xtype='U')
+        CREATE TABLE studentdb (
+            ID INT IDENTITY(1,1) PRIMARY KEY,
+            Name NVARCHAR(255) NOT NULL,
+            Email NVARCHAR(255) NOT NULL UNIQUE,
+            MobileNo NVARCHAR(20) NOT NULL,
+            CollegeName NVARCHAR(255) NOT NULL,
+            Password NVARCHAR(255) NOT NULL,
+            RegisteredOn DATE NOT NULL,
+            Status NVARCHAR(10) NOT NULL DEFAULT 'Open',
+            Approved BIT NOT NULL DEFAULT 0,
+            Blocked BIT NOT NULL DEFAULT 0
+        )"""])
+
+
+def ensure_student_profile_columns():
+    _run_startup_sql("studentdb profile columns", [
+        """IF NOT EXISTS (SELECT 1 FROM sys.columns
+                          WHERE Name = N'City' AND Object_ID = Object_ID(N'studentdb'))
+           ALTER TABLE studentdb ADD City NVARCHAR(100) NULL""",
+        """IF NOT EXISTS (SELECT 1 FROM sys.columns
+                          WHERE Name = N'CollegeCode' AND Object_ID = Object_ID(N'studentdb'))
+           ALTER TABLE studentdb ADD CollegeCode NVARCHAR(50) NULL""",
+        """IF NOT EXISTS (SELECT 1 FROM sys.columns
+                          WHERE Name = N'OtherCollege' AND Object_ID = Object_ID(N'studentdb'))
+           ALTER TABLE studentdb ADD OtherCollege NVARCHAR(255) NULL""",
+    ])
+
+
+def ensure_chatbook_tables():
+    _run_startup_sql("chatbook tables", [
+        """IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='chatbook_messages' AND xtype='U')
+           CREATE TABLE chatbook_messages (
+               id INT IDENTITY(1,1) PRIMARY KEY,
+               sender_id INT NOT NULL,
+               sender_name NVARCHAR(255) NOT NULL,
+               text NVARCHAR(1000) NOT NULL,
+               reply_to_id INT NULL,
+               created_at DATETIME NOT NULL DEFAULT GETUTCDATE()
+           )""",
+        """IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='chatbook_presence' AND xtype='U')
+           CREATE TABLE chatbook_presence (
+               student_id INT PRIMARY KEY,
+               name NVARCHAR(255) NOT NULL,
+               last_seen DATETIME NOT NULL
+           )""",
+    ])
+
+
+def ensure_applydb_table():
+    """RojgarSetu 'Apply Now' applications. Only created if it is missing,
+    so an existing applydb (with your data) is never touched."""
+    _run_startup_sql("applydb table", ["""
+        IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='applydb' AND xtype='U')
+        CREATE TABLE applydb (
+            id INT IDENTITY(1,1) PRIMARY KEY,
+            jobid INT NOT NULL,
+            jobtitle NVARCHAR(255) NULL,
+            company NVARCHAR(255) NULL,
+            name NVARCHAR(255) NULL,
+            email NVARCHAR(255) NOT NULL,
+            profile NVARCHAR(MAX) NULL,
+            salaryid NVARCHAR(100) NULL
+        )"""])
 
 
 ensure_college_status_columns()
+ensure_news_table()
+ensure_reviews_table()
+ensure_student_table()
+ensure_student_profile_columns()
+ensure_chatbook_tables()
+ensure_applydb_table()
 
 
-# ---- Page routes: ab render_template use ho raha hai, templates/ folder se HTML padhega ----
+def rows_to_dicts(cursor):
+    """Fetch all rows as dicts; non-JSON types (dates, decimals) become str."""
+    columns = [col[0] for col in cursor.description]
+    rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+    for r in rows:
+        for k, v in r.items():
+            if not isinstance(v, (str, int, float, type(None))):
+                r[k] = str(v)
+    return rows
+
+
+# ============================================================
+# PUBLIC PAGES
+# ============================================================
 @app.route('/submit-enquiry', methods=['POST'])
 def submit_enquiry():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     name = data.get('name')
     email = data.get('email')
     mobile = data.get('mobile')
@@ -430,6 +462,7 @@ def submit_enquiry():
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
+
 
 @app.route('/')
 def home():
@@ -467,6 +500,7 @@ def rojgarsetu():
         print("DB ERROR:", e)
     return render_template('rojgarsetu.html', jobs=jobs)
 
+
 @app.route('/advertisement.html')
 def advertisement():
     return render_template('advertisement.html')
@@ -475,6 +509,11 @@ def advertisement():
 @app.route('/contact.html')
 def contact():
     return render_template('contact.html')
+
+
+@app.route('/campus-agent')
+def campus_agent():
+    return render_template('campus_agent.html')
 
 
 @app.route('/auth/google')
@@ -491,12 +530,8 @@ def auth_google_callback():
     if not user_info:
         return redirect('/registration.html?error=google_failed')
 
-    # NOTE: these are dedicated one-time "prefill" keys used ONLY to pre-fill
-    # the registration form after Google sign-in. They are intentionally
-    # separate from session['user_email'] / session['role'], which track an
-    # actual logged-in admin/expert session. Reusing the same key caused the
-    # registration form to prefill with whichever account was last logged in
-    # (e.g. the admin's email) instead of the Google account that just signed in.
+    # Dedicated one-time "prefill" keys (NOT session['user_email'] / ['role'],
+    # which track a real logged-in session).
     session['oauth_prefill_email'] = user_info.get('email')
     session['oauth_prefill_name'] = user_info.get('name')
 
@@ -544,8 +579,7 @@ def invite():
 
 @app.route('/api/subscribers', methods=['GET'])
 def get_subscribers():
-    """Emails collected via the 'Invite Us' newsletter box on the homepage
-    (stored in invitedb). Used as a source for the Admin > Invite page."""
+    """Emails collected via the 'Invite Us' box on the homepage (invitedb)."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -564,8 +598,8 @@ def get_subscribers():
 
 @app.route('/api/invite/send', methods=['POST'])
 def send_invite():
-    """Used by the Admin > Invite page: sends the composed subject/message
-    to every selected recipient email."""
+    """Admin > Invite page: sends the composed subject/message to every
+    selected recipient email."""
     data = request.get_json(silent=True) or {}
 
     emails = data.get('emails') or []
@@ -601,7 +635,6 @@ def send_invite():
                     print("INVITE SEND ERROR for", to_email, ":", e)
                     failed.append(to_email)
     except Exception as e:
-        # Couldn't even connect/login to the SMTP server at all
         print("SMTP CONNECTION ERROR:", e)
         return {"success": False, "error": f"Could not connect to mail server: {e}"}, 500
 
@@ -660,6 +693,7 @@ def view_subscribers():
 
 CITIES_JSON_PATH = os.path.join(app.root_path, "static", "data", "cities_by_state.json")
 
+
 @app.route('/api/cities', methods=['GET'])
 def get_cities():
     with open(CITIES_JSON_PATH, "r", encoding="utf-8") as f:
@@ -667,14 +701,17 @@ def get_cities():
     return data
 
 
+# ============================================================
+# CAMPUS REGISTRATION + LOGIN
+# ============================================================
 @app.route('/api/register', methods=['POST'])
-def register_student():
-    """Campus (college) registration. Student registration is a separate
-    route further below: /api/student-register."""
-    data = request.get_json()
+def register_campus():
+    """Campus (college) registration. Student registration is separate:
+    /api/student-register."""
+    data = request.get_json(silent=True) or {}
 
     name = data.get('name')
-    email = data.get('email')
+    email = (data.get('email') or '').strip()
     mobile = data.get('mobile')
     city = data.get('city')
     college_name = data.get('college_name')
@@ -691,7 +728,7 @@ def register_student():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT 1 FROM collegedb WHERE Email = ?", email)
+        cursor.execute("SELECT 1 FROM collegedb WHERE Email = ?", (email,))
         if cursor.fetchone():
             cursor.close()
             conn.close()
@@ -703,13 +740,10 @@ def register_student():
             conn.close()
             return {"success": False, "error": "This email is already used by a student account. Please use a different email."}, 409
 
-        # Hash the password before storing — never store plain text
-        hashed_password = generate_password_hash(password)
-
         cursor.execute(
             "INSERT INTO collegedb (Name, Email, MobileNo, City, CollegeName, CollegeCode, Password) "
             "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (name, email, mobile, city, college_name, college_code, hashed_password)
+            (name, email, mobile, city, college_name, college_code, generate_password_hash(password))
         )
         conn.commit()
         cursor.close()
@@ -720,36 +754,73 @@ def register_student():
         return {"success": False, "error": str(e)}, 500
 
 
+def _clear_panel_ids():
+    session.pop('college_id', None)
+    session.pop('student_id', None)
+
+
+def student_login(email, password, next_url):
+    """Called by /api/login when the email isn't in logindb or collegedb.
+    Returns a (json, status) tuple, or None if no such student."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT ID, Email, Password, Approved, Blocked FROM studentdb WHERE Email = ?",
+        (email,)
+    )
+    st = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if not st:
+        return None
+
+    try:
+        password_ok = check_password_hash(st.Password, password)
+    except Exception:
+        password_ok = False
+
+    if not password_ok:
+        print(f"LOGIN: student {email} found, but password does not match the stored hash")
+        return {"success": False, "error": "Invalid email or password."}, 401
+    if st.Blocked:
+        return {"success": False, "error": "Your account has been blocked. Please contact the admin."}, 403
+    if not st.Approved:
+        return {"success": False, "error": "Your registration is still awaiting admin approval."}, 403
+
+    session['logged_in'] = True
+    session['user_email'] = st.Email
+    session['role'] = 'student'
+    session['student_id'] = st.ID
+    session.pop('college_id', None)
+
+    return {"success": True, "role": "student", "redirect": next_url or STUDENT_DASHBOARD_URL}, 200
+
+
 @app.route('/api/login', methods=['POST'])
-def login_student():
-    """One login endpoint for four kinds of account:
+def login_user():
+    """One login endpoint for every kind of account:
 
-      1. admin / expert   -> stored in logindb
-      2. college (campus) -> stored in collegedb, created by /api/register
-      3. student          -> stored in studentdb, created by /api/student-register
+      1. admin / expert   -> logindb
+      2. college (campus) -> collegedb
+      3. student          -> studentdb
 
-    A college / student may only get in once an admin has approved it in the
-    admin panel (Approved = 1) and hasn't blocked it (Blocked = 0).
+    Colleges / students may only get in once an admin has approved them
+    (Approved = 1) and hasn't blocked them (Blocked = 0).
     """
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
 
-    email = data.get('email')
-    password = data.get('password')
+    email = (data.get('email') or '').strip()
+    password = data.get('password') or ''
 
-    # Optional: the page the user was trying to reach before being sent to
-    # login (e.g. /expert/12). login.html should read `?next=` from its own
-    # URL and pass it through here so we can send the user back to it.
-    # Only allow relative, same-site paths (must start with "/") to avoid
-    # open-redirect vulnerabilities.
+    # Optional ?next= page to return to after login. Only same-site relative
+    # paths are accepted (prevents open redirects).
     next_url = data.get('next')
     if not next_url or not isinstance(next_url, str) or not next_url.startswith('/'):
         next_url = None
 
     if not email or not password:
-        return {
-            "success": False,
-            "error": "Email and password are required."
-        }, 400
+        return {"success": False, "error": "Email and password are required."}, 400
 
     try:
         conn = get_db_connection()
@@ -757,90 +828,45 @@ def login_student():
 
         # ---- 1. admin / expert accounts (logindb) ----
         cursor.execute(
-            """
-            SELECT login_id, email, password, role
-            FROM logindb
-            WHERE email = ?
-            """,
+            "SELECT login_id, email, password, role FROM logindb WHERE email = ?",
             (email,)
         )
-
         row = cursor.fetchone()
 
         if row:
-            # Check password.
-            # logindb currently has a mix of legacy plain-text passwords and
-            # (going forward) hashed ones. check_password_hash() safely fails
-            # instead of throwing if row.password isn't a valid hash, so we
-            # fall back to a plain-text comparison for old rows. Once every
-            # row in logindb has been migrated to a hash, drop the fallback.
-            password_ok = False
+            # logindb may hold legacy plain-text passwords next to hashed ones.
             try:
                 password_ok = check_password_hash(row.password, password)
             except Exception:
                 password_ok = False
-
             if not password_ok and row.password == password:
                 password_ok = True
 
             if not password_ok:
                 cursor.close()
                 conn.close()
-                return {
-                    "success": False,
-                    "error": "Invalid email or password."
-                }, 401
+                print(f"LOGIN: {email} found in logindb, password mismatch")
+                return {"success": False, "error": "Invalid email or password."}, 401
 
-            role = row.role.lower()
+            role = (row.role or '').lower()
 
-            if role == "admin":
+            if role in ("admin", "expert"):
                 session['logged_in'] = True
                 session['user_email'] = row.email
                 session['role'] = row.role
-                session.pop('college_id', None)
-                session.pop('student_id', None)
+                _clear_panel_ids()
                 cursor.close()
                 conn.close()
-
-                # Admins go to the admin dashboard unless they were sent here
-                # from a specific page (rare, but honor it if present).
-                return {
-                    "success": True,
-                    "role": "admin",
-                    "redirect": next_url or ADMIN_DASHBOARD_URL
-                }, 200
-
-            if role == "expert":
-                session['logged_in'] = True
-                session['user_email'] = row.email
-                session['role'] = row.role
-                session.pop('college_id', None)
-                session.pop('student_id', None)
-                cursor.close()
-                conn.close()
-
-                # Send the expert back to whatever page they clicked "Learn
-                # More" from (e.g. /expert/12). Falls back to the homepage.
-                return {
-                    "success": True,
-                    "role": "expert",
-                    "redirect": next_url or "/"
-                }, 200
+                default_url = ADMIN_DASHBOARD_URL if role == "admin" else "/"
+                return {"success": True, "role": role, "redirect": next_url or default_url}, 200
 
             cursor.close()
             conn.close()
-            return {
-                "success": False,
-                "error": "You are not authorized to access this page."
-            }, 403
+            return {"success": False, "error": "You are not authorized to access this page."}, 403
 
         # ---- 2. college / campus accounts (collegedb) ----
         cursor.execute(
-            """
-            SELECT ID, Name, Email, Password, CollegeName, Approved, Blocked
-            FROM collegedb
-            WHERE Email = ?
-            """,
+            "SELECT ID, Name, Email, Password, CollegeName, Approved, Blocked FROM collegedb WHERE Email = ?",
             (email,)
         )
         college = cursor.fetchone()
@@ -852,36 +878,25 @@ def login_student():
             student_resp = student_login(email, password, next_url)
             if student_resp:
                 return student_resp
-            return {
-                "success": False,
-                "error": "Invalid email or password."
-            }, 401
+            print(f"LOGIN: {email} not found in logindb, collegedb or studentdb "
+                  f"(connected to DB: {os.environ.get('DB_NAME')})")
+            return {"success": False, "error": "Invalid email or password."}, 401
 
-        password_ok = False
         try:
             password_ok = check_password_hash(college.Password, password)
         except Exception:
             password_ok = False
 
         if not password_ok:
-            return {
-                "success": False,
-                "error": "Invalid email or password."
-            }, 401
+            print(f"LOGIN: college {email} found, password mismatch")
+            return {"success": False, "error": "Invalid email or password."}, 401
 
-        # Blocked wins over approved — a blocked college stays out even if
-        # it was approved earlier.
+        # Blocked wins over approved.
         if college.Blocked:
-            return {
-                "success": False,
-                "error": "Your account has been blocked. Please contact the admin."
-            }, 403
+            return {"success": False, "error": "Your account has been blocked. Please contact the admin."}, 403
 
         if not college.Approved:
-            return {
-                "success": False,
-                "error": "Your registration is still awaiting admin approval."
-            }, 403
+            return {"success": False, "error": "Your registration is still awaiting admin approval."}, 403
 
         session['logged_in'] = True
         session['user_email'] = college.Email
@@ -889,43 +904,33 @@ def login_student():
         session['college_id'] = college.ID
         session.pop('student_id', None)
 
-        return {
-            "success": True,
-            "role": "college",
-            "redirect": next_url or CAMPUS_DASHBOARD_URL
-        }, 200
+        return {"success": True, "role": "college", "redirect": next_url or CAMPUS_DASHBOARD_URL}, 200
 
     except Exception as e:
         print("LOGIN DB ERROR:", e)
-
-        return {
-            "success": False,
-            "error": "Database connection error."
-        }, 500
+        return {"success": False, "error": "Database connection error."}, 500
 
 
-# ---- Campus panel APIs (the logged-in college's own data) ----
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    session.clear()
+    return {"success": True}, 200
+
+
+# ============================================================
+# CAMPUS PANEL APIs (the logged-in college's own data)
+# ============================================================
 @app.route('/api/campus/profile', methods=['GET'])
 @requires_college
 def campus_profile():
-    """Everything the campus panel header needs: the college's own details
-    plus the logo that was uploaded for it on the Advertisement page.
-
-    The logo is matched on Advertisement.Name == collegedb.CollegeName, so
-    whoever adds the ad must type the college name exactly as registered.
-    If no ad/logo exists yet, logo_url comes back as null and the panel
-    should fall back to the default CampusConnect logo.
-    """
+    """Campus panel header data: college details + the logo uploaded on the
+    Advertisement page (matched on Advertisement.Name == CollegeName)."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
 
         cursor.execute(
-            """
-            SELECT ID, Name, Email, MobileNo, City, CollegeName, CollegeCode
-            FROM collegedb
-            WHERE ID = ?
-            """,
+            "SELECT ID, Name, Email, MobileNo, City, CollegeName, CollegeCode FROM collegedb WHERE ID = ?",
             (session['college_id'],)
         )
         college = cursor.fetchone()
@@ -973,14 +978,8 @@ def campus_profile():
 
 @app.route('/api/campus/session', methods=['GET'])
 def campus_session():
-    """Lightweight check the campus panel can call on load to find out
-    whether it still has a valid college session."""
     if session.get('role') == 'college' and session.get('college_id'):
-        return {
-            "success": True,
-            "logged_in": True,
-            "email": session.get('user_email')
-        }, 200
+        return {"success": True, "logged_in": True, "email": session.get('user_email')}, 200
     return {"success": True, "logged_in": False}, 200
 
 
@@ -1047,6 +1046,9 @@ def change_campus_password():
         return {"success": False, "error": str(e)}, 500
 
 
+# ============================================================
+# ADMIN PANEL: enquiries, campus registrations
+# ============================================================
 @app.route('/api/enquiries', methods=['GET'])
 def get_enquiries():
     try:
@@ -1067,24 +1069,27 @@ def get_enquiries():
         return {"success": False, "error": str(e)}, 500
 
 
-@app.route('/api/enquiries/<int:enquiry_id>', methods=['DELETE'])
-def delete_enquiry(enquiry_id):
+def _execute_one(sql, params, not_found_msg):
+    """Runs one UPDATE/DELETE and returns the JSON response tuple."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM Enqdb WHERE ID = ?", (enquiry_id,))
+        cursor.execute(sql, params)
         conn.commit()
-        deleted = cursor.rowcount
+        affected = cursor.rowcount
         cursor.close()
         conn.close()
-
-        if deleted == 0:
-            return {"success": False, "error": "Enquiry not found."}, 404
-
+        if affected == 0:
+            return {"success": False, "error": not_found_msg}, 404
         return {"success": True}, 200
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
+
+
+@app.route('/api/enquiries/<int:enquiry_id>', methods=['DELETE'])
+def delete_enquiry(enquiry_id):
+    return _execute_one("DELETE FROM Enqdb WHERE ID = ?", (enquiry_id,), "Enquiry not found.")
 
 
 @app.route('/api/registrations', methods=['GET'])
@@ -1127,18 +1132,13 @@ def approve_registration(reg_id):
 
         cursor.execute("UPDATE collegedb SET Approved = 1, Blocked = 0 WHERE ID = ?", (reg_id,))
         conn.commit()
-        updated = cursor.rowcount
 
-        if updated == 0:
+        if cursor.rowcount == 0:
             cursor.close()
             conn.close()
             return {"success": False, "error": "Registration not found."}, 404
 
-        # Grab the details so we can tell the college they're approved.
-        cursor.execute(
-            "SELECT Name, Email, CollegeName FROM collegedb WHERE ID = ?",
-            (reg_id,)
-        )
+        cursor.execute("SELECT Name, Email, CollegeName FROM collegedb WHERE ID = ?", (reg_id,))
         row = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -1150,74 +1150,32 @@ def approve_registration(reg_id):
         try:
             send_campus_approved_email(row.Email, row.Name, row.CollegeName)
         except Exception as e:
-            print("EMAIL ERROR:", e)
-            # Approval already saved; the email is best-effort.
+            print("EMAIL ERROR:", e)  # approval already saved; email is best-effort
 
     return {"success": True}, 200
 
 
 @app.route('/api/registrations/<int:reg_id>/block', methods=['PUT'])
 def block_registration(reg_id):
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("UPDATE collegedb SET Blocked = 1 WHERE ID = ?", (reg_id,))
-        conn.commit()
-        updated = cursor.rowcount
-        cursor.close()
-        conn.close()
-
-        if updated == 0:
-            return {"success": False, "error": "Registration not found."}, 404
-
-        return {"success": True}, 200
-    except Exception as e:
-        print("DB ERROR:", e)
-        return {"success": False, "error": str(e)}, 500
+    return _execute_one("UPDATE collegedb SET Blocked = 1 WHERE ID = ?", (reg_id,), "Registration not found.")
 
 
 @app.route('/api/registrations/<int:reg_id>/unblock', methods=['PUT'])
 def unblock_registration(reg_id):
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("UPDATE collegedb SET Blocked = 0 WHERE ID = ?", (reg_id,))
-        conn.commit()
-        updated = cursor.rowcount
-        cursor.close()
-        conn.close()
-
-        if updated == 0:
-            return {"success": False, "error": "Registration not found."}, 404
-
-        return {"success": True}, 200
-    except Exception as e:
-        print("DB ERROR:", e)
-        return {"success": False, "error": str(e)}, 500
+    return _execute_one("UPDATE collegedb SET Blocked = 0 WHERE ID = ?", (reg_id,), "Registration not found.")
 
 
 @app.route('/api/registrations/<int:reg_id>', methods=['DELETE'])
 def delete_registration(reg_id):
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM collegedb WHERE ID = ?", (reg_id,))
-        conn.commit()
-        deleted = cursor.rowcount
-        cursor.close()
-        conn.close()
-
-        if deleted == 0:
-            return {"success": False, "error": "Registration not found."}, 404
-
-        return {"success": True}, 200
-    except Exception as e:
-        print("DB ERROR:", e)
-        return {"success": False, "error": str(e)}, 500
+    return _execute_one("DELETE FROM collegedb WHERE ID = ?", (reg_id,), "Registration not found.")
 
 
+# ============================================================
+# EXPERTS
+# ============================================================
 UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'experts')
 ALLOWED_EXT = {'png', 'jpg', 'jpeg'}
+
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXT
@@ -1229,14 +1187,9 @@ def get_experts():
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Expertdb ORDER BY ID DESC")
-        columns = [col[0] for col in cursor.description]
-        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        rows = rows_to_dicts(cursor)
         cursor.close()
         conn.close()
-        for r in rows:
-            for k, v in r.items():
-                if not isinstance(v, (str, int, float, type(None))):
-                    r[k] = str(v)
         return {"success": True, "data": rows}, 200
     except Exception as e:
         print("DB ERROR:", e)
@@ -1284,7 +1237,7 @@ def add_expert():
              plan_type, amount, transaction_id, payment_date, expiry_date)
         )
 
-        # Only create login credentials if this email doesn't already have an account
+        # Only create login credentials if this email has no account yet
         cursor.execute("SELECT 1 FROM logindb WHERE email = ?", (email,))
         already_has_login = cursor.fetchone() is not None
 
@@ -1305,8 +1258,7 @@ def add_expert():
         try:
             send_expert_login_email(email, name, generated_password)
         except Exception as e:
-            print("EMAIL ERROR:", e)
-            # Expert + login were still created; email delivery is best-effort
+            print("EMAIL ERROR:", e)  # expert + login exist; email is best-effort
 
     return {"success": True}, 201
 
@@ -1320,7 +1272,7 @@ def expert_detail(expert_id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Expertdb WHERE ID = ?", expert_id)
+        cursor.execute("SELECT * FROM Expertdb WHERE ID = ?", (expert_id,))
         columns = [col[0] for col in cursor.description]
         row = cursor.fetchone()
         cursor.close()
@@ -1338,27 +1290,15 @@ def expert_detail(expert_id):
 
 @app.route('/api/experts/<int:expert_id>', methods=['DELETE'])
 def delete_expert(expert_id):
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM Expertdb WHERE ID = ?", (expert_id,))
-        conn.commit()
-        deleted = cursor.rowcount
-        cursor.close()
-        conn.close()
-
-        if deleted == 0:
-            return {"success": False, "error": "Expert not found."}, 404
-
-        return {"success": True}, 200
-    except Exception as e:
-        print("DB ERROR:", e)
-        return {"success": False, "error": str(e)}, 500
+    return _execute_one("DELETE FROM Expertdb WHERE ID = ?", (expert_id,), "Expert not found.")
 
 
-# ---- Advertisement routes ----
+# ============================================================
+# ADVERTISEMENTS
+# ============================================================
 ADV_UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'advertisements')
 ALLOWED_ADV_EXT = {'png', 'jpg', 'jpeg'}
+
 
 def allowed_adv_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_ADV_EXT
@@ -1370,14 +1310,9 @@ def get_advertisements():
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Advertisement ORDER BY AdvertisementId DESC")
-        columns = [col[0] for col in cursor.description]
-        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        rows = rows_to_dicts(cursor)
         cursor.close()
         conn.close()
-        for r in rows:
-            for k, v in r.items():
-                if not isinstance(v, (str, int, float, type(None))):
-                    r[k] = str(v)
         return {"success": True, "data": rows}, 200
     except Exception as e:
         print("DB ERROR:", e)
@@ -1391,7 +1326,7 @@ def add_advertisement():
     mobile = request.form.get('mobile')
     cost = request.form.get('cost', 1200)
     duration = request.form.get('duration', '6 Months')
-    registration_date = request.form.get('registration_date')  # yyyy-mm-dd from <input type="date">
+    registration_date = request.form.get('registration_date')  # yyyy-mm-dd
 
     if not name or not email or not mobile or not registration_date:
         return {"success": False, "error": "Missing required fields"}, 400
@@ -1406,8 +1341,7 @@ def add_advertisement():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-
-        # ExpiryDate is a computed column in SQL Server — do NOT insert it here
+        # ExpiryDate is a computed column in SQL Server - do NOT insert it
         cursor.execute(
             """INSERT INTO Advertisement
                (Name, Email, Mobile, LogoPath, Cost, Duration, RegistrationDate)
@@ -1425,25 +1359,37 @@ def add_advertisement():
 
 @app.route('/api/advertisements/<int:adv_id>', methods=['DELETE'])
 def delete_advertisement(adv_id):
+    return _execute_one("DELETE FROM Advertisement WHERE AdvertisementId = ?", (adv_id,), "Advertisement not found.")
+
+
+@app.route('/api/advertisements/active', methods=['GET'])
+def get_active_advertisements():
+    """Public: only non-expired ads with a logo, no personal fields."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM Advertisement WHERE AdvertisementId = ?", (adv_id,))
-        conn.commit()
-        deleted = cursor.rowcount
+        cursor.execute("""
+            SELECT Name, LogoPath
+            FROM Advertisement
+            WHERE LogoPath IS NOT NULL
+              AND ExpiryDate >= ?
+            ORDER BY RegistrationDate DESC
+        """, (date.today(),))
+
+        rows = cursor.fetchall()
+        data = [{"Name": r.Name, "LogoPath": r.LogoPath} for r in rows]
         cursor.close()
         conn.close()
 
-        if deleted == 0:
-            return {"success": False, "error": "Advertisement not found."}, 404
-
-        return {"success": True}, 200
+        return {"success": True, "data": data}, 200
     except Exception as e:
         print("DB ERROR:", e)
         return {"success": False, "error": str(e)}, 500
 
 
-# ---- Internship routes ----
+# ============================================================
+# INTERNSHIPS
+# ============================================================
 @app.route('/api/internships', methods=['GET'])
 def get_internships():
     try:
@@ -1456,14 +1402,9 @@ def get_internships():
                    Status AS status, PostedOn AS postedOn
             FROM Internship ORDER BY InternshipId DESC
         """)
-        columns = [col[0] for col in cursor.description]
-        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        rows = rows_to_dicts(cursor)
         cursor.close()
         conn.close()
-        for r in rows:
-            for k, v in r.items():
-                if not isinstance(v, (str, int, float, type(None))):
-                    r[k] = str(v)
         return {"success": True, "data": rows}, 200
     except Exception as e:
         print("DB ERROR:", e)
@@ -1472,20 +1413,13 @@ def get_internships():
 
 @app.route('/api/internships', methods=['POST'])
 def add_internship():
-    # Keys match the Vue form's `form` object exactly:
-    # company, email, mobile, companyType, duration, stipend, link, location, branch, status
-    data = request.get_json()
+    # Keys match the Vue form: company, email, mobile, companyType, duration,
+    # stipend, link, location, branch, status
+    data = request.get_json(silent=True) or {}
 
     company = data.get('company')
     email = data.get('email')
     mobile = data.get('mobile')
-    company_type = data.get('companyType')
-    duration = data.get('duration')
-    stipend = data.get('stipend')
-    link = data.get('link')
-    location = data.get('location')
-    branch = data.get('branch')
-    status = data.get('status')
 
     if not company or not email or not mobile:
         return {"success": False, "error": "Company, Email and Mobile are required"}, 400
@@ -1497,7 +1431,9 @@ def add_internship():
             """INSERT INTO Internship
                (Company, Email, Mobile, CompanyType, Duration, Stipend, ApplicationLink, Location, Branch, Status)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (company, email, mobile, company_type, duration, stipend, link, location, branch, status)
+            (company, email, mobile, data.get('companyType'), data.get('duration'),
+             data.get('stipend'), data.get('link'), data.get('location'),
+             data.get('branch'), data.get('status'))
         )
         conn.commit()
         cursor.close()
@@ -1510,22 +1446,7 @@ def add_internship():
 
 @app.route('/api/internships/<int:internship_id>', methods=['DELETE'])
 def delete_internship(internship_id):
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM Internship WHERE InternshipId = ?", (internship_id,))
-        conn.commit()
-        deleted = cursor.rowcount
-        cursor.close()
-        conn.close()
-
-        if deleted == 0:
-            return {"success": False, "error": "Internship not found."}, 404
-
-        return {"success": True}, 200
-    except Exception as e:
-        print("DB ERROR:", e)
-        return {"success": False, "error": str(e)}, 500
+    return _execute_one("DELETE FROM Internship WHERE InternshipId = ?", (internship_id,), "Internship not found.")
 
 
 @app.route('/api/internships/<int:internship_id>/status', methods=['PATCH'])
@@ -1536,66 +1457,21 @@ def update_internship_status(internship_id):
     if status not in ('Open', 'Closed'):
         return {"success": False, "error": "Status must be 'Open' or 'Closed'."}, 400
 
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE Internship SET Status = ? WHERE InternshipId = ?",
-            (status, internship_id)
-        )
-        conn.commit()
-        updated = cursor.rowcount
-        cursor.close()
-        conn.close()
-
-        if updated == 0:
-            return {"success": False, "error": "Internship not found."}, 404
-
-        return {"success": True}, 200
-    except Exception as e:
-        print("DB ERROR:", e)
-        return {"success": False, "error": str(e)}, 500
+    return _execute_one(
+        "UPDATE Internship SET Status = ? WHERE InternshipId = ?",
+        (status, internship_id), "Internship not found."
+    )
 
 
-@app.route('/api/logout', methods=['POST'])
-def logout():
-    session.clear()
-    return {"success": True}, 200
-
-
-# ---- News routes ----
+# ============================================================
+# NEWS
+# ============================================================
 NEWS_UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'news')
 ALLOWED_NEWS_EXT = {'png', 'jpg', 'jpeg', 'pdf', 'doc', 'docx'}
 
+
 def allowed_news_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_NEWS_EXT
-
-
-def ensure_news_table():
-    """Creates the News table automatically on startup if it doesn't
-    already exist yet — no manual SSMS/SQL setup required."""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='News' AND xtype='U')
-            CREATE TABLE News (
-                NewsId INT IDENTITY(1,1) PRIMARY KEY,
-                Title NVARCHAR(255) NOT NULL,
-                Description NVARCHAR(MAX) NOT NULL,
-                FilePath NVARCHAR(255) NULL,
-                PostedOn DATETIME NOT NULL DEFAULT GETDATE()
-            )
-        """)
-        conn.commit()
-        cursor.close()
-        conn.close()
-    except Exception as e:
-        print("Could not ensure News table exists:", e)
-
-
-# Runs once when this module is imported (i.e. when Flask starts up).
-ensure_news_table()
 
 
 @app.route('/api/news', methods=['GET'])
@@ -1604,14 +1480,9 @@ def get_news():
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM News ORDER BY NewsId DESC")
-        columns = [col[0] for col in cursor.description]
-        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        rows = rows_to_dicts(cursor)
         cursor.close()
         conn.close()
-        for r in rows:
-            for k, v in r.items():
-                if not isinstance(v, (str, int, float, type(None))):
-                    r[k] = str(v)
         return {"success": True, "data": rows}, 200
     except Exception as e:
         print("DB ERROR:", e)
@@ -1639,8 +1510,7 @@ def add_news():
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            """INSERT INTO News (Title, Description, FilePath)
-               VALUES (?, ?, ?)""",
+            "INSERT INTO News (Title, Description, FilePath) VALUES (?, ?, ?)",
             (title, description, file_filename)
         )
         conn.commit()
@@ -1652,46 +1522,23 @@ def add_news():
         return {"success": False, "error": str(e)}, 500
 
 
-@app.route('/campus-agent')
-def campus_agent():
-    return render_template('campus_agent.html')
-
-
 @app.route('/api/news/<int:news_id>', methods=['DELETE'])
 def delete_news(news_id):
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM News WHERE NewsId = ?", (news_id,))
-        conn.commit()
-        deleted = cursor.rowcount
-        cursor.close()
-        conn.close()
-
-        if deleted == 0:
-            return {"success": False, "error": "News not found."}, 404
-
-        return {"success": True}, 200
-    except Exception as e:
-        print("DB ERROR:", e)
-        return {"success": False, "error": str(e)}, 500
+    return _execute_one("DELETE FROM News WHERE NewsId = ?", (news_id,), "News not found.")
 
 
-# ---- RojgarSetu routes ----
+# ============================================================
+# ROJGARSETU (job postings)
+# ============================================================
 @app.route('/api/rojgarsetu', methods=['GET'])
 def get_job_postings():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM RojgarSetu ORDER BY JobId DESC")
-        columns = [col[0] for col in cursor.description]
-        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        rows = rows_to_dicts(cursor)
         cursor.close()
         conn.close()
-        for r in rows:
-            for k, v in r.items():
-                if not isinstance(v, (str, int, float, type(None))):
-                    r[k] = str(v)
         return {"success": True, "data": rows}, 200
     except Exception as e:
         print("DB ERROR:", e)
@@ -1700,19 +1547,12 @@ def get_job_postings():
 
 @app.route('/api/rojgarsetu', methods=['POST'])
 def add_job_posting():
-    # Keys here match the Vue form's `form` object exactly:
-    # category, jobTitle, companyName, location, email, mobile, experience, salary, link
-    data = request.get_json()
+    # Keys match the Vue form: category, jobTitle, companyName, location,
+    # email, mobile, experience, salary, link
+    data = request.get_json(silent=True) or {}
 
-    job_category = data.get('category')
     job_title = data.get('jobTitle')
     company_name = data.get('companyName')
-    location = data.get('location')
-    email = data.get('email')
-    mobile = data.get('mobile')
-    experience = data.get('experience')
-    salary = data.get('salary')
-    link = data.get('link')
 
     if not job_title or not company_name:
         return {"success": False, "error": "Job Title and Company Name are required"}, 400
@@ -1724,7 +1564,9 @@ def add_job_posting():
             """INSERT INTO RojgarSetu
                (JobCategory, JobTitle, CompanyName, Location, Email, Mobile, Experience, SalaryLPA, ApplicationLink)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (job_category, job_title, company_name, location, email, mobile, experience, salary, link)
+            (data.get('category'), job_title, company_name, data.get('location'),
+             data.get('email'), data.get('mobile'), data.get('experience'),
+             data.get('salary'), data.get('link'))
         )
         conn.commit()
         cursor.close()
@@ -1737,105 +1579,21 @@ def add_job_posting():
 
 @app.route('/api/rojgarsetu/<int:job_id>', methods=['DELETE'])
 def delete_job_posting(job_id):
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM RojgarSetu WHERE JobId = ?", (job_id,))
-        conn.commit()
-        deleted = cursor.rowcount
-        cursor.close()
-        conn.close()
-
-        if deleted == 0:
-            return {"success": False, "error": "Job posting not found."}, 404
-
-        return {"success": True}, 200
-    except Exception as e:
-        print("DB ERROR:", e)
-        return {"success": False, "error": str(e)}, 500
+    return _execute_one("DELETE FROM RojgarSetu WHERE JobId = ?", (job_id,), "Job posting not found.")
 
 
-@app.route('/api/advertisements/active', methods=['GET'])
-def get_active_advertisements():
-    """Public endpoint — only non-expired ads with a logo, no personal fields.
-    NOTE: table is 'Advertisement' (singular) to match the rest of the app's
-    routes (get_advertisements, add_advertisement, delete_advertisement)."""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT Name, LogoPath
-            FROM Advertisement
-            WHERE LogoPath IS NOT NULL
-              AND ExpiryDate >= ?
-            ORDER BY RegistrationDate DESC
-        """, (date.today(),))
-
-        rows = cursor.fetchall()
-        data = [{"Name": r.Name, "LogoPath": r.LogoPath} for r in rows]
-        cursor.close()
-        conn.close()
-
-        return {"success": True, "data": data}, 200
-    except Exception as e:
-        print("DB ERROR:", e)
-        return {"success": False, "error": str(e)}, 500
-
-
-@app.route('/admin')
-@app.route('/admin/<path:path>')
-def admin_dashboard(path='index.html'):
-    return send_from_directory('static/admin', path)
-
-
-@app.route('/campus')
-@app.route('/campus/<path:path>')
-def campus_dashboard(path='index.html'):
-    return send_from_directory('static/campus', path)
-
-
-# ---- Review routes ----
-def ensure_reviews_table():
-    """Creates the Reviews table automatically on startup if it doesn't
-    already exist yet — no manual SSMS/SQL setup required."""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Reviews' AND xtype='U')
-            CREATE TABLE Reviews (
-                ReviewId INT IDENTITY(1,1) PRIMARY KEY,
-                Name NVARCHAR(255) NOT NULL,
-                Message NVARCHAR(MAX) NOT NULL,
-                Rating INT NOT NULL,
-                PostedOn DATETIME NOT NULL DEFAULT GETDATE()
-            )
-        """)
-        conn.commit()
-        cursor.close()
-        conn.close()
-    except Exception as e:
-        print("Could not ensure Reviews table exists:", e)
-
-
-# Runs once when this module is imported (i.e. when Flask starts up).
-ensure_reviews_table()
-
-
+# ============================================================
+# REVIEWS
+# ============================================================
 @app.route('/api/reviews', methods=['GET'])
 def get_reviews():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Reviews ORDER BY ReviewId DESC")
-        columns = [col[0] for col in cursor.description]
-        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        rows = rows_to_dicts(cursor)
         cursor.close()
         conn.close()
-        for r in rows:
-            for k, v in r.items():
-                if not isinstance(v, (str, int, float, type(None))):
-                    r[k] = str(v)
         return {"success": True, "data": rows}, 200
     except Exception as e:
         print("DB ERROR:", e)
@@ -1844,8 +1602,8 @@ def get_reviews():
 
 @app.route('/api/reviews', methods=['POST'])
 def add_review():
-    # Keys match the Vue ReviewForm's `form` object exactly: name, message, rating
-    data = request.get_json()
+    # Keys match the Vue ReviewForm: name, message, rating
+    data = request.get_json(silent=True) or {}
 
     name = data.get('name')
     message = data.get('message')
@@ -1880,36 +1638,26 @@ def add_review():
 
 @app.route('/api/reviews/<int:review_id>', methods=['DELETE'])
 def delete_review(review_id):
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM Reviews WHERE ReviewId = ?", (review_id,))
-        conn.commit()
-        deleted = cursor.rowcount
-        cursor.close()
-        conn.close()
-
-        if deleted == 0:
-            return {"success": False, "error": "Review not found."}, 404
-
-        return {"success": True}, 200
-    except Exception as e:
-        print("DB ERROR:", e)
-        return {"success": False, "error": str(e)}, 500
-
-
-@app.route('/debug/db-test')
-def debug_db_test():
-    try:
-        conn = get_db_connection()
-        conn.close()
-        return {"db_connect": "success"}, 200
-    except Exception as e:
-        return {"db_connect": "failed", "error": str(e)}, 500
+    return _execute_one("DELETE FROM Reviews WHERE ReviewId = ?", (review_id,), "Review not found.")
 
 
 # ============================================================
-# STUDENT FLOW (all student code lives in this one section)
+# STATIC PANEL BUILDS
+# ============================================================
+@app.route('/admin')
+@app.route('/admin/<path:path>')
+def admin_dashboard(path='index.html'):
+    return send_from_directory('static/admin', path)
+
+
+@app.route('/campus')
+@app.route('/campus/<path:path>')
+def campus_dashboard(path='index.html'):
+    return send_from_directory('static/campus', path)
+
+
+# ============================================================
+# STUDENT FLOW
 #
 #   1. Student registers   -> /student-registration  (Flask form, :5000)
 #   2. Row goes to studentdb with Approved = 0
@@ -1918,167 +1666,9 @@ def debug_db_test():
 #   5. Student panel calls /api/student/session:
 #        has_college = False (college = 'Other') -> only Profile menu
 #        has_college = True                      -> all menus
-#   6. On Profile page the student picks a registered college
+#   6. On the Profile page the student picks / types a college
 #        -> PUT /api/student/profile -> menus unlock
 # ============================================================
-
-def ensure_student_table():
-    """Creates studentdb on startup if it doesn't exist."""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='studentdb' AND xtype='U')
-            CREATE TABLE studentdb (
-                ID INT IDENTITY(1,1) PRIMARY KEY,
-                Name NVARCHAR(255) NOT NULL,
-                Email NVARCHAR(255) NOT NULL UNIQUE,
-                MobileNo NVARCHAR(20) NOT NULL,
-                CollegeName NVARCHAR(255) NOT NULL,
-                Password NVARCHAR(255) NOT NULL,
-                RegisteredOn DATE NOT NULL,
-                Status NVARCHAR(10) NOT NULL DEFAULT 'Open',
-                Approved BIT NOT NULL DEFAULT 0,
-                Blocked BIT NOT NULL DEFAULT 0
-            )
-        """)
-        conn.commit()
-        cursor.close()
-        conn.close()
-    except Exception as e:
-        print("Could not ensure studentdb table:", e)
-
-
-ensure_student_table()
-
-
-def ensure_student_profile_columns():
-    """Adds City / CollegeCode to studentdb if they aren't there yet -
-    same auto-migration pattern as ensure_college_status_columns()."""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            IF NOT EXISTS (
-                SELECT 1 FROM sys.columns
-                WHERE Name = N'City' AND Object_ID = Object_ID(N'studentdb')
-            )
-            ALTER TABLE studentdb ADD City NVARCHAR(100) NULL
-        """)
-        conn.commit()
-        cursor.execute("""
-            IF NOT EXISTS (
-                SELECT 1 FROM sys.columns
-                WHERE Name = N'CollegeCode' AND Object_ID = Object_ID(N'studentdb')
-            )
-            ALTER TABLE studentdb ADD CollegeCode NVARCHAR(50) NULL
-        """)
-        conn.commit()
-        cursor.execute("""
-            IF NOT EXISTS (
-                SELECT 1 FROM sys.columns
-                WHERE Name = N'OtherCollege' AND Object_ID = Object_ID(N'studentdb')
-            )
-            ALTER TABLE studentdb ADD OtherCollege NVARCHAR(255) NULL
-        """)
-        conn.commit()
-        cursor.close()
-        conn.close()
-    except Exception as e:
-        print("Could not ensure studentdb profile columns:", e)
-
-
-ensure_student_profile_columns()
-
-
-def send_student_approved_email(to_email, name):
-    login_url = f"{APP_BASE_URL}/login.html"
-    html_body = f"""
-    <html>
-    <body style="margin:0; padding:0; background-color:#f4f4f7; font-family: 'Segoe UI', Arial, sans-serif;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7; padding: 40px 0;">
-            <tr>
-                <td align="center">
-                    <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:10px; overflow:hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
-                        <tr>
-                            <td style="background-color:#2d2d3a; padding: 35px 40px; text-align:center;">
-                                <h1 style="margin:0; color:#ffffff; font-size:24px;">
-                                    <span style="color:#ff6b35;">CAMPUS</span>CONNECT AI
-                                </h1>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 40px;">
-                                <h2 style="color:#2d2d3a; margin-top:0;">Your student account is approved</h2>
-                                <p style="color:#555555; font-size:15px; line-height:1.6;">
-                                    Hi {name}, your <strong>student registration</strong> on CampusConnect AI has been
-                                    approved. You can now log in with the email and password you registered with.
-                                </p>
-                                <div style="text-align:center; margin: 30px 0;">
-                                    <a href="{login_url}" style="background-color:#fd7e14; color:#ffffff; text-decoration:none; padding: 14px 32px; border-radius:8px; font-weight:600; display:inline-block;">
-                                        Log In to Your Student Panel
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="background-color:#f4f4f7; padding: 25px 40px; text-align:center; border-top:1px solid #eaeaea;">
-                                <p style="color:#999999; font-size:13px; margin:0;">
-                                    Best regards,<br>
-                                    <strong style="color:#2d2d3a;">Team CampusConnect AI</strong><br>
-                                    NRSolution4u
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-    </body>
-    </html>
-    """
-    msg = MIMEText(html_body, 'html')
-    msg['Subject'] = 'Your CampusConnect AI student account is approved'
-    msg['From'] = EMAIL_SENDER
-    msg['To'] = to_email
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
-        server.starttls()
-        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_SENDER, to_email, msg.as_string())
-
-
-def student_login(email, password, next_url):
-    """Called by /api/login when the email isn't in logindb or collegedb.
-    Returns a (json, status) tuple, or None if no such student."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT ID, Email, Password, Approved, Blocked FROM studentdb WHERE Email = ?",
-        (email,)
-    )
-    st = cursor.fetchone()
-    cursor.close()
-    conn.close()
-
-    if not st:
-        return None
-
-    if not check_password_hash(st.Password, password):
-        return {"success": False, "error": "Invalid email or password."}, 401
-    if st.Blocked:
-        return {"success": False, "error": "Your account has been blocked. Please contact the admin."}, 403
-    if not st.Approved:
-        return {"success": False, "error": "Your registration is still awaiting admin approval."}, 403
-
-    session['logged_in'] = True
-    session['user_email'] = st.Email
-    session['role'] = 'student'
-    session['student_id'] = st.ID
-    session.pop('college_id', None)
-
-    return {"success": True, "role": "student", "redirect": next_url or STUDENT_DASHBOARD_URL}, 200
-
-
 @app.route('/student-registration')
 def student_registration():
     return render_template('student_registration.html')
@@ -2223,36 +1813,19 @@ def approve_student(student_id):
     return {"success": True}, 200
 
 
-def _set_student_flag(student_id, sql):
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(sql, (student_id,))
-        conn.commit()
-        updated = cursor.rowcount
-        cursor.close()
-        conn.close()
-        if updated == 0:
-            return {"success": False, "error": "Student not found."}, 404
-        return {"success": True}, 200
-    except Exception as e:
-        print("DB ERROR:", e)
-        return {"success": False, "error": str(e)}, 500
-
-
 @app.route('/api/students/<int:student_id>/block', methods=['PUT'])
 def block_student(student_id):
-    return _set_student_flag(student_id, "UPDATE studentdb SET Blocked = 1 WHERE ID = ?")
+    return _execute_one("UPDATE studentdb SET Blocked = 1 WHERE ID = ?", (student_id,), "Student not found.")
 
 
 @app.route('/api/students/<int:student_id>/unblock', methods=['PUT'])
 def unblock_student(student_id):
-    return _set_student_flag(student_id, "UPDATE studentdb SET Blocked = 0 WHERE ID = ?")
+    return _execute_one("UPDATE studentdb SET Blocked = 0 WHERE ID = ?", (student_id,), "Student not found.")
 
 
 @app.route('/api/students/<int:student_id>', methods=['DELETE'])
 def delete_student(student_id):
-    return _set_student_flag(student_id, "DELETE FROM studentdb WHERE ID = ?")
+    return _execute_one("DELETE FROM studentdb WHERE ID = ?", (student_id,), "Student not found.")
 
 
 # ---- Student panel APIs (the logged-in student's own data) ----
@@ -2340,8 +1913,8 @@ def get_student_profile():
 @app.route('/api/student/profile', methods=['PUT'])
 @requires_student
 def update_student_profile():
-    """Profile page: student adds their college (only while it is 'Other').
-    The college must be one that is registered as a Campus."""
+    """Profile page: student sets their college (only while it is 'Other').
+    It can be one from the list OR a name the student typed."""
     data = request.get_json(silent=True) or {}
     college_name = (data.get('college_name') or '').strip()
     city = (data.get('city') or '').strip()
@@ -2366,8 +1939,6 @@ def update_student_profile():
             conn.close()
             return {"success": False, "error": "College is already set."}, 403
 
-        # The college can be one from the list OR a name the student typed
-        # (college not registered as a campus yet), so no collegedb check here.
         cursor.execute(
             "UPDATE studentdb SET CollegeName = ?, City = ?, OtherCollege = NULL WHERE ID = ?",
             (college_name, city or None, session['student_id'])
@@ -2386,42 +1957,39 @@ def update_student_profile():
 def student(path=''):
     return render_template('student.html')
 
-# ---- Chatbook (student group chat) ----
-CHATBOOK_ONLINE_SECONDS = 20
 
-
-def ensure_chatbook_tables():
+@app.route('/api/student/dashboard-counts', methods=['GET'])
+@requires_student
+def student_dashboard_counts():
+    """Total counts for the student dashboard cards (same style as admin)."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("""
-            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='chatbook_messages' AND xtype='U')
-            CREATE TABLE chatbook_messages (
-                id INT IDENTITY(1,1) PRIMARY KEY,
-                sender_id INT NOT NULL,
-                sender_name NVARCHAR(255) NOT NULL,
-                text NVARCHAR(1000) NOT NULL,
-                reply_to_id INT NULL,
-                created_at DATETIME NOT NULL DEFAULT GETUTCDATE()
-            )
-        """)
-        conn.commit()
-        cursor.execute("""
-            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='chatbook_presence' AND xtype='U')
-            CREATE TABLE chatbook_presence (
-                student_id INT PRIMARY KEY,
-                name NVARCHAR(255) NOT NULL,
-                last_seen DATETIME NOT NULL
-            )
-        """)
-        conn.commit()
+
+        def count(sql):
+            cursor.execute(sql)
+            return cursor.fetchone()[0]
+
+        data = {
+            "services": count("SELECT COUNT(*) FROM Internship"),
+            "rojgarsetu": count("SELECT COUNT(*) FROM RojgarSetu"),
+            "expertise": count("SELECT COUNT(*) FROM Expertdb"),
+            "review": count("SELECT COUNT(*) FROM Reviews"),
+            "chatbook": count("SELECT COUNT(*) FROM chatbook_messages"),
+        }
+
         cursor.close()
         conn.close()
+        return {"success": True, **data}, 200
     except Exception as e:
-        print("Could not ensure chatbook tables:", e)
+        print("DB ERROR:", e)
+        return {"success": False, "error": str(e)}, 500
 
 
-ensure_chatbook_tables()
+# ============================================================
+# CHATBOOK (student group chat)
+# ============================================================
+CHATBOOK_ONLINE_SECONDS = 20
 
 
 @app.route('/api/chatbook/sync', methods=['GET'])
@@ -2549,35 +2117,9 @@ def chatbook_send():
         return {"success": False, "error": str(e)}, 500
 
 
-@app.route('/api/student/dashboard-counts', methods=['GET'])
-@requires_student
-def student_dashboard_counts():
-    """Total counts for the student dashboard cards (same style as admin)."""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        def count(sql):
-            cursor.execute(sql)
-            return cursor.fetchone()[0]
-
-        data = {
-            "services": count("SELECT COUNT(*) FROM Internship"),
-            "rojgarsetu": count("SELECT COUNT(*) FROM RojgarSetu"),
-            "expertise": count("SELECT COUNT(*) FROM Expertdb"),
-            "review": count("SELECT COUNT(*) FROM Reviews"),
-            "chatbook": count("SELECT COUNT(*) FROM chatbook_messages"),
-        }
-
-        cursor.close()
-        conn.close()
-        return {"success": True, **data}, 200
-    except Exception as e:
-        print("DB ERROR:", e)
-        return {"success": False, "error": str(e)}, 500
-
-
-# ---- RojgarSetu: student applications (applydb) ----
+# ============================================================
+# ROJGARSETU: student applications (applydb)
+# ============================================================
 @app.route('/api/apply', methods=['POST'])
 @requires_student
 def apply_job():
@@ -2595,11 +2137,8 @@ def apply_job():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # name / email session wale student ke studentdb se aate hain
-        cursor.execute(
-            "SELECT Name, Email FROM studentdb WHERE ID = ?",
-            (session['student_id'],)
-        )
+        # name / email come from the logged-in student's studentdb row
+        cursor.execute("SELECT Name, Email FROM studentdb WHERE ID = ?", (session['student_id'],))
         st = cursor.fetchone()
         if not st:
             cursor.close()
@@ -2607,11 +2146,8 @@ def apply_job():
             session.clear()
             return {"success": False, "message": "Account no longer exists."}, 401
 
-        # same job pe dobara apply na ho
-        cursor.execute(
-            "SELECT 1 FROM applydb WHERE jobid = ? AND email = ?",
-            (jobid, st.Email)
-        )
+        # one application per student per job
+        cursor.execute("SELECT 1 FROM applydb WHERE jobid = ? AND email = ?", (jobid, st.Email))
         if cursor.fetchone():
             cursor.close()
             conn.close()
@@ -2634,7 +2170,7 @@ def apply_job():
 @app.route('/api/applied', methods=['GET'])
 @requires_student
 def applied_jobs():
-    """Job ids jo logged-in student pehle apply kar chuka hai."""
+    """Job ids the logged-in student has already applied to."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -2654,21 +2190,13 @@ def applied_jobs():
         print("DB ERROR:", e)
         return {"success": False, "message": str(e)}, 500
 
-# ---- Connect page (expert panel): message an expert ----
-# The expert LIST reuses the existing GET /api/experts route, so only the send route is new. ----
-# Paste this into app.py, above `if __name__ == '__main__':`
 
-def requires_login(f):
-    """Any logged-in user (admin / expert / college / student)."""
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if not session.get('user_email'):
-            return {"success": False, "error": "Not logged in."}, 401
-        return f(*args, **kwargs)
-    return decorated
-
-
+# ============================================================
+# CONNECT PAGE: message an expert
+# (the expert LIST reuses GET /api/experts)
+# ============================================================
 @app.route('/api/connect/send', methods=['POST'])
+@requires_login
 def connect_send():
     """Emails the message to the chosen expert. The expert's address is
     looked up on the server, so it is never exposed to the browser."""
@@ -2696,23 +2224,73 @@ def connect_send():
         return {"success": False, "error": "Expert not found."}, 404
 
     body = f"You have a new message on CampusConnect AI from {from_email}.\n\n{message}"
-    msg = MIMEText(body, 'plain')
-    msg['Subject'] = subject
-    msg['From'] = EMAIL_SENDER
-    msg['To'] = expert.Email
-    msg['Reply-To'] = from_email
-
     try:
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
-            server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-            server.sendmail(EMAIL_SENDER, expert.Email, msg.as_string())
+        _send_mail(expert.Email, subject, body, subtype='plain', reply_to=from_email)
     except Exception as e:
         print("EMAIL ERROR:", e)
         return {"success": False, "error": "Could not send the email."}, 500
 
     return {"success": True}, 200
 
+
+# ============================================================
+# DEBUG ROUTES (only work while Flask runs with debug=True)
+# ============================================================
+@app.route('/debug/db-test')
+@debug_only
+def debug_db_test():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT DB_NAME(), @@SERVERNAME")
+        r = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return {"db_connect": "success", "database": r[0], "server": r[1]}, 200
+    except Exception as e:
+        return {"db_connect": "failed", "error": str(e)}, 500
+
+
+@app.route('/debug/who')
+@debug_only
+def debug_who():
+    """/debug/who?email=someone@gmail.com  -> shows which table the email is
+    in and what the stored password looks like (first 10 characters only)."""
+    email = request.args.get('email', '').strip()
+    out = {}
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT DB_NAME(), @@SERVERNAME")
+        r = cursor.fetchone()
+        out["connected_db"] = r[0]
+        out["server"] = r[1]
+
+        for tbl, email_col, pw_col in (
+            ("logindb", "email", "password"),
+            ("collegedb", "Email", "Password"),
+            ("studentdb", "Email", "Password"),
+        ):
+            try:
+                cursor.execute(
+                    f"SELECT {pw_col}, LEN({pw_col}) FROM {tbl} WHERE {email_col} = ?", (email,)
+                )
+                row = cursor.fetchone()
+                out[tbl] = (
+                    {"found": True, "stored_starts_with": str(row[0])[:10], "length": row[1]}
+                    if row else {"found": False}
+                )
+            except Exception as e:
+                out[tbl] = {"error": str(e)}
+
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        out["connection_error"] = str(e)
+    return out
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
-    
+    # reloader_type='stat' stops the endless "Detected change in ...unicode_escape.py" restarts
+    app.run(debug=True, reloader_type='stat')
