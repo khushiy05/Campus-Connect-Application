@@ -13,6 +13,9 @@ from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
+import random
+import time
+import hmac
 
 
 load_dotenv()
@@ -671,7 +674,7 @@ def get_cities():
 def register_student():
     """Campus (college) registration. Student registration is a separate
     route further below: /api/student-register."""
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
 
     name = data.get('name')
     email = data.get('email')
@@ -687,11 +690,17 @@ def register_student():
     if len(password) < 6:
         return {"success": False, "error": "Password must be at least 6 characters."}, 400
 
+    # The email must have passed OTP verification first
+    email_key = email.strip().lower()
+    rec = otp_store.get(email_key)
+    if not rec or not rec.get("verified") or time.time() > rec["expires"]:
+        return {"success": False, "error": "Email not verified. Please verify the OTP first."}, 403
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT 1 FROM collegedb WHERE Email = ?", email)
+        cursor.execute("SELECT 1 FROM collegedb WHERE Email = ?", (email,))
         if cursor.fetchone():
             cursor.close()
             conn.close()
@@ -714,6 +723,10 @@ def register_student():
         conn.commit()
         cursor.close()
         conn.close()
+
+        # OTP is single-use: remove it after a successful registration
+        otp_store.pop(email_key, None)
+
         return {"success": True}, 201
     except Exception as e:
         print("DB ERROR:", e)
@@ -2703,14 +2716,83 @@ def connect_send():
     msg['Reply-To'] = from_email
 
     try:
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=20) as server:
             server.login(EMAIL_SENDER, EMAIL_PASSWORD)
             server.sendmail(EMAIL_SENDER, expert.Email, msg.as_string())
     except Exception as e:
         print("EMAIL ERROR:", e)
         return {"success": False, "error": "Could not send the email."}, 500
 
+    return {"success": True}, 200
+
+# ---- Email OTP for campus registration ----
+otp_store = {}  # email -> {"otp", "expires", "attempts", "verified", "last_sent"}
+
+
+def send_otp_email(to_email, name, otp):
+    body = (
+        f"Hi {name},\n\n"
+        f"Your Campus Connect OTP is: {otp}\n"
+        f"It is valid for 10 minutes. Do not share it with anyone."
+    )
+    msg = MIMEText(body, 'plain')
+    msg['Subject'] = 'OTP for your Campus Registration authentication'
+    msg['From'] = EMAIL_SENDER
+    msg['To'] = to_email
+
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.starttls()
+        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+        server.sendmail(EMAIL_SENDER, to_email, msg.as_string())
+
+
+@app.route('/api/send-otp', methods=['POST'])
+def api_send_otp():
+    data = request.get_json(silent=True) or {}
+    email = (data.get('email') or '').strip().lower()
+    name = (data.get('name') or 'there').strip()
+
+    if not email:
+        return {"success": False, "error": "Email is required."}, 400
+
+    rec = otp_store.get(email)
+    if rec and time.time() - rec["last_sent"] < 30:
+        return {"success": False, "error": "Please wait 30 seconds before requesting another OTP."}, 429
+
+    otp = str(random.SystemRandom().randint(100000, 999999))
+    try:
+        send_otp_email(email, name, otp)
+    except Exception as e:
+        print("OTP EMAIL ERROR:", e)
+        return {"success": False, "error": "Could not send OTP email. Please try again."}, 500
+
+    otp_store[email] = {
+        "otp": otp,
+        "expires": time.time() + 600,
+        "attempts": 0,
+        "verified": False,
+        "last_sent": time.time(),
+    }
+    return {"success": True}, 200
+
+
+@app.route('/api/verify-otp', methods=['POST'])
+def api_verify_otp():
+    data = request.get_json(silent=True) or {}
+    email = (data.get('email') or '').strip().lower()
+    otp = (data.get('otp') or '').strip()
+    rec = otp_store.get(email)
+
+    if not rec or time.time() > rec["expires"]:
+        return {"success": False, "error": "OTP expired. Please request a new one."}, 400
+    if rec["attempts"] >= 5:
+        return {"success": False, "error": "Too many attempts. Please request a new OTP."}, 429
+
+    rec["attempts"] += 1
+    if not hmac.compare_digest(rec["otp"], otp):
+        return {"success": False, "error": "Incorrect OTP. Please try again."}, 400
+
+    rec["verified"] = True
     return {"success": True}, 200
 
 if __name__ == '__main__':

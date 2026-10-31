@@ -19,10 +19,7 @@
     <!-- Customized Bootstrap Stylesheet -->
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 
-    <!-- Google Sign-In + EmailJS -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-
+    <!-- Searchable city dropdown -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
@@ -258,110 +255,109 @@
                             <div id="regFormStep">
                                 <form id="registrationForm">
 
-<form id="registrationForm">
+                                    <div class="form-grid">
 
-    <div class="form-grid">
+                                        <!-- Name -->
+                                        <div class="form-group">
+                                            <label>Name</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="regName"
+                                                   value="{{ prefill_name }}"
+                                                   required>
+                                        </div>
 
-        <!-- Name -->
-        <div class="form-group">
-            <label>Name</label>
-            <input type="text"
-                   class="form-control"
-                   id="regName"
-                   value="{{ prefill_name }}"
-                   required>
-        </div>
+                                        <!-- Email -->
+                                        <div class="form-group">
+                                            <label>Email</label>
+                                            <input type="email"
+                                                   class="form-control"
+                                                   id="regEmail"
+                                                   value="{{ prefill_email }}"
+                                                   required>
+                                        </div>
 
-        <!-- Email -->
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email"
-                   class="form-control"
-                   id="regEmail"
-                   value="{{ prefill_email }}"
-                   required>
-        </div>
+                                        <!-- Mobile Number -->
+                                        <div class="form-group">
+                                            <label>Mobile Number</label>
+                                            <input type="tel"
+                                                   class="form-control"
+                                                   id="regMobile"
+                                                   required>
+                                        </div>
 
-        <!-- Mobile Number -->
-        <div class="form-group">
-            <label>Mobile Number</label>
-            <input type="tel"
-                   class="form-control"
-                   id="regMobile"
-                   required>
-        </div>
+                                        <!-- City -->
+                                        <div class="form-group">
+                                            <label>City</label>
+                                            <select class="form-control"
+                                                    id="regCity"
+                                                    disabled
+                                                    required>
+                                                <option value="" selected disabled>
+                                                    Loading cities...
+                                                </option>
+                                            </select>
+                                        </div>
 
-        <!-- City -->
-        <div class="form-group">
-            <label>City</label>
-            <select class="form-control"
-                    id="regCity"
-                    disabled
-                    required>
-                <option value="" selected disabled>
-                    Loading cities...
-                </option>
-            </select>
-        </div>
+                                        <!-- College Name -->
+                                        <div class="form-group">
+                                            <label>College Name</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="regCollege"
+                                                   list="collegeSuggestions"
+                                                   placeholder="Select a city first"
+                                                   disabled
+                                                   required
+                                                   autocomplete="off">
 
-        <!-- College Name -->
-        <div class="form-group">
-            <label>College Name</label>
-            <input type="text"
-                   class="form-control"
-                   id="regCollege"
-                   list="collegeSuggestions"
-                   placeholder="Select a city first"
-                   disabled
-                   required
-                   autocomplete="off">
+                                            <datalist id="collegeSuggestions"></datalist>
+                                        </div>
 
-            <datalist id="collegeSuggestions"></datalist>
-        </div>
+                                        <!-- College Code -->
+                                        <div class="form-group">
+                                            <label>College Code</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="regCollegeCode"
+                                                   required>
+                                        </div>
 
-        <!-- College Code -->
-        <div class="form-group">
-            <label>College Code</label>
-            <input type="text"
-                   class="form-control"
-                   id="regCollegeCode"
-                   required>
-        </div>
+                                        <!-- Password -->
+                                        <div class="form-group full-width">
+                                            <label>Password</label>
 
-        <!-- Password -->
-        <div class="form-group full-width">
-            <label>Password</label>
+                                            <div class="password-wrapper">
+                                                <input type="password"
+                                                       class="form-control"
+                                                       id="regPassword"
+                                                       required
+                                                       minlength="6">
 
-            <div class="password-wrapper">
-                <input type="password"
-                       class="form-control"
-                       id="regPassword"
-                       required
-                       minlength="6">
+                                                <button type="button"
+                                                        class="toggle-password"
+                                                        id="togglePassword"
+                                                        tabindex="-1">
+                                                    <i class="fa fa-eye" id="toggleIcon"></i>
+                                                </button>
+                                            </div>
+                                        </div>
 
-                <button type="button"
-                        class="toggle-password"
-                        id="togglePassword"
-                        tabindex="-1">
-                    <i class="fa fa-eye" id="toggleIcon"></i>
-                </button>
-            </div>
-        </div>
+                                    </div>
 
-    </div>
+                                    <div id="regFormError"
+                                         class="text-danger small mb-2"
+                                         style="display:none;">
+                                    </div>
 
-    <div id="regFormError"
-         class="text-danger small mb-2"
-         style="display:none;">
-    </div>
+                                    <button type="submit"
+                                            class="reg-submit-btn btn-block py-2"
+                                            id="regSubmitBtn">
+                                        Submit &amp; Send OTP
+                                    </button>
 
-    <button type="submit"
-            class="reg-submit-btn btn-block py-2"
-            id="regSubmitBtn">
-        Submit &amp; Send OTP
-    </button>
+                                </form>
 
-</form>
                                 <div class="text-center mt-3">
                                     <p class="mb-0 login-link-text">
                                         Already have an account?
@@ -412,26 +408,10 @@
     <script>
     $(document).ready(function () {
 
-        // ---- Google Sign-In ----
-        var GOOGLE_CLIENT_ID = "783150146725-si2g0g9u233d9q2jlcfg556giccfmkvg.apps.googleusercontent.com";
-
-        function handleGoogleCredential(response) {
-            var payload = JSON.parse(atob(response.credential.split('.')[1]));
-            $('#regName').val(payload.name || '');
-            $('#regEmail').val(payload.email || '');
-            $('#regMobile').focus();
-        }
-
-        if (window.google && google.accounts && google.accounts.id) {
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: handleGoogleCredential
-            });
-        }
-
+        // ---- Google Sign-In (handled by Flask) ----
         $('#googleSignupBtn').on('click', function () {
-    window.location.href = '/auth/google';
-});
+            window.location.href = '/auth/google';
+        });
 
         // ---- Password show/hide toggle ----
         $('#togglePassword').on('click', function () {
@@ -446,13 +426,6 @@
             }
         });
 
-        // ---- EmailJS config ----
-        var EMAILJS_PUBLIC_KEY  = "oTqk1LMgYJlwBhX8J";
-        var EMAILJS_SERVICE_ID  = "service_6y8m99h";
-        var EMAILJS_TEMPLATE_ID = "template_1atdh9g";
-        emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
-
-        var currentOtp = "";
         var resendInterval = null;
         var pendingRegistration = null;
 
@@ -484,16 +457,16 @@
             });
 
             $citySelect.prop('disabled', false);
-                // NEW: turn the select into a searchable dropdown
-    var cityChoices = new Choices('#regCity', {
-        searchEnabled: true,
-        itemSelectText: '',
-        shouldSort: false,
-        placeholder: true,
-        placeholderValue: 'Select your city'
-    });
+
+            // Turn the select into a searchable dropdown
+            new Choices('#regCity', {
+                searchEnabled: true,
+                itemSelectText: '',
+                shouldSort: false,
+                placeholder: true,
+                placeholderValue: 'Select your city'
+            });
         }
-        
 
         $('#regCity').on('change', function () {
             var selectedCity = $(this).val();
@@ -516,7 +489,7 @@
 
         loadCities();
 
-        // ---- Step 1: Submit registration form, send real OTP via EmailJS ----
+        // ---- Step 1: Submit form, send OTP from Flask ----
         $('#registrationForm').on('submit', function (e) {
             e.preventDefault();
             $('#regFormError').hide();
@@ -545,36 +518,26 @@
                 password: password
             };
 
-            currentOtp = String(Math.floor(100000 + Math.random() * 900000));
-            sendOtpEmail(email, name, currentOtp);
+            sendOtpEmail(email, name);
         });
 
-        function sendOtpEmail(email, name, otp) {
+        function sendOtpEmail(email, name) {
             var $btn = $('#regSubmitBtn');
             $btn.prop('disabled', true).text('Sending OTP...');
 
-            var expiry = new Date(Date.now() + 10 * 60 * 1000);
-            var expiryStr = expiry.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
-
-            var templateParams = {
-                email: email,
-                passcode: otp,
-                time: expiryStr,
-                to_name: name
-            };
-
-            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
-                .then(function () {
-                    $btn.prop('disabled', false).text('Submit & Send OTP');
-                    showOtpStep(email);
-                })
-                .catch(function (err) {
-                    $btn.prop('disabled', false).text('Submit & Send OTP');
-                    console.error('EmailJS error:', err);
-                    $('#regFormError').text(
-                        'Could not send the OTP email (' + (err && err.text ? err.text : 'unknown error') + '). Please try again.'
-                    ).show();
-                });
+            $.ajax({
+                url: '/api/send-otp',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ email: email, name: name })
+            }).done(function () {
+                showOtpStep(email);
+            }).fail(function (xhr) {
+                var msg = (xhr.responseJSON && xhr.responseJSON.error) || 'Could not send OTP. Please try again.';
+                $('#regFormError').text(msg).show();
+            }).always(function () {
+                $btn.prop('disabled', false).text('Submit & Send OTP');
+            });
         }
 
         function showOtpStep(email) {
@@ -590,13 +553,11 @@
         function startResendTimer() {
             var seconds = 30;
             var $resendBtn = $('#resendOtpBtn');
-            var $timer = $('#resendTimer');
-
-            $resendBtn.prop('disabled', true);
+            $resendBtn.prop('disabled', true).html('Resend OTP (<span id="resendTimer">30</span>s)');
             clearInterval(resendInterval);
             resendInterval = setInterval(function () {
                 seconds--;
-                $timer.text(seconds);
+                $('#resendTimer').text(seconds);
                 if (seconds <= 0) {
                     clearInterval(resendInterval);
                     $resendBtn.prop('disabled', false).html('Resend OTP');
@@ -604,47 +565,42 @@
             }, 1000);
         }
 
-        // ---- Step 2: Verify OTP, then save to SQL Server ----
+        // ---- Step 2: Verify OTP on server, then register ----
         $('#otpForm').on('submit', function (e) {
             e.preventDefault();
             $('#otpError').hide();
 
             var otp = $('#otpInput').val().trim();
-
             if (otp.length < 6) {
                 $('#otpError').text('Please enter all 6 digits.').show();
                 return;
             }
-            
-
-            if (otp !== currentOtp) {
-                $('#otpError').text('Incorrect OTP. Please try again.').show();
-                return;
-            }
-
             if (!pendingRegistration) {
                 $('#otpError').text('Something went wrong. Please restart registration.').show();
                 return;
             }
 
-            clearInterval(resendInterval);
-
             var $btn = $('#otpSubmitBtn');
-            $btn.prop('disabled', true).text('Registering...');
+            $btn.prop('disabled', true).text('Verifying...');
 
             $.ajax({
-                url: '/api/register',
+                url: '/api/verify-otp',
                 method: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify(pendingRegistration)
+                data: JSON.stringify({ email: pendingRegistration.email, otp: otp })
+            }).then(function () {
+                clearInterval(resendInterval);
+                return $.ajax({
+                    url: '/api/register',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(pendingRegistration)
+                });
             }).done(function () {
                 $('#otpStep').hide();
                 $('#successStep').show();
             }).fail(function (xhr) {
-                var msg = 'Registration failed. Please try again.';
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    msg = xhr.responseJSON.error;
-                }
+                var msg = (xhr.responseJSON && xhr.responseJSON.error) || 'Registration failed. Please try again.';
                 $('#otpError').text(msg).show();
             }).always(function () {
                 $btn.prop('disabled', false).text('Verify & Register');
@@ -654,9 +610,8 @@
         // ---- Resend OTP ----
         $('#resendOtpBtn').on('click', function () {
             if ($(this).prop('disabled') || !pendingRegistration) return;
-            currentOtp = String(Math.floor(100000 + Math.random() * 900000));
             $('#otpError').hide();
-            sendOtpEmail(pendingRegistration.email, pendingRegistration.name, currentOtp);
+            sendOtpEmail(pendingRegistration.email, pendingRegistration.name);
         });
 
     });
