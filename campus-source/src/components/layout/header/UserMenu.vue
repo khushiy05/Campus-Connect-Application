@@ -10,7 +10,7 @@
         👤
       </span>
 
-      <span class="block mr-1 font-medium text-theme-sm">CAMPUS</span>
+      <span class="block mr-1 font-medium text-theme-sm">{{ collegeName }}</span>
 
       <ChevronDownIcon :class="{ 'rotate-180': dropdownOpen }" />
     </button>
@@ -45,6 +45,23 @@ const API_BASE = 'http://127.0.0.1:5000'
 
 const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
+
+// Shows "CAMPUS" until the logged-in college's name is loaded
+const collegeName = ref('')
+
+const loadCollegeName = async () => {
+  try {
+    const res = await fetch(`${API_BASE}/api/campus/profile`, {
+      credentials: 'include',
+    })
+    const json = await res.json()
+    if (json.success && json.data?.college_name) {
+      collegeName.value = json.data.college_name
+    }
+  } catch (err) {
+    console.error('Could not load college name:', err)
+  }
+}
 
 const toggleDropdown = () => {
   dropdownOpen.value = !dropdownOpen.value
@@ -84,6 +101,7 @@ const handleClickOutside = (event: Event) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  loadCollegeName()
 })
 
 onUnmounted(() => {
