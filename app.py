@@ -2795,6 +2795,10 @@ def api_verify_otp():
     rec["verified"] = True
     return {"success": True}, 200
 
+@app.route('/forgot-password')
+def forgot_password():
+    return render_template('forgot-password.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
     

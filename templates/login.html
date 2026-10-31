@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Campus Connect - Login</title>
+<title>CAMPUS CONNECT-LOGIN</title>
 
 <!-- Favicon -->
 <link href="{{ url_for('static', filename='img/logo-icon.png') }}" rel="icon" type="image/png">
@@ -162,7 +162,7 @@
           <input type="checkbox" class="form-check-input" id="rememberMe">
           <label class="form-check-label" for="rememberMe" style="color:#6c757d; font-size:14px;">Remember me</label>
         </div>
-        <a href="#" style="color:#6c63ff; font-size:14px; text-decoration:none;">Forgot password?</a>
+        <a href="{{ url_for('forgot_password') }}" style="color:#6c63ff; font-size:14px; text-decoration:none;">Forgot password?</a>
       </div>
 
       <button type="submit" class="btn-login">Login</button>
