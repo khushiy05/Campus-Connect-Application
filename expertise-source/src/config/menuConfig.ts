@@ -10,13 +10,6 @@ const menuConfig = [
         path: "/",
         component: () => import("../views/Ecommerce.vue"),
       },
-      {
-        icon: GridIcon,
-        name: "Connect",
-        path: "/connect",
-        component: () => import("../views/Others/Connect.vue"),
-
-      },
     ],
   },
 ];
