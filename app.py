@@ -2599,7 +2599,6 @@ def apply_job():
     jobid = data.get('jobid')
     jobtitle = (data.get('jobtitle') or '').strip()
     company = (data.get('company') or '').strip()
-    salaryid = data.get('salaryid')
 
     if not jobid or not jobtitle or not company:
         return {"success": False, "message": "Missing required fields"}, 400
@@ -2608,9 +2607,8 @@ def apply_job():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # name / email session wale student ke studentdb se aate hain
         cursor.execute(
-            "SELECT Name, Email FROM studentdb WHERE ID = ?",
+            "SELECT ID, Name, Email, MobileNo FROM studentdb WHERE ID = ?",
             (session['student_id'],)
         )
         st = cursor.fetchone()
@@ -2620,7 +2618,6 @@ def apply_job():
             session.clear()
             return {"success": False, "message": "Account no longer exists."}, 401
 
-        # same job pe dobara apply na ho
         cursor.execute(
             "SELECT 1 FROM applydb WHERE jobid = ? AND email = ?",
             (jobid, st.Email)
@@ -2631,9 +2628,9 @@ def apply_job():
             return {"success": False, "message": "Already applied to this job"}, 409
 
         cursor.execute(
-            """INSERT INTO applydb (jobid, jobtitle, company, name, email, profile, salaryid)
+            """INSERT INTO applydb (jobid, jobtitle, company, name, email, mobile, studentid)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (jobid, jobtitle, company, st.Name, st.Email, None, salaryid)
+            (jobid, jobtitle, company, st.Name, st.Email, st.MobileNo, st.ID)
         )
         conn.commit()
         cursor.close()
@@ -2801,4 +2798,3 @@ def forgot_password():
 
 if __name__ == '__main__':
     app.run(debug=True)
-    
